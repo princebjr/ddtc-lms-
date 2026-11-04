@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+.vercel/
+supabase/.branches/
+supabase/.temp/
+playwright-report/
+test-results/
+blob-report/
+.lighthouseci/
+*.log
+.DS_Store
+Thumbs.db

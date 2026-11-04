@@ -1,0 +1,66 @@
+# DDTC LMS: How the phases work
+
+Claude Code builds the system one phase at a time. A phase is finished only when its tests pass, its manual checks are done, its evidence is saved and the owner has signed it off. Nothing is "done" because it was written; it is done when it was run and shown to pass.
+
+## The phase protocol (every phase, no exceptions)
+
+1. **Orient.** Announce the phase. Read the files listed at the top of the phase file. Check that the previous phase's tag exists and `npm run verify` is green on `main`.
+2. **Plan.** Write a short plan: migrations, files, policies, functions, screens, tests. Note anything unclear or missing from the decisions. **Stop and wait for the owner's approval.**
+3. **Tests first for security.** For every new table, bucket or function, write the allow and deny tests for each role before the policy or function. Run them and see them fail.
+4. **Build in small steps** on a branch named `phase-N-short-name`. One logical change per commit. Every database change is a numbered migration.
+5. **Run the checks** after each step: `npm run lint`, `npm run typecheck`, `npm run test`, `npm run test:db`. Fix failures before continuing.
+6. **Run the full suite**: `npm run verify` (all earlier phases included). For UI work also run `npm run test:e2e` on every device project, in light and dark, and `npm run lighthouse` where the phase lists it.
+7. **Manual checks.** Do the manual and real-device checks the phase lists. Never claim a manual check you did not do.
+8. **Evidence.** Write `docs/acceptance/phase-NN.md` with the test output summary, the exit-gate checklist and screenshots.
+9. **Pull request.** Open one pull request for the phase with the gate checklist. CI must be green. **The owner reviews and approves.**
+10. **Tag and update.** After approval, merge, create the tag named in the phase file, tick the phase in the tracker below, and update `docs/ARCHITECTURE.md` and the diagrams if the structure changed.
+11. **Stop.** Do not begin the next phase until the owner tells you to.
+
+## Rules that protect quality
+
+- Never skip, delete, loosen or `.only` a test to get green. If a test is wrong, say so and get approval to change it.
+- If a bug from an earlier phase appears, fix it in a separate commit with a regression test before continuing.
+- If a requirement is not in `docs/DECISIONS.md` or `docs/BUILD_PLAN.md`, stop and ask. Do not invent policy.
+- Report honestly: what passed, what failed, what you did not test.
+
+## Phase list and tracker
+
+| Phase | What it delivers | File |
+|---|---|---|
+| 0 | Repository, environments and CI | `phases/phase-00-repo-environments-ci.md` |
+| 1 | Frontend scaffold and design system | `phases/phase-01-frontend-scaffold-design-system.md` |
+| 2 | Database foundation and security core | `phases/phase-02-database-security-core.md` |
+| 3 | Authentication | `phases/phase-03-authentication.md` |
+| 4 | Profiles, user management and avatars | `phases/phase-04-profiles-user-management.md` |
+| 5 | Courses, lecturers and enrolment | `phases/phase-05-courses-lecturers-enrolment.md` |
+| 6 | Lessons and lesson audio | `phases/phase-06-lessons-and-audio.md` |
+| 7 | Assignments and instruction audio | `phases/phase-07-assignments.md` |
+| 8 | Submissions and file validation | `phases/phase-08-submissions-file-validation.md` |
+| 9 | Grading, feedback and history | `phases/phase-09-grading-feedback-history.md` |
+| 10 | Gradebook, distribution charts and exports | `phases/phase-10-gradebook-charts-exports.md` |
+| 11 | Notifications, reports, audit viewer and settings | `phases/phase-11-notifications-reports-settings.md` |
+| 12 | Assignment-audio retention | `phases/phase-12-audio-retention.md` |
+| 13 | Hardening, accessibility, performance and recovery | `phases/phase-13-hardening-accessibility-performance.md` |
+| 14 | Staging acceptance and production release | `phases/phase-14-staging-acceptance-production.md` |
+
+Tracker (tick after sign-off):
+
+- [ ] Phase 0: Repository, environments and CI (`phase-0-done`)
+- [ ] Phase 1: Frontend scaffold and design system (`phase-1-done`)
+- [ ] Phase 2: Database foundation and security core (`phase-2-done`)
+- [ ] Phase 3: Authentication (`phase-3-done`)
+- [ ] Phase 4: Profiles, user management and avatars (`phase-4-done`)
+- [ ] Phase 5: Courses, lecturers and enrolment (`phase-5-done`)
+- [ ] Phase 6: Lessons and lesson audio (`phase-6-done`)
+- [ ] Phase 7: Assignments and instruction audio (`phase-7-done`)
+- [ ] Phase 8: Submissions and file validation (`phase-8-done`)
+- [ ] Phase 9: Grading, feedback and history (`phase-9-done`)
+- [ ] Phase 10: Gradebook, distribution charts and exports (`phase-10-done`)
+- [ ] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)
+- [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
+- [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
+- [ ] Phase 14: Staging acceptance and production release (`v1.0.0`)
+
+## Session prompt for each phase
+
+> Read `CLAUDE.md`, `docs/BUILD_PLAN.md`, `docs/DECISIONS.md` and `docs/ARCHITECTURE.md`. We are starting Phase N. Write a plan listing the migrations, files, policies and tests you will create, and wait for my approval. Write the allow and deny tests for every role before the feature code. Do not begin Phase N+1. When finished, run the full test suite and show the exit-gate checklist with pass or fail for each item.
