@@ -42,9 +42,9 @@ The first CI run on PR #1 failed. Causes found and fixed in commits `437d0b1` an
 | `npm run audit:deps` | Pass (no high or critical); see known issue K1 |
 | `npm run build` | Pass |
 | `npm run test:db` | Pass: 1 file, 3 tests (`00_rls_guard.test.sql`) |
-| `npm run test:e2e` | PENDING locally: Playwright browsers still downloading. Passes in CI (24 of 24 projects) |
-| `npm run lighthouse` | PENDING locally. Passes in CI |
-| `npm run verify` | PENDING full local run (needs the two items above) |
+| `npm run test:e2e` | Verified in CI, local run deferred (K6): 24 of 24 projects pass, run https://github.com/princebjr/ddtc-lms-/actions/runs/41849999942 |
+| `npm run lighthouse` | Verified in CI, local run deferred (K6): mobile preset within budgets, run https://github.com/princebjr/ddtc-lms-/actions/runs/41849999942 |
+| `npm run verify` | Verified in CI, local run deferred (K6): every other component passes locally (rows above); e2e and Lighthouse pass in CI, run https://github.com/princebjr/ddtc-lms-/actions/runs/41849999942 |
 
 ## 4. Tests required (phase file and TESTING.md section 6)
 
@@ -77,3 +77,4 @@ None required for Phase 0.
 | K3 | Repository name is `ddtc-lms-` (trailing dash) while the docs say `ddtc-lms`. Works as is. | Accept unless the owner renames it | Prince Boateng |
 | K4 | `supabase start` prints "Skipping migration .gitkeep"; harmless until the first migration in Phase 2. | Accept; the file is removed when the first migration lands | Claude |
 | K5 | `postgres-meta` (used only by Supabase Studio) is excluded from the local stack; it timed out on first start and is not needed for pgTAP. | Accept | Claude |
+| K6 | The Playwright browser download stalls on the development machine (no bytes written after 10 minutes, twice), so `test:e2e`, `lighthouse` and the full `verify` were not run locally. All three pass in CI on the same commit. | Owner accepted the CI runs as proof for Phase 0 (2026-11-04). Retry the local install before Phase 1 sign-off, which needs real e2e runs | Prince Boateng |
