@@ -61,7 +61,7 @@ The first CI run on PR #1 failed. Causes found and fixed in commits `437d0b1` an
 | Line | Result | Proof |
 |---|---|---|
 | Inputs needed by Phases 0 to 2 are supplied; every other Section 4 input has a named owner and a due date matching the phase that needs it | PASS | `docs/INPUTS.md` (owner Prince Boateng for all; due phase per item; item 4 supplied); `docs/DECISIONS.md` O1 to O17 settled 2026-11-04 |
-| Architecture diagrams reviewed and consistent with this build plan | PENDING owner review | `docs/architecture/` (8 Mermaid files) indexed in `docs/ARCHITECTURE.md` section 21 |
+| Architecture diagrams reviewed and consistent with this build plan | PASS: approved by Prince Boateng, 2026-11-04 | `docs/architecture/` (8 Mermaid files) indexed in `docs/ARCHITECTURE.md` section 21 |
 | CI green; branch protection active | PASS | Run 41849999942; section 1 |
 
 ## 6. Real-device notes
