@@ -73,7 +73,7 @@ describe('scanFiles', () => {
   });
 
   it('fails on a Supabase secret API key', () => {
-    const key = ['sb', 'secret', 'abcdefghijklmnop1234'].join('_');
+    const key = ['sb', 'secret', 'x'.repeat(24)].join('_');
     expect(scanFiles([{ path: 'config.js', content: `const k = '${key}';` }]).map((f) => f.rule)).toEqual(['supabase-secret-key']);
   });
 

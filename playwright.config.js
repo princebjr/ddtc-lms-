@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Device projects from docs/TESTING.md section 3. Every project runs in light and dark.
-/** @type {Array<{ name: string, use: import('@playwright/test').PlaywrightTestOptions & Record<string, unknown> }>} */
+/** @type {Array<{ name: string, use: import('@playwright/test').Project['use'] }>} */
 const DEVICES = [
   { name: 'desktop-chrome', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 720 } } },
   { name: 'desktop-firefox', use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 720 } } },
