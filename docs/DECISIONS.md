@@ -1,4 +1,4 @@
-# DDTC LMS: Decisions
+# DDTC LMS: Decisions[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |[x] 2026-11-04: keep default |
 
 The locked decisions (D01 to D40) are below. Change one only through an entry in the ADR log.
 
@@ -55,23 +55,23 @@ Reply to each with "keep" or your change. "Default" is what the plan assumes. Ti
 
 | # | Decision | Default in the plan | Done |
 |---|---|---|---|
-| O1 | Approve BUILD_PLAN v1.7 as the single source of truth (add "BUILD_PLAN v1.7 accepted" with the date below) | Approve | [ ] |
+| O1 | Approve BUILD_PLAN v1.7 as the single source of truth (add "BUILD_PLAN v1.7 accepted" with the date below) | Approve | [x] 2026-11-04: keep default |
 | O2 | Who approves each phase gate (a named human reviewer for every pull request) | Prince | [x] 2026-11-04: Prince Boateng approves every phase gate |
-| O3 | Google sign-in rules (D27): learners only; verified Google emails only; a matching administrator or lecturer email is refused; a matching verified learner is linked; no Google photo import | As written | [ ] |
-| O4 | Confirm the palette hex codes read from the style guide: #2563EB, #0F172A, #64748B, #F1F5F9, #0F766E, #D97706, #DC2626, and that warning text uses the darker #B45309 | Confirm | [ ] |
-| O5 | Logos: confirm the placement rules (D39); supply SVG copies of both logos; supply or approve a simplified DDTC mark for the favicon; decide whether the sidebar shows the words "DDTC LMS" beside the emblem | Emblem plus "DDTC LMS" text; favicon from the emblem until a simplified mark exists | [ ] |
-| O6 | Grading defaults (D14, D15): A 80+, B 70, C 60, D 50, F below 50; pass mark 50; chart ranges 0-49 then each ten points; learners see charts from 5 graded results | Keep | [ ] |
-| O7 | Course and submission policy: administrator approval for courses (D04); resubmission until due date (D10); late work blocked unless allowed or extended; missing work not counted as zero (D11) | Keep | [ ] |
-| O8 | File limits (D17): lesson audio 100 MB and 90 min; learner audio 25 MB and 10 min; PDF and Word 10 MB; images 2 MB | Keep | [ ] |
-| O9 | Retention (D20): learner audio deleted 180 days after grade release, off at launch, 30-day dry run first | Keep | [ ] |
-| O10 | Sessions and recovery (D32, D34): admin 30 min idle and 12 h maximum; backups RPO 24 h, RTO 8 h, kept 30 days | Keep | [ ] |
-| O11 | Language (D23): JavaScript with JSDoc type checks, or move to TypeScript (recommended for fewer mistakes) | JavaScript with JSDoc | [ ] |
-| O12 | Scope for this release: confirm Messages, Calendar, quizzes, certificates, announcements, discussion, captions, video and prerequisites are NOT in version 1 | Out of scope | [ ] |
-| O13 | Navigation: confirm the phone tab bars and menus, and the floating "+" buttons, as shown in the prototype | As in prototype | [ ] |
-| O14 | Theme default: System (follows the phone), with Light and Dark choices | System | [ ] |
-| O15 | The first and second name of each of the two administrators (princebjr1638@gmail.com and nyamekyesolomon856@gmail.com); who owns the production Supabase account; who holds each authenticator device | Needed | [~] 2026-11-04: first (main) administrator Prince Boateng, princebjr1638@gmail.com; second administrator Solomon Nyamekye, nyamekyesolomon856@gmail.com; production Supabase owner Prince Boateng. Still open: who holds each authenticator device. |
-| O16 | Accounts to create and their owners: GitHub (private repository `ddtc-lms`), Supabase (region closest to Ghana that DDTC accepts), Vercel, Resend, Cloudflare Turnstile, Sentry, Google Cloud | Create | [~] 2026-11-04: all accounts owned by Prince Boateng; GitHub (personal account, private repo `ddtc-lms`), Vercel and Supabase accounts exist. Still open: Supabase region; Resend, Turnstile, Sentry, Google Cloud to be created before the phase that needs them. |
-| O17 | Paid plans you accept for production: Supabase (daily backups), Vercel, Resend | Accept | [ ] |
+| O3 | Google sign-in rules (D27): learners only; verified Google emails only; a matching administrator or lecturer email is refused; a matching verified learner is linked; no Google photo import | As written | [x] 2026-11-04: keep default |
+| O4 | Confirm the palette hex codes read from the style guide: #2563EB, #0F172A, #64748B, #F1F5F9, #0F766E, #D97706, #DC2626, and that warning text uses the darker #B45309 | Confirm | [x] 2026-11-04: keep default |
+| O5 | Logos: confirm the placement rules (D39); supply SVG copies of both logos; supply or approve a simplified DDTC mark for the favicon; decide whether the sidebar shows the words "DDTC LMS" beside the emblem | Emblem plus "DDTC LMS" text; favicon from the emblem until a simplified mark exists | [x] 2026-11-04: keep default |
+| O6 | Grading defaults (D14, D15): A 80+, B 70, C 60, D 50, F below 50; pass mark 50; chart ranges 0-49 then each ten points; learners see charts from 5 graded results | Keep | [x] 2026-11-04: keep default |
+| O7 | Course and submission policy: administrator approval for courses (D04); resubmission until due date (D10); late work blocked unless allowed or extended; missing work not counted as zero (D11) | Keep | [x] 2026-11-04: keep default |
+| O8 | File limits (D17): lesson audio 100 MB and 90 min; learner audio 25 MB and 10 min; PDF and Word 10 MB; images 2 MB | Keep | [x] 2026-11-04: keep default |
+| O9 | Retention (D20): learner audio deleted 180 days after grade release, off at launch, 30-day dry run first | Keep | [x] 2026-11-04: keep default |
+| O10 | Sessions and recovery (D32, D34): admin 30 min idle and 12 h maximum; backups RPO 24 h, RTO 8 h, kept 30 days | Keep | [x] 2026-11-04: keep default |
+| O11 | Language (D23): JavaScript with JSDoc type checks, or move to TypeScript (recommended for fewer mistakes) | JavaScript with JSDoc | [x] 2026-11-04: keep default |
+| O12 | Scope for this release: confirm Messages, Calendar, quizzes, certificates, announcements, discussion, captions, video and prerequisites are NOT in version 1 | Out of scope | [x] 2026-11-04: keep default |
+| O13 | Navigation: confirm the phone tab bars and menus, and the floating "+" buttons, as shown in the prototype | As in prototype | [x] 2026-11-04: keep default |
+| O14 | Theme default: System (follows the phone), with Light and Dark choices | System | [x] 2026-11-04: keep default |
+| O15 | The first and second name of each of the two administrators (princebjr1638@gmail.com and nyamekyesolomon856@gmail.com); who owns the production Supabase account; who holds each authenticator device | Needed | [x] 2026-11-04: first (main) administrator Prince Boateng, princebjr1638@gmail.com; second administrator Solomon Nyamekye, nyamekyesolomon856@gmail.com; production Supabase owner Prince Boateng. Each administrator holds their own authenticator device. |
+| O16 | Accounts to create and their owners: GitHub (private repository `ddtc-lms`), Supabase (region closest to Ghana that DDTC accepts), Vercel, Resend, Cloudflare Turnstile, Sentry, Google Cloud | Create | [~] 2026-11-04: all accounts owned by Prince Boateng; GitHub (personal account, repository princebjr/ddtc-lms-, public per ADR-001), Vercel and Supabase accounts exist. Supabase region Europe (Ireland, eu-west-1), projects ddtc-lms-dev and ddtc-lms-staging created; still open: Resend, Turnstile, Sentry, Google Cloud to be created before the phase that needs them. |
+| O17 | Paid plans you accept for production: Supabase (daily backups), Vercel, Resend | Accept | [x] 2026-11-04: keep default |
 
 ### B. Before Phase 3 (authentication)
 
@@ -98,8 +98,10 @@ Add one entry per change to any locked decision: date, decision ID, old value, n
 
 | Date | ID | Change | Reason | Approved by |
 |---|---|---|---|---|
+| 2026-11-04 | ADR-001 (CLAUDE.md section 7, O16, Phase 0 exit gate) | The GitHub repository is **public** (princebjr/ddtc-lms-) instead of private. | GitHub branch protection is not available for private repositories on a free personal account, and the owner declined GitHub Pro. A public repository gives enforced branch protection (pull request and passing CI required) at no cost. Consequence accepted by the owner: the code and documentation, including the two administrator email addresses, are publicly readable. Secrets are never committed (secret guard and gitleaks in CI). | Prince Boateng |
+| 2026-11-04 | ADR-002 (D26) | Supabase region for development and staging: Europe (Ireland). | Closest region to Ghana accepted by DDTC. | Prince Boateng |
 
 ## Acceptance record
 
-- BUILD_PLAN v1.7 accepted: ____ (date, name)
+- BUILD_PLAN v1.7 accepted: 2026-11-04, Prince Boateng
 - Phase sign-offs: recorded in `docs/PHASES.md` tracker and `docs/acceptance/`.
