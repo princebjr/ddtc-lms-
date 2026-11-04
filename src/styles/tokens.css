@@ -1,0 +1,138 @@
+/*
+ * DDTC design tokens (docs/DESIGN.md v3.0, sections 5, 7, 8, 9 and 18).
+ * The single source of every colour, size, radius, shadow and duration in the app.
+ * Light values on :root, dark values on .dark (class-based dark mode, set before first paint).
+ * tests/unit/tokens-contrast.test.js recomputes the DESIGN.md 5.4 contrast pairs from this file.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Semantic colours, light theme (DESIGN.md 5.2) */
+  --page: #f8fafc;
+  --sidebar: #ffffff;
+  --card: #ffffff;
+  --fill: #f1f5f9;
+  --hairline: #e2e8f0;
+  --control-border: #7a8aa0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #5b6b80;
+  --primary: #2563eb;
+  --on-primary: #ffffff;
+  --link: #2563eb;
+  --focus-ring: #2563eb;
+  --success: #0f766e;
+  --warning: #b45309;
+  --warning-fill: #d97706;
+  --error: #dc2626;
+  --on-error: #ffffff;
+  --chart-bar: #64748b;
+  --chart-own: #2563eb;
+  --skeleton-base: #f1f5f9;
+  --skeleton-shine: #e2e8f0;
+  --logo: #0f172a;
+  --logo-navy: #0f172a;
+  --logo-white: #ffffff;
+  --scrim: rgb(15 23 42 / 0.48);
+  --hero-tint: #eef4ff;
+
+  /* Google button, light variant (Google identity branding guidelines) */
+  --google-fill: #ffffff;
+  --google-border: #747775;
+  --google-text: #1f1f1f;
+
+  /* Overlay shadow: the only shadow (DESIGN.md 8) */
+  --shadow-overlay-value: 0 8px 24px rgb(15 23 42 / 0.12), 0 2px 6px rgb(15 23 42 / 0.08);
+
+  /* shadcn/ui mapping (DESIGN.md 18) */
+  --background: var(--page);
+  --foreground: var(--text-primary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--card);
+  --popover-foreground: var(--text-primary);
+  --primary-foreground: var(--on-primary);
+  --secondary: var(--fill);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--fill);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--fill);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--error);
+  --destructive-foreground: var(--on-error);
+  --border: var(--hairline);
+  --input: var(--control-border);
+  --ring: var(--focus-ring);
+  --info: var(--link);
+  --radius: 12px;
+
+  /* Layout */
+  --content-max: 80rem; /* 1280 px */
+  --reading-max: 68ch;
+  --sidebar-width: 16rem;
+  --rail-width: 4.5rem;
+  --topbar-height: 3.5rem;
+  --pill-height: 4rem;
+  --pill-gap: 1rem;
+  --touch-min: 2.75rem; /* 44 px */
+  --fab-size: 3.5rem; /* 56 px */
+  --toast-width: 22.5rem; /* 360 px */
+  --toast-edge: 1rem; /* 16 px from the screen edge */
+  /* Phones: toasts sit above the pill bar, any FAB and the safe area */
+  --toast-bottom-offset: calc(var(--bottom-nav-space) + var(--fab-clearance, 0px) + var(--safe-bottom) + var(--toast-edge));
+
+  /* Safe areas (notches, rounded corners, home indicator) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Height of the phone pill bar area, so toasts, FABs and content clear it */
+  --bottom-nav-space: 0px;
+
+  /* Motion (DESIGN.md 9) */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-sheet: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-shimmer: 1.4s;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Semantic colours, dark theme: defined separately, not inverted (DESIGN.md 5.2) */
+  --page: #0a1428;
+  --sidebar: #08122a;
+  --card: #0f1d3a;
+  --fill: #172a52;
+  --hairline: #1f3566;
+  --control-border: #6f84a8;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --primary: #2563eb;
+  --on-primary: #ffffff;
+  --link: #60a5fa;
+  --focus-ring: #60a5fa;
+  --success: #2dd4bf;
+  --warning: #fbbf24;
+  --warning-fill: #d97706;
+  --error: #f87171;
+  --on-error: #0a1428;
+  --chart-bar: #94a3b8;
+  --chart-own: #60a5fa;
+  --skeleton-base: #172a52;
+  --skeleton-shine: #1f3566;
+  --logo: #ffffff;
+  --scrim: rgb(2 6 23 / 0.64);
+  --hero-tint: #0d1a36;
+
+  /* Google button, dark variant */
+  --google-fill: #131314;
+  --google-border: #8e918f;
+  --google-text: #e3e3e3;
+
+  --shadow-overlay-value: 0 8px 24px rgb(0 0 0 / 0.48), 0 2px 6px rgb(0 0 0 / 0.32);
+}
