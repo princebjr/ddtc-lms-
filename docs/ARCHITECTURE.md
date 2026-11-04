@@ -96,13 +96,19 @@ A lecturer sees only courses they are assigned to. A learner sees only their own
 
 Route guards only decide what the screen shows. The real protection is in the database and storage rules (Section 11).
 
+**Preview routes (Phase 1 to Phase 3).** Until sign-in exists, the role layout shells are reachable only on preview routes: `/dev` (index), `/dev/design` (every shared component) and `/dev/shell/{admin|lecturer|learner}/{page}`. They are compiled in only when `VITE_DEV_ROUTES` is true: the dev server, the end-to-end build (`dist-e2e/`) and Vercel preview deployments. Production builds drop them, so production has only `/`, `/offline` and the 404 page. Phase 3 mounts the same shells under the guarded routes above.
+
+**Frontend structure (Phase 1).** `src/styles/tokens.css` (design tokens, light and dark) and `src/styles/index.css` (Tailwind 4 `@theme` mapping); `src/components/ui` (shadcn/ui primitives restyled with tokens); `src/components/brand` (`LogoMark`, `BrandBlock`, `GoogleButton`); `src/components/feedback` (toasts, skeletons, FAB and speed dial, states, offline and update prompts, in-app-browser notice); `src/components/layout` (`AppShell`, `PhoneNav`, `SideNav`, account menu, theme switch); `src/components/data` (`ResponsiveTable`, `ResponsiveChart`); `src/lib/toast` (the toast catalogue and controller; only catalogue toasts can be shown); `src/lib/supabase.js` (anon key only, checked by `src/lib/env.js`). The service worker (`pwa.config.js`) precaches the app shell only and has no runtime caching.
+
 ## 6. Navigation and avatars
 
 | Role | Phone (bottom tab bar) | Tablet and desktop |
 |---|---|---|
-| Administrator | Dashboard, Users, Courses + More | Sidebar: Dashboard, Users (lecturers, learners), Courses, Enrolments, Assignments, Gradebooks, Reports, Notifications, Audit logs, Settings |
-| Lecturer | Dashboard, My Courses, To grade + More | Sidebar: Dashboard, My Courses, Submissions to review, Gradebooks, Notifications, Profile settings |
-| Learner | Dashboard, My Courses, Assignments + More | Sidebar: Dashboard, My Courses, Assignments, Grades, Notifications, Profile settings |
+| Administrator | Dashboard, Users, Courses + More | Sidebar: Dashboard, Users, Lecturers, Learners, Courses, Approvals, Enrolments, Assignments, Gradebooks, Reports, Notifications, Audit logs, Settings |
+| Lecturer | Dashboard, My Courses, To grade + More | Sidebar: Dashboard, My Courses, To grade (submissions to review), Gradebooks, Notifications |
+| Learner | Dashboard, My Courses, Assignments + More | Sidebar: Dashboard, My Courses, Assignments, Grades, Notifications |
+
+Profile settings, the theme choice and Sign out are in the avatar menu in the top bar (and Profile and Sign out also in the phone More sheet). The single source of these lists is `src/lib/navigation.js` (Phase 1). Course-scoped pages (lessons, grading, results, learner progress) live inside the course workspace, not in global navigation.
 
 Tablets use a collapsible side rail. On phones the floating pill shows only icons for the three main destinations and a permanent More button; the name appears on the active item only, with an animated morph (D40). More opens a sheet with every other page and Sign out.
 
