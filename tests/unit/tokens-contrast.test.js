@@ -69,6 +69,25 @@ describe.each([
   });
 });
 
+/** @param {string} fg @param {string} bg @param {number} p share of fg */
+function mix(fg, bg, p) {
+  return `#${[1, 3, 5]
+    .map((i) => Math.round(parseInt(fg.slice(i, i + 2), 16) * p + parseInt(bg.slice(i, i + 2), 16) * (1 - p)).toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
+describe('active navigation capsule (DESIGN.md 12.4)', () => {
+  const tint = Number(/--capsule-tint:\s*(\d+)%/.exec(css)?.[1]) / 100;
+  it.each([
+    ['light', light],
+    ['dark', dark],
+  ])('%s: the link-coloured active label reaches 4.5:1 on the capsule', (_t, t) => {
+    // bg-active-capsule mixes the link colour over --card (src/styles/index.css).
+    expect(tint).toBeGreaterThan(0);
+    expect(contrast(t.link, mix(t.link, t.card, tint))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe('token values match DESIGN.md 5.2', () => {
   it('uses the confirmed brand palette (O4)', () => {
     expect(light.primary).toBe('#2563eb');

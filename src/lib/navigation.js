@@ -70,6 +70,7 @@ export const NAVIGATION = Object.freeze({
       { slug: 'dashboard', label: 'Dashboard', title: 'Dashboard', description: 'What is happening across your courses.', icon: LayoutDashboard, group: 'Overview', under: 'dashboard', phase: 5 },
       { slug: 'my-courses', label: 'My Courses', title: 'My Courses', description: 'Courses you teach.', icon: BookOpen, group: 'Teaching', under: 'my-courses', phase: 5 },
       { slug: 'to-grade', label: 'To grade', title: 'To grade', description: 'Submissions waiting for marks and feedback.', icon: ClipboardList, group: 'Assessment', under: 'to-grade', phase: 9 },
+      { slug: 'gradebooks', label: 'Gradebooks', title: 'Gradebooks', description: 'Results for the courses you teach.', icon: ClipboardCheck, group: 'Assessment', under: 'to-grade', phase: 10 },
       { slug: 'notifications', label: 'Notifications', title: 'Notifications', description: 'Latest alerts.', icon: Bell, group: 'Account', under: 'more', phase: 11 },
       { slug: 'profile', label: 'Profile', title: 'Profile settings', description: 'Your account.', icon: UserRound, group: 'Account', under: 'more', phase: 4 },
     ],

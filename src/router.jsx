@@ -32,6 +32,8 @@ export const routes = [
   {
     path: '/',
     errorElement: <RouteErrorPage />,
+    // Neutral shell while the first route chunk loads: page colour only, so nothing flashes.
+    hydrateFallbackElement: <div className="min-h-dvh-screen bg-page" aria-busy="true" />,
     children: [...publicRoutes, ...devRoutes, { path: '*', lazy: page(() => import('@/pages/NotFoundPage.jsx')) }],
   },
 ];

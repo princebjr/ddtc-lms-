@@ -16,11 +16,11 @@ function wasDismissed() {
 /**
  * "Open in Safari or Chrome" notice for in-app browsers (D27 item 8, D36, RESPONSIVE.md 15.6).
  * Never blocks the page; can be dismissed for this visit.
- * @param {{ userAgent?: string }} props  userAgent is injectable for tests
+ * @param {{ userAgent?: string, preview?: boolean }} props  userAgent is injectable for tests; preview ignores a dismissal
  */
-export function InAppBrowserNotice({ userAgent }) {
+export function InAppBrowserNotice({ userAgent, preview = false }) {
   const app = detectInAppBrowser(userAgent ?? (typeof navigator === 'undefined' ? '' : navigator.userAgent));
-  const [dismissed, setDismissed] = useState(wasDismissed);
+  const [dismissed, setDismissed] = useState(() => !preview && wasDismissed());
   if (!app || dismissed) return null;
   return (
     <Banner
@@ -28,7 +28,7 @@ export function InAppBrowserNotice({ userAgent }) {
       dismissLabel="Dismiss notice"
       onDismiss={() => {
         try {
-          window.sessionStorage.setItem(DISMISS_KEY, '1');
+          if (!preview) window.sessionStorage.setItem(DISMISS_KEY, '1');
         } catch {
           // Storage unavailable: dismiss for this page view only.
         }

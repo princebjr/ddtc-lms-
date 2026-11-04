@@ -94,7 +94,6 @@ export default function DesignPage() {
 
   return (
     <div className="min-h-dvh-screen bg-page">
-      <InAppBrowserNotice userAgent="Mozilla/5.0 (iPhone) Instagram 300.0" />
       <main id="main" className="mx-auto flex w-full max-w-content flex-col gap-10 px-4 pt-8 pb-nav-safe sm:px-6 lg:px-8">
         <PageHeader title="Design system" description="DDTC tokens and shared components. Switch the theme to review light and dark." actions={<ThemeSwitch />} />
         <div className="lg:hidden">
@@ -319,6 +318,13 @@ export default function DesignPage() {
             <Button variant="outline" onClick={() => toast.show('admin.course-archived', { onAction: () => undefined })}>
               Undo
             </Button>
+          </div>
+        </Section>
+
+        <Section title="In-app browser notice">
+          <p className="m-0 text-body-sm text-ink-secondary">Preview with an Instagram user agent. In the app it appears at the top of every page inside an in-app browser.</p>
+          <div className="overflow-hidden rounded-md border border-hairline">
+            <InAppBrowserNotice userAgent="Mozilla/5.0 (iPhone) Instagram 300.0" preview />
           </div>
         </Section>
 

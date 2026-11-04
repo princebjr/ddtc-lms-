@@ -33,7 +33,7 @@ export function ThemeSwitch({ compact = false, className }) {
               selected && 'bg-card text-ink',
             )}
           >
-            <Icon className="size-4" aria-hidden="true" />
+            <Icon className="size-4 shrink-0" aria-hidden="true" />
             {compact ? null : <span>{label}</span>}
           </button>
         );

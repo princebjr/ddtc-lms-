@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu.jsx';
 import { UserAvatar } from '@/components/UserAvatar.jsx';
+import { getInitials } from '@/lib/initials.js';
 import { isThemeChoice } from '@/lib/theme.js';
 
 /** @typedef {{ firstName: string, secondName: string, imageUrl?: string | null }} ShellUser */
@@ -26,7 +27,8 @@ export function AccountMenu({ user, roleLabel, profileHref, onSignOut }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className="inline-flex size-11 items-center justify-center rounded-full focus-visible:focus-ring"
-        aria-label={`Account menu for ${user.firstName} ${user.secondName}`}
+        // WCAG 2.5.3: the visible initials are part of the accessible name.
+        aria-label={`${getInitials(user.firstName, user.secondName) || 'Account'}: account menu for ${user.firstName} ${user.secondName}`}
       >
         <UserAvatar firstName={user.firstName} secondName={user.secondName} imageUrl={user.imageUrl} size={32} decorative />
       </DropdownMenuTrigger>

@@ -76,6 +76,7 @@
   --pill-gap: 1rem;
   --touch-min: 2.75rem; /* 44 px */
   --fab-size: 3.5rem; /* 56 px */
+  --capsule-tint: 8%; /* active nav capsule: link colour over card */
   --toast-width: 22.5rem; /* 360 px */
   --toast-edge: 1rem; /* 16 px from the screen edge */
   /* Phones: toasts sit above the pill bar, any FAB and the safe area */

@@ -173,8 +173,10 @@
 @utility bg-pill {
   background-color: color-mix(in srgb, var(--card) 85%, transparent);
 }
+/* Active navigation capsule. DESIGN.md 12.4 says 14 %; 8 % keeps the link-coloured label at
+   4.65:1 in light mode (14 % gives 4.24:1, below WCAG AA). See docs/acceptance/phase-01.md. */
 @utility bg-active-capsule {
-  background-color: color-mix(in srgb, var(--link) 14%, transparent);
+  background-color: color-mix(in srgb, var(--link) var(--capsule-tint), var(--card));
 }
 @utility bg-hero-soft {
   background-image: linear-gradient(180deg, var(--hero-tint), var(--page));

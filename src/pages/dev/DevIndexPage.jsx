@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { InsetList, InsetListRow } from '@/components/ui/inset-list.jsx';
+import { InsetList } from '@/components/ui/inset-list.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { NAVIGATION, ROLE_KEYS } from '@/lib/navigation.js';
 
@@ -39,9 +39,16 @@ export default function DevIndexPage() {
             </InsetList>
           </section>
         ))}
-        <InsetList>
-          <InsetListRow title="Offline fallback" trailing={<Link to="/offline" className="inline-flex min-h-11 items-center text-link">Open</Link>} />
-        </InsetList>
+        <section className="flex flex-col gap-2">
+          <h2 className="m-0 text-title-2 text-ink">Fallback pages</h2>
+          <InsetList>
+            <li>
+              <Link to="/offline" className="flex min-h-14 items-center px-4 text-body text-link hover:bg-fill focus-visible:focus-ring">
+                Offline fallback
+              </Link>
+            </li>
+          </InsetList>
+        </section>
       </div>
     </main>
   );
