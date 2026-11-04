@@ -83,7 +83,7 @@ ddtc-lms/
 
 ## 7. Git conventions
 
-Private repository `ddtc-lms`. Branches `phase-N-short-name`. Conventional commit messages (`feat:`, `fix:`, `test:`, `docs:`, `chore:`). One pull request per phase with the gate checklist copied from the phase file. Protected `main`: pull request and green CI required. Tags: `phase-N-done`, final `v1.0.0`.
+Public repository `princebjr/ddtc-lms-` (ADR-001 in `docs/DECISIONS.md`: public so that branch protection is enforced on a free account; never commit secrets). Branches `phase-N-short-name`. Conventional commit messages (`feat:`, `fix:`, `test:`, `docs:`, `chore:`). One pull request per phase with the gate checklist copied from the phase file. Protected `main`: pull request and green CI required. Tags: `phase-N-done`, final `v1.0.0`.
 
 ## 8. When to stop and ask
 
