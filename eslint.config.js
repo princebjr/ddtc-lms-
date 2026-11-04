@@ -10,6 +10,8 @@ export default [
     ignores: [
       'node_modules/',
       'dist/',
+      'dist-e2e/',
+      'dist-shots/',
       'dev-dist/',
       'coverage/',
       'playwright-report/',

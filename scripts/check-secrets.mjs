@@ -19,7 +19,7 @@ const BINARY_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.pdf', '.zip', '.gz',
   '.woff', '.woff2', '.ttf', '.otf', '.mp3', '.m4a', '.wav', '.webm', '.ogg', '.mp4',
 ]);
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci']);
+const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'dist-e2e', 'dist-shots', 'coverage', 'playwright-report', 'test-results', '.lighthouseci']);
 const MAX_BYTES = 2 * 1024 * 1024;
 
 const SERVICE_ROLE_TEXT = /service[\s_-]?role/i;
