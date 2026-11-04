@@ -1,0 +1,3 @@
+# Reviewed false positives only. Each line is an exact gitleaks fingerprint with the reason.
+# Fake fixture in the secret-guard unit test (not a real key); fixture since replaced. Reviewed 2026-11-04 by Claude, owner Prince Boateng.
+d1667581507d18bb22330cb3a44b67073d507d29:tests/unit/check-secrets.test.js:generic-api-key:76
