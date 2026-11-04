@@ -61,7 +61,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Start local Supabase (database, auth, storage only)
-        run: npx supabase start -x realtime,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor
+        run: npm run db:start
       - run: npm run test:db
       - if: always()
         run: npx supabase stop --no-backup

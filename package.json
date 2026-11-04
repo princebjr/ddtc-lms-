@@ -16,7 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "supabase test db",
-    "db:start": "supabase start",
+    "db:start": "supabase start -x realtime,imgproxy,mailpit,studio,postgres-meta,edge-runtime,logflare,vector,supavisor",
     "db:stop": "supabase stop",
     "test:e2e": "playwright test",
     "lighthouse": "lhci autorun",
