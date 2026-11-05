@@ -449,7 +449,7 @@ enabled = true
 # Staging (ddtc-lms-staging). `supabase config push` applies these values to staging only; every
 # value not listed keeps the base setting above. Staging keeps the platform's default rate
 # limits, pooler and storage settings (the base raises some for local tests). Google and
-# Turnstile are configured in the dashboard (their secrets never live in this file), so they are
+# Turnstile were configured in the dashboard (their secrets never live in this file), so they are
 # not declared here and a push leaves them as they are. There is no domain yet: staging runs on
 # Vercel preview addresses (*.vercel.app); see docs/acceptance/phase-03.md.
 [remotes.staging]
@@ -458,6 +458,11 @@ project_id = "iybsnzrkkddkqnhfqykv"
 [remotes.staging.auth]
 site_url = "https://ddtc-lms-git-phase-3-authen-a1b234-princebjr1638-8304s-projects.vercel.app"
 additional_redirect_urls = ["https://ddtc-lms-*-princebjr1638-8304s-projects.vercel.app/**"]
+
+# No CAPTCHA (owner change to D22, 2026-11-05): Turnstile removed; the rate limits below apply.
+[remotes.staging.auth.captcha]
+enabled = false
+provider = "turnstile"
 
 [remotes.staging.auth.rate_limit]
 sign_in_sign_ups = 30

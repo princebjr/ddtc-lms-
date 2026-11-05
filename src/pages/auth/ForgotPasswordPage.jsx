@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { AuthLayout, FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
-import { Turnstile } from '@/components/auth/Turnstile.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { authErrorMessage, MESSAGES } from '@/lib/auth/messages.js';
 import { appUrl } from '@/lib/auth/routing.js';
@@ -16,8 +15,6 @@ export default function ForgotPasswordPage() {
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [message, setMessage] = useState(/** @type {{ tone: 'error' | 'success', text: string } | null} */ (null));
   const [pending, setPending] = useState(false);
-  const [captcha, setCaptcha] = useState(/** @type {string | null} */ (null));
-  const [captchaKey, setCaptchaKey] = useState(0);
 
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   const onSubmit = async (event) => {
@@ -33,7 +30,6 @@ export default function ForgotPasswordPage() {
     try {
       const { error } = await getSupabase().auth.resetPasswordForEmail(result.data.email, {
         redirectTo: appUrl('/auth/confirm?type=recovery'),
-        ...(captcha ? { captchaToken: captcha } : {}),
       });
       // Only rate limits and connection problems are reported; everything else looks like success.
       const shown = error ? authErrorMessage(error, 'recovery') : MESSAGES.checkInbox;
@@ -42,7 +38,6 @@ export default function ForgotPasswordPage() {
       setMessage({ tone: 'error', text: authErrorMessage(error, 'recovery') });
     } finally {
       setPending(false);
-      setCaptchaKey((k) => k + 1);
     }
   };
 
@@ -60,7 +55,6 @@ export default function ForgotPasswordPage() {
     >
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormField label="Email address" name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="you@example.org" error={errors.email} />
-        <Turnstile onToken={setCaptcha} resetKey={captchaKey} />
         <FormMessage tone={message?.tone}>{message?.text}</FormMessage>
         <Button type="submit" size="auth" loading={pending} loadingLabel="Sending">
           Send reset link

@@ -2,7 +2,6 @@ import { MailCheck } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { AuthLayout, FormMessage } from '@/components/auth/AuthLayout.jsx';
-import { Turnstile } from '@/components/auth/Turnstile.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { authErrorMessage } from '@/lib/auth/messages.js';
@@ -18,8 +17,6 @@ export default function VerifyEmailPage() {
   const email = /** @type {{ email?: string } | null} */ (location.state)?.email ?? '';
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
-  const [captcha, setCaptcha] = useState(/** @type {string | null} */ (null));
-  const [captchaKey, setCaptchaKey] = useState(0);
 
   const resend = async () => {
     if (!email) return;
@@ -29,7 +26,7 @@ export default function VerifyEmailPage() {
       const { error } = await getSupabase().auth.resend({
         type: 'signup',
         email,
-        options: { emailRedirectTo: appUrl('/auth/confirm?type=signup'), ...(captcha ? { captchaToken: captcha } : {}) },
+        options: { emailRedirectTo: appUrl('/auth/confirm?type=signup') },
       });
       if (error && error.status === 429) setMessage(authErrorMessage(error, 'recovery'));
       else toast.show('account.verification-resent');
@@ -37,7 +34,6 @@ export default function VerifyEmailPage() {
       setMessage(authErrorMessage(error, 'recovery'));
     } finally {
       setPending(false);
-      setCaptchaKey((k) => k + 1);
     }
   };
 
@@ -67,7 +63,6 @@ export default function VerifyEmailPage() {
       </div>
       {email ? (
         <div className="flex flex-col gap-4">
-          <Turnstile onToken={setCaptcha} resetKey={captchaKey} />
           <FormMessage>{message}</FormMessage>
           <Button type="button" variant="secondary" size="auth" onClick={resend} loading={pending} loadingLabel="Sending">
             Resend verification email

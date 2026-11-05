@@ -8,7 +8,6 @@ export const MESSAGES = {
   checkInbox: 'If the address can be used, an email is on its way. Check your inbox.',
   weakPassword: 'Choose a stronger password of at least 8 characters.',
   rateLimited: 'Too many attempts. Wait a minute and try again.',
-  captcha: 'Complete the security check and try again.',
   network: 'You seem to be offline. Check your connection and try again.',
   signupFailed: 'We could not create the account. Check your details and try again.',
   linkInvalid: 'This link has expired or has already been used. Request a new one.',
@@ -29,7 +28,6 @@ export function authErrorMessage(error, context) {
   const code = e?.code ?? '';
   if (e?.name === 'AuthRetryableFetchError' || e?.name === 'TypeError' || e?.status === 0) return MESSAGES.network;
   if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit' || e?.status === 429) return MESSAGES.rateLimited;
-  if (code === 'captcha_failed') return MESSAGES.captcha;
   if (code === 'weak_password') return MESSAGES.weakPassword;
 
   switch (context) {

@@ -48,7 +48,7 @@ Tick each row once you have confirmed the architecture does what you want.
  +----------+  +--------------+  +-----------------+  +------------------------+
                      ^   ^                ^                      |
                      |   +---- pg_cron scheduled jobs -----------+
- Also: Resend (email) | Sentry (errors) | Turnstile (CAPTCHA) | GitHub Actions (CI)
+ Also: Resend (email) | Sentry (errors) | GitHub Actions (CI)
 ```
 
 How to read it: the browser talks to Supabase directly for sign-in, data and files, using the signed-in user's own session, so every request is checked by database and storage rules. Anything that needs extra power (creating users, validating uploads, releasing grades, deleting files) goes through an Edge Function, which re-checks the caller before acting.
@@ -59,7 +59,7 @@ How to read it: the browser talks to Supabase directly for sign-in, data and fil
 |---|---|
 | Frontend | React, Vite, JavaScript with JSDoc type checks and Zod validation, Tailwind CSS, shadcn/ui, Lucide React, React Router, Supabase JavaScript client |
 | Backend | Supabase: Auth, PostgreSQL with Row Level Security, Storage, Edge Functions (TypeScript), `pg_cron` |
-| Email, bots, errors | Resend (SMTP), Cloudflare Turnstile, Sentry |
+| Email, errors | Resend (SMTP), Sentry (no CAPTCHA: owner change to D22, 2026-11-05) |
 | Hosting and delivery | Vercel for the frontend; three Supabase projects (development, staging, production); GitHub Actions CI |
 | Testing | Vitest, React Testing Library, Playwright (10 device profiles), pgTAP for database rules, Lighthouse CI |
 | Not used | Express, MongoDB, Firebase, Apple sign-in and other social sign-in (Google is the only one) |
@@ -81,7 +81,7 @@ A lecturer sees only courses they are assigned to. A learner sees only their own
 **Sign-in:**
 1. The app opens and checks the session while a skeleton is shown (no flash of Sign In or protected content).
 2. No session: show Sign In (email and password, and Continue with Google below an "or" divider). Directly below the form show the gölarae logo and, directly beneath it, the text "from gölarae". The same block sits directly below the Sign Up form.
-3. Supabase Auth validates email and password (CAPTCHA applies).
+3. Supabase Auth validates email and password (per-IP rate limits apply; no CAPTCHA since 2026-11-05).
 4. The app loads the profile and role, then checks account status. Suspended or deactivated users are refused with a clear message.
 5. Administrators must complete MFA (TOTP) before any admin page or data opens.
 6. The user is sent to their dashboard.
@@ -219,7 +219,7 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - Roles are stored in the database and cannot be changed from the browser; only an administrator, through an audited function, can change a role or a lecturer's course-creation permission.
 - The service-role key exists only inside Edge Functions and server settings. Continuous checks fail the build if it appears in frontend code.
 - Sessions: administrators 30 minutes idle and 12 hours maximum; lecturers 8 hours idle and 7 days maximum; learners 7 days idle and 30 days maximum. Suspension revokes all sessions.
-- Google sign-in accepts verified Google emails only, never signs in or links an administrator or lecturer account, and does not import the Google photo. Email sign-in and sign-up use CAPTCHA and rate limits; error messages never reveal whether an email is registered.
+- Google sign-in accepts verified Google emails only, never signs in or links an administrator or lecturer account, and does not import the Google photo. Email sign-in and sign-up use rate limits (CAPTCHA removed by the owner, 2026-11-05); error messages never reveal whether an email is registered.
 - Administrators use MFA, and a lost device is reset by the other administrator through an audited function.
 - Learners cannot see another learner's submissions, marks or feedback; unreleased grades stay private.
 - Audit records are written for administrator actions, permission changes, grade changes, exports, settings changes and file deletions, and cannot be edited.

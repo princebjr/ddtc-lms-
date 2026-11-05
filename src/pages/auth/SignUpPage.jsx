@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router';
 import { AuthLayout, FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
 import { GoogleSection } from '@/components/auth/GoogleSection.jsx';
-import { Turnstile } from '@/components/auth/Turnstile.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { authErrorMessage } from '@/lib/auth/messages.js';
 import { appUrl } from '@/lib/auth/routing.js';
@@ -19,8 +18,6 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const [pending, setPending] = useState(false);
-  const [captcha, setCaptcha] = useState(/** @type {string | null} */ (null));
-  const [captchaKey, setCaptchaKey] = useState(0);
 
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   const onSubmit = async (event) => {
@@ -42,7 +39,6 @@ export default function SignUpPage() {
           // Names only. The role is never sent and would be ignored by the database.
           data: { first_name: firstName, second_name: secondName },
           emailRedirectTo: appUrl('/auth/confirm?type=signup'),
-          ...(captcha ? { captchaToken: captcha } : {}),
         },
       });
       if (error && error.code !== 'user_already_exists' && error.code !== 'email_exists') {
@@ -54,7 +50,6 @@ export default function SignUpPage() {
       setMessage(authErrorMessage(error, 'sign-up'));
     } finally {
       setPending(false);
-      setCaptchaKey((k) => k + 1);
     }
   };
 
@@ -82,7 +77,6 @@ export default function SignUpPage() {
         </div>
         <FormField label="Email address" name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="you@example.org" error={errors.email} />
         <FormField label="Password" name="password" type="password" autoComplete="new-password" hint={`At least ${PASSWORD_MIN} characters`} error={errors.password} />
-        <Turnstile onToken={setCaptcha} resetKey={captchaKey} />
         <FormMessage>{message}</FormMessage>
         <Button type="submit" size="auth" loading={pending} loadingLabel="Creating your account">
           Create account

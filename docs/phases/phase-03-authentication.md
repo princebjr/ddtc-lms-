@@ -12,7 +12,7 @@
 - Brand block directly below the Sign In and Sign Up forms (including the Google button): the gölarae logo, then directly beneath it the exact text "from gölarae", centred, nothing between them. The DDTC LMS logo sits above the form. Assets and rules are in D39.
 - Supabase email-and-password and Google providers configured per environment. Sign In and Sign Up show Continue with Google per D27 (official button, "or" divider, full width), a Complete your profile screen for missing names, and refusal for ADMIN and LECTURER accounts. Before coding, Claude Code states the Supabase mechanism for D27 rules (4) and (5) and verifies which D32 session limits the plan enforces, and gets approval.
 - Role-aware route guards and redirects to `/admin/dashboard`, `/lecturer/dashboard`, `/learner/dashboard`; signed-in users leaving auth pages are redirected.
-- Suspended, deactivated and unverified handling; Turnstile CAPTCHA; Resend SMTP with branded templates.
+- Suspended, deactivated and unverified handling; Resend SMTP with branded templates. (Turnstile CAPTCHA removed by the owner, 2026-11-05; see D22.)
 - Admin MFA enrolment and enforcement.
 - Authentication Loading State: a skeleton while the session is checked, with no flash of Sign In for a signed-in user and no flash of protected content for a signed-out user.
 - Auth screens follow Section 15: single column on phones, correct `type`, `inputmode` and `autocomplete` values (including `current-password`, `new-password` and `one-time-code`), 16 px inputs so iOS does not zoom, the on-screen keyboard never hides the focused field or the submit button.

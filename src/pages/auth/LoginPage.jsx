@@ -4,7 +4,6 @@ import { AuthLayout, FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
 import { GoogleSection } from '@/components/auth/GoogleSection.jsx';
-import { Turnstile } from '@/components/auth/Turnstile.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { authErrorMessage } from '@/lib/auth/messages.js';
 import { signInSchema, validate } from '@/lib/auth/schemas.js';
@@ -27,8 +26,6 @@ export default function LoginPage() {
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [message, setMessage] = useState(() => initialMessage(search, location.state));
   const [pending, setPending] = useState(false);
-  const [captcha, setCaptcha] = useState(/** @type {string | null} */ (null));
-  const [captchaKey, setCaptchaKey] = useState(0);
 
   // A blocked account that has just signed in is signed out again with the reason.
   const blockedStatus = auth.status === 'signed-in' ? auth.profile?.account_status : undefined;
@@ -55,14 +52,12 @@ export default function LoginPage() {
       const { error } = await getSupabase().auth.signInWithPassword({
         email: result.data.email,
         password: result.data.password,
-        options: captcha ? { captchaToken: captcha } : undefined,
       });
       if (error) setMessage(authErrorMessage(error, 'sign-in'));
     } catch (error) {
       setMessage(authErrorMessage(error, 'sign-in'));
     } finally {
       setPending(false);
-      setCaptchaKey((k) => k + 1);
     }
   };
 
@@ -95,7 +90,6 @@ export default function LoginPage() {
             </Link>
           }
         />
-        <Turnstile onToken={setCaptcha} resetKey={captchaKey} />
         <div id="login-message">
           <FormMessage>{message}</FormMessage>
         </div>

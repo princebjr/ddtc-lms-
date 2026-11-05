@@ -24,7 +24,6 @@ flowchart TB
 
   subgraph External["External services"]
     RS[Resend email]
-    TS[Cloudflare Turnstile]
     GG[Google OAuth]
     SN[Sentry]
   end
@@ -37,7 +36,6 @@ flowchart TB
   FE -->|upload to registered path,<br/>createSignedUrl with own session| ST
   FE -->|trusted calls with user JWT| EF
   FE -.->|errors| SN
-  FE -.->|CAPTCHA token| TS
   AUTH -.-> GG
   AUTH -.->|account emails| RS
   EF --> DB
