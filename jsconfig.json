@@ -3,8 +3,17 @@
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["node", "vite/client"],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node",
+      "vite/client",
+      "vite-plugin-pwa/client",
+      "@testing-library/jest-dom/vitest"
+    ],
     "checkJs": true,
     "maxNodeModuleJsDepth": 0,
     "allowJs": true,
@@ -15,8 +24,24 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
-  "include": ["src", "scripts", "tests", "*.js", "*.cjs"],
-  "exclude": ["node_modules", "dist", "supabase/functions"]
+  "include": [
+    "src",
+    "scripts",
+    "tests",
+    "*.js",
+    "*.cjs"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "supabase/functions"
+  ]
 }

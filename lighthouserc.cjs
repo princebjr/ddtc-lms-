@@ -18,6 +18,8 @@ module.exports = {
         'categories:accessibility': ['error', { minScore: 0.95 }],
         'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
+        // Initial JavaScript for the first route at or below 200 KB (transfer size, gzipped).
+        'resource-summary:script:size': ['error', { maxNumericValue: 200 * 1024 }],
         'total-byte-weight': ['warn', { maxNumericValue: 1_000_000 }],
       },
     },
