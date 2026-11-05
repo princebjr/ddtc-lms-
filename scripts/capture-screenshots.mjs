@@ -4,6 +4,7 @@
 // Usage: node scripts/capture-screenshots.mjs <phase-number> <path>[,<path>...]
 //   e.g. node scripts/capture-screenshots.mjs 01 /,/offline,/dev/design
 // Output: docs/acceptance/phase-NN/screens/<name>-<width>-<theme>.png
+/* global document -- used only inside page.evaluate(), which runs in the browser */
 
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
