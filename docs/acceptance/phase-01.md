@@ -35,7 +35,7 @@ Local run on 2026-11-05 (Windows 11), every step except the browser matrix, afte
 | Build (Vite) | PASS | built in 7.6 s |
 | Database tests (pgTAP on local Supabase) | PASS | `00_rls_guard.test.sql`: 3 tests, all successful |
 | Lighthouse CI (mobile preset) | PASS | Performance 0.99, Accessibility 1, Best Practices 1, SEO 1; FCP 0.8 s, LCP 0.8 s, TBT 90 ms, CLS 0.002 |
-| End-to-end (Playwright, 24 projects, 1,410 tests) | see CI | CI_E2E |
+| End-to-end (Playwright, 24 projects, 1,410 tests) | PASS (CI) | 1,410 of 1,410 passed, 0 failed, 0 flaky, retries 0, on commit `25feacf` in 4 shards (352, 353, 353, 352): [CI run 41952207884](https://github.com/princebjr/ddtc-lms-/actions/runs/41952207884). Every other CI job also green: static checks, gitleaks, pgTAP, Lighthouse, CI gate. |
 
 Faults found and fixed, with no test or rule weakened:
 - Lint: `scripts/capture-screenshots.mjs` used `document` inside `page.evaluate()` (browser code in a Node script) without declaring it, so `no-undef` failed. The local log showed this but it was first misread; CI's static job caught it on PR #5. Fixed by declaring the browser global for that file only.
@@ -53,9 +53,9 @@ Why the browser matrix is evidenced from CI (K11): on this machine, with the loc
 | UserAvatar: Sarah gives S | PASS | same file, "Sarah gives S", "shows S for Sarah" |
 | UserAvatar: no name gives the generic icon | PASS | same file, "shows the generic icon when there is no name" |
 | UserAvatar: broken image falls back to initials | PASS | same file, "falls back to initials when the image fails to load" |
-| Playwright runs on every Section 15 device project | E2E_PROJECTS | `playwright.config.js` (12 devices x light and dark = 24 projects) |
-| No-horizontal-overflow test on every route at 320, 375, 768, 1024, 1280 and 1920 px | E2E_SWEEP | `tests/e2e/width-sweep.spec.js` (every route, all six widths, on Chromium, Firefox and WebKit in light and dark); every other device project checks its own viewport in `tests/e2e/routes.spec.js` |
-| Touch-target test: interactive elements at least 44 by 44 px on phones | E2E_TOUCH | `tests/e2e/routes.spec.js` on the iPhone SE, iPhone 15, small Android, Pixel 7 and 320 px projects |
+| Playwright runs on every Section 15 device project | PASS (CI run 41952207884) | `playwright.config.js` (12 devices x light and dark = 24 projects) |
+| No-horizontal-overflow test on every route at 320, 375, 768, 1024, 1280 and 1920 px | PASS (CI run 41952207884) | `tests/e2e/width-sweep.spec.js` (every route, all six widths, on Chromium, Firefox and WebKit in light and dark); every other device project checks its own viewport in `tests/e2e/routes.spec.js` |
+| Touch-target test: interactive elements at least 44 by 44 px on phones | PASS (CI run 41952207884) | `tests/e2e/routes.spec.js` on the iPhone SE, iPhone 15, small Android, Pixel 7 and 320 px projects |
 
 Also covered (TESTING.md section 6, Phase 1 focus; UI_FEEDBACK.md tests):
 
@@ -77,7 +77,7 @@ Also covered (TESTING.md section 6, Phase 1 focus; UI_FEEDBACK.md tests):
 
 | Line | Result | Proof |
 |---|---|---|
-| All layouts usable at every Section 15 width and orientation; overflow and touch-target tests green | GATE_LAYOUT | Sections 2 and 3; screenshots in section 5 |
+| All layouts usable at every Section 15 width and orientation; overflow and touch-target tests green | PASS | Sections 2 and 3; screenshots in section 5 |
 | Initials are computed in code, never stored | PASS | `getInitials()` in `src/lib/initials.js` runs on every render; `tests/unit/user-avatar.test.jsx` "no source file writes initials to storage, and no migration has an initials column". There is no database yet (Phase 2); the same test covers `supabase/` when migrations arrive. |
 
 ## 5. Screenshots
