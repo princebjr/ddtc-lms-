@@ -41,7 +41,7 @@ Faults found during the phase and fixed (no test or rule weakened): first-route 
 | Playwright: register, verify, sign in, sign out, wrong password, reset password, suspended user refused, each role lands on the correct dashboard, signed-out visit to every protected route redirects to Sign In | PASS (CI, every device project) | `tests/e2e/auth.spec.js` |
 | Sign-up requires both names; a role in the request is still LEARNER; unverified cannot sign in; duplicate-email and wrong-password messages do not reveal registration; a self-registered user can never become ADMIN or LECTURER | PASS | `auth.spec.js`, `tests/unit/auth-logic.test.js`, `supabase/tests/02_signup.test.sql`, `03_access_matrix.test.sql` |
 | Google: new user LEARNER; names copied; missing name forces Complete your profile; ADMIN or LECTURER email refused and links nothing; verified match links; unverified match refused; cancelled prompt returns with a message; in-app browser shows the notice | PASS (rules in pgTAP and e2e; desktop on staging by the owner) | `04_auth_rules.test.sql` (refusals, linking, verified email), `auth.spec.js` (Complete your profile, cancelled and refused callbacks), `auth-pages.test.jsx` (in-app notice). Staging: the owner's Google sign-in linked to the existing verified learner (section 6) |
-| Auth screens without overflow and with the brand line at 320, 375, 768 and 1280 px, portrait and landscape | PASS (emulated) | `routes.spec.js` and `width-sweep.spec.js` include the auth routes; real iOS 18 and Android: OPEN (section 6) |
+| Auth screens without overflow and with the brand line at 320, 375, 768 and 1280 px, portrait and landscape | PASS | `routes.spec.js` and `width-sweep.spec.js` include the auth routes; real iOS 18 Safari and Android Chrome checked by the owner (section 6) |
 | Brand block under both forms, logo above text, nothing between, light and dark | PASS | `auth.spec.js` (layout), `auth-pages.test.jsx` (DOM order and exact text), screenshots |
 
 ## 4. Exit gate
@@ -50,7 +50,7 @@ Faults found during the phase and fixed (no test or rule weakened): first-route 
 |---|---|---|
 | No protected data or route is reachable while signed out | PASS | `auth.spec.js` (every protected route redirects; no flash of protected content); pgTAP anon denial; on staging every table and `record_activity` answer `42501` to an anonymous request |
 | Admin cannot reach the dashboard without MFA | PASS | `auth.spec.js` (admin redirected to `/mfa` until a valid TOTP; challenged on the next sign-in) on every device project; pgTAP: every ADMIN policy denies AAL1 |
-| Email sign-up, email verification, email sign-in and Continue with Google all work on staging on iOS 18 Safari, Android Chrome and desktop | **Desktop PASS; iOS 18 Safari and Android Chrome OPEN** | Section 6 |
+| Email sign-up, email verification, email sign-in and Continue with Google all work on staging on iOS 18 Safari, Android Chrome and desktop | PASS (owner-reported; see the note in section 6 on phone sign-up) | Section 6 |
 
 ## 5. Screenshots
 
@@ -61,7 +61,7 @@ Faults found during the phase and fixed (no test or rule weakened): first-route 
 Staging: `ddtc-lms-staging` (`iybsnzrkkddkqnhfqykv`), app on the Vercel preview of this branch.
 
 - 2026-11-05, desktop browser, by the owner: sign-up, email verification, sign-out, sign-in, wrong password and Continue with Google were reported working. The staging database afterwards (read-only query, no personal data): 2 accounts, both LEARNER, ACTIVE, email verified, profile complete; one has email and Google identities (Google linked to the existing verified learner, D27 rule 5); 2 `account.created` audit events.
-- iOS 18 Safari and Android Chrome: **not yet run**.
+- 2026-11-05, iOS 18 Safari and Android Chrome, by the owner: reported passing. The staging database afterwards still holds the same 2 accounts (2 verified learners, 1 with Google, 2 sessions), so the phone run used the existing accounts: sign-in, sign-out, Google and the phone layout were exercised on real phones; email sign-up and verification were exercised on desktop and on every emulated phone in CI, not on a real phone. Approved by the owner on that basis.
 - Admin MFA on staging: not run (no staff account exists on staging until Phase 4 provisioning); covered on every device project in CI.
 
 ## 7. Decisions and deviations (for the owner's review)
@@ -85,4 +85,4 @@ Staging: `ddtc-lms-staging` (`iybsnzrkkddkqnhfqykv`), app on the Vercel preview 
 | K16 | Branded emails need custom SMTP; Supabase's built-in mailer only delivers to members of the Supabase team | Resend once DDTC has a domain (INPUTS 1) | Prince Boateng |
 | K17 | Google OAuth consent screen is in Testing mode (test users only) | "In production" before launch (D27 item 7); needs public privacy and terms pages (INPUTS 5) | Prince Boateng |
 | K18 | With default emails, a link opened on another device verifies the account but asks the user to sign in there once; a recovery link works only in the browser that asked | Lifted when branded templates (token hash) are switched on with SMTP | Claude |
-| K19 | iOS 18 Safari and Android Chrome staging run outstanding | Required before `phase-3-done` | Prince Boateng |
+| K19 | Email sign-up and verification not yet done on a real phone (sign-in and Google were) | Repeat with a new address during Phase 4 staging checks | Prince Boateng |
