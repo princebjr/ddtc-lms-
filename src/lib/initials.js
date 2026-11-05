@@ -1,6 +1,9 @@
 // Avatar initials (BUILD_PLAN Phase 1): first letter of the first name and first letter of the
 // second name, uppercase. Computed in code on every render and never stored (exit gate).
 
+/** @type {any} One grapheme segmenter, created on first use and reused (avatars render in long lists). */
+let segmenter;
+
 /**
  * First user-perceived character of a name, so accented and non-Latin letters stay whole.
  * @param {string | null | undefined} name
@@ -11,7 +14,8 @@ function firstLetter(name) {
   if (!trimmed) return '';
   const Segmenter = /** @type {any} */ (Intl).Segmenter;
   if (typeof Segmenter === 'function') {
-    const first = new Segmenter('en', { granularity: 'grapheme' }).segment(trimmed)[Symbol.iterator]().next();
+    segmenter ??= new Segmenter('en', { granularity: 'grapheme' });
+    const first = segmenter.segment(trimmed)[Symbol.iterator]().next();
     return first.done ? '' : first.value.segment;
   }
   return Array.from(trimmed)[0] ?? '';
