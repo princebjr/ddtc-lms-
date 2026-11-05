@@ -11,7 +11,10 @@ const PNG = Uint8Array.from(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA
 const JPEG = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, ...new Array(200).fill(0)]);
 const NOT_AN_IMAGE = new TextEncoder().encode('this is a text file pretending to be a PNG');
 
-/** Runs register-upload, the signed upload and finalize-upload as `user`. */
+/**
+ * Runs register-upload, the signed upload and finalize-upload as `user`.
+ * @param {{ token: string }} user @param {string} filename @param {Uint8Array} bytes
+ */
 async function upload(user, filename, bytes) {
   const s = requireSupabase();
   const reg = await call('register-upload', user.token, { resourceType: 'PROFILE_IMAGE', filename, size: bytes.length });
