@@ -440,3 +440,36 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# ---------------------------------------------------------------------------------------------
+# Staging (ddtc-lms-staging). `supabase config push` applies these values to staging only; every
+# value not listed keeps the base setting above. Staging keeps the platform's default rate
+# limits, pooler and storage settings (the base raises some for local tests). Google and
+# Turnstile are configured in the dashboard (their secrets never live in this file), so they are
+# not declared here and a push leaves them as they are. There is no domain yet: staging runs on
+# Vercel preview addresses (*.vercel.app); see docs/acceptance/phase-03.md.
+[remotes.staging]
+project_id = "iybsnzrkkddkqnhfqykv"
+
+[remotes.staging.auth]
+site_url = "https://ddtc-lms-git-phase-3-authen-a1b234-princebjr1638-8304s-projects.vercel.app"
+additional_redirect_urls = ["https://ddtc-lms-*-princebjr1638-8304s-projects.vercel.app/**"]
+
+[remotes.staging.auth.rate_limit]
+sign_in_sign_ups = 30
+token_refresh = 150
+token_verifications = 30
+
+[remotes.staging.auth.email]
+max_frequency = "1m0s"
+otp_length = 8
+
+[remotes.staging.auth.sms]
+enable_confirmations = true
+
+[remotes.staging.db.pooler]
+default_pool_size = 15
+max_client_conn = 200
+
+[remotes.staging.storage.vector]
+enabled = false
