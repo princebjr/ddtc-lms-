@@ -63,6 +63,8 @@ jobs:
       - name: Start local Supabase (database, auth, storage only)
         run: npm run db:start
       - run: npm run test:db
+      - name: Generated database types match the migrations (D23)
+        run: npm run db:types && git diff --exit-code src/lib/database.types.d.ts
       - if: always()
         run: npx supabase stop --no-backup
 

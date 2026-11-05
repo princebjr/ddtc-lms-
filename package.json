@@ -18,6 +18,7 @@
     "test:db": "supabase test db",
     "db:start": "supabase start -x realtime,imgproxy,mailpit,studio,postgres-meta,edge-runtime,logflare,vector,supavisor",
     "db:stop": "supabase stop",
+    "db:types": "supabase gen types typescript --local --schema public > src/lib/database.types.d.ts",
     "test:e2e": "playwright test",
     "lighthouse": "lhci autorun",
     "scan:secrets": "node scripts/check-secrets.mjs",
