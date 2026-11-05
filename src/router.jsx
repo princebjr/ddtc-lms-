@@ -1,10 +1,14 @@
 import { createBrowserRouter } from 'react-router';
+import { ProtectedRoute, RootRedirect, SignedOutRoute, StepRoute } from '@/components/auth/Guards.jsx';
 import { devRoutesEnabled } from '@/lib/flags.js';
 import RouteErrorPage from '@/pages/RouteErrorPage.jsx';
 
-// Routes, code-split per page (RESPONSIVE.md 15.5). Production has only the public pages until
-// Phase 3 adds Sign In and the guarded role routes. Preview routes are compiled in only when
-// VITE_DEV_ROUTES is true (Phase 1 plan, decision 1); otherwise the bundler drops them.
+// Routes, code-split per page (RESPONSIVE.md 15.5; ARCHITECTURE.md section 5).
+// `/`              Sign In when signed out, the user's dashboard when signed in
+// auth pages       signed-out users only; signed-in users are sent on
+// /mfa, /complete-profile   steps inside sign-in
+// /admin, /lecturer, /learner   guarded by role, account status and (admin) MFA
+// Preview routes are compiled in only when VITE_DEV_ROUTES is true (Phase 1 plan, decision 1).
 
 /**
  * @param {() => Promise<{ default: import('react').ComponentType }>} load
@@ -12,11 +16,40 @@ import RouteErrorPage from '@/pages/RouteErrorPage.jsx';
  */
 const page = (load) => async () => ({ Component: (await load()).default });
 
+/** @param {'AdminPage' | 'LecturerPage' | 'LearnerPage'} name */
+const rolePage = (name) => async () => ({ Component: (await import('@/pages/RolePage.jsx'))[name] });
+
 /** @type {import('react-router').RouteObject[]} */
-const publicRoutes = [
-  { index: true, lazy: page(() => import('@/pages/HomePage.jsx')) },
-  { path: 'offline', lazy: page(() => import('@/pages/OfflinePage.jsx')) },
+const authRoutes = [
+  { index: true, element: <RootRedirect /> },
+  {
+    element: <SignedOutRoute />,
+    children: [
+      { path: 'login', lazy: page(() => import('@/pages/auth/LoginPage.jsx')) },
+      { path: 'signup', lazy: page(() => import('@/pages/auth/SignUpPage.jsx')) },
+      { path: 'forgot-password', lazy: page(() => import('@/pages/auth/ForgotPasswordPage.jsx')) },
+      { path: 'verify-email', lazy: page(() => import('@/pages/auth/VerifyEmailPage.jsx')) },
+    ],
+  },
+  { path: 'reset-password', lazy: page(() => import('@/pages/auth/ResetPasswordPage.jsx')) },
+  { path: 'auth/confirm', lazy: page(() => import('@/pages/auth/ConfirmPage.jsx')) },
+  { path: 'auth/callback', lazy: page(() => import('@/pages/auth/CallbackPage.jsx')) },
+  { element: <StepRoute step="mfa" />, children: [{ path: 'mfa', lazy: page(() => import('@/pages/auth/MfaPage.jsx')) }] },
+  {
+    element: <StepRoute step="complete-profile" />,
+    children: [{ path: 'complete-profile', lazy: page(() => import('@/pages/auth/CompleteProfilePage.jsx')) }],
+  },
 ];
+
+/** @type {import('react-router').RouteObject[]} */
+const roleRoutes = [
+  { path: 'admin', element: <ProtectedRoute role="ADMIN" />, children: [{ path: ':slug?', lazy: rolePage('AdminPage') }] },
+  { path: 'lecturer', element: <ProtectedRoute role="LECTURER" />, children: [{ path: ':slug?', lazy: rolePage('LecturerPage') }] },
+  { path: 'learner', element: <ProtectedRoute role="LEARNER" />, children: [{ path: ':slug?', lazy: rolePage('LearnerPage') }] },
+];
+
+/** @type {import('react-router').RouteObject[]} */
+const publicRoutes = [{ path: 'offline', lazy: page(() => import('@/pages/OfflinePage.jsx')) }];
 
 /** @type {import('react-router').RouteObject[]} */
 const devRoutes = devRoutesEnabled
@@ -34,7 +67,13 @@ export const routes = [
     errorElement: <RouteErrorPage />,
     // Neutral shell while the first route chunk loads: page colour only, so nothing flashes.
     hydrateFallbackElement: <div className="min-h-dvh-screen bg-page" aria-busy="true" />,
-    children: [...publicRoutes, ...devRoutes, { path: '*', lazy: page(() => import('@/pages/NotFoundPage.jsx')) }],
+    children: [
+      ...authRoutes,
+      ...roleRoutes,
+      ...publicRoutes,
+      ...devRoutes,
+      { path: '*', lazy: page(() => import('@/pages/NotFoundPage.jsx')) },
+    ],
   },
 ];
 

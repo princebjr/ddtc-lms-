@@ -96,3 +96,10 @@ describe('in-app browser detection (D36, RESPONSIVE.md 15.6)', () => {
     '',
   ])('does not flag a normal browser: %s', (ua) => expect(detectInAppBrowser(ua)).toBeNull());
 });
+
+describe('Vercel serves the single-page app on every path', () => {
+  it('rewrites paths that are not files to index.html, so links like /signup and /auth/confirm open', () => {
+    const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
+    expect(config.rewrites).toContainEqual({ source: '/(.*)', destination: '/index.html' });
+  });
+});

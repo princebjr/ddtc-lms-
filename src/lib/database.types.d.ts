@@ -111,7 +111,9 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "record_activity":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           }
           }
           Enums: {
             "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","user_role": "ADMIN"|"LECTURER"|"LEARNER"

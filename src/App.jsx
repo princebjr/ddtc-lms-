@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { RouterProvider } from 'react-router/dom';
+import { AuthProvider } from '@/components/auth/AuthProvider.jsx';
 import { InAppBrowserNotice } from '@/components/feedback/InAppBrowserNotice.jsx';
 import { NetworkStatus } from '@/components/feedback/NetworkStatus.jsx';
 import { ToastProvider } from '@/components/feedback/ToastProvider.jsx';
@@ -15,7 +16,9 @@ export function App() {
         <NetworkStatus />
         <UpdatePrompt />
         <InAppBrowserNotice />
-        <RouterProvider router={router} />
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
   );

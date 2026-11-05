@@ -57,7 +57,7 @@ export function ToastProvider({ children }) {
         visibleToasts={MAX_VISIBLE_TOASTS}
         expand
         gap={8}
-        offset={desktop ? { top: 'var(--toast-edge)', right: 'var(--toast-edge)' } : { bottom: bottomOffset, left: 'var(--toast-edge)', right: 'var(--toast-edge)' }}
+        offset={desktop ? { top: 'var(--toast-top-offset)', right: 'var(--toast-edge)' } : { bottom: bottomOffset, left: 'var(--toast-edge)', right: 'var(--toast-edge)' }}
         mobileOffset={{ bottom: bottomOffset, left: 'var(--toast-edge)', right: 'var(--toast-edge)' }}
         containerAriaLabel="Notifications"
         toastOptions={{ unstyled: true, className: 'w-full' }}

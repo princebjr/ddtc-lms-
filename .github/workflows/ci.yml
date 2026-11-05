@@ -84,6 +84,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Start local Supabase (database, auth, Mailpit) for the authentication tests
+        run: npm run db:start
       - run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
       - if: always()
         uses: actions/upload-artifact@v4
@@ -91,6 +93,8 @@ jobs:
           name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 14
+      - if: always()
+        run: npx supabase stop --no-backup
 
   lighthouse:
     name: Lighthouse CI (mobile preset)

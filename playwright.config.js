@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { localSupabase } from './tests/e2e/support/local-supabase.js';
 
 // Device projects from docs/TESTING.md section 3. Every project runs in light and dark.
 /** @type {Array<{ name: string, use: import('@playwright/test').Project['use'] }>} */
@@ -49,7 +50,8 @@ export default defineConfig({
   webServer: {
     command: `npx vite build --outDir dist-e2e --emptyOutDir && npx vite preview --outDir dist-e2e --host 127.0.0.1 --port ${PORT} --strictPort`,
     url: `http://127.0.0.1:${PORT}`,
-    env: { VITE_DEV_ROUTES: 'true' },
+    // The build gets only the public URL and anon key of the local Supabase (never the service key).
+    env: { VITE_DEV_ROUTES: 'true', VITE_SUPABASE_URL: localSupabase().url, VITE_SUPABASE_ANON_KEY: localSupabase().anonKey },
     reuseExistingServer: false,
     timeout: 180_000,
   },

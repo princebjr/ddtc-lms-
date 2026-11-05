@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/mini';
 
 // Public build-time configuration. Only public values exist in the browser: the Supabase URL and
 // the anon (publishable) key. Privileged keys never appear in the browser (CLAUDE.md section 3).
@@ -33,8 +33,7 @@ export const publicEnvSchema = z.object({
   VITE_SUPABASE_URL: z.url({ protocol: /^https?$/ }),
   VITE_SUPABASE_ANON_KEY: z
     .string()
-    .min(20, 'The Supabase anon key is missing.')
-    .refine(isPublicKey, 'Only the public anon key may be used in the browser.'),
+    .check(z.minLength(20, 'The Supabase anon key is missing.'), z.refine(isPublicKey, 'Only the public anon key may be used in the browser.')),
 });
 
 /** @typedef {z.infer<typeof publicEnvSchema>} PublicEnv */

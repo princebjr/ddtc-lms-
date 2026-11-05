@@ -47,7 +47,7 @@ Tracker (tick after sign-off):
 
 - [x] Phase 0: Repository, environments and CI (`phase-0-done`)
 - [x] Phase 1: Frontend scaffold and design system (`phase-1-done`)
-- [ ] Phase 2: Database foundation and security core (`phase-2-done`)
+- [x] Phase 2: Database foundation and security core (`phase-2-done`)
 - [ ] Phase 3: Authentication (`phase-3-done`)
 - [ ] Phase 4: Profiles, user management and avatars (`phase-4-done`)
 - [ ] Phase 5: Courses, lecturers and enrolment (`phase-5-done`)
