@@ -18,12 +18,13 @@ import { getSupabase } from '@/lib/supabase.js';
  * @property {'aal1' | 'aal2' | null} aal      assurance level of the current session
  * @property {'aal1' | 'aal2' | null} nextAal  the level the user can reach (aal2 when a TOTP factor is verified)
  * @property {boolean} configured             false when the Supabase settings are missing
+ * @property {string | null} signedOutTo      where a deliberate sign-out lands (no "next" page is remembered)
  */
 
 /**
  * @typedef {AuthState & {
  *   refresh: () => Promise<void>,
- *   signOut: (options?: { quiet?: boolean }) => Promise<void>,
+ *   signOut: (options?: { to?: string }) => Promise<void>,
  * }} AuthContextValue
  */
 
@@ -32,7 +33,7 @@ const PROFILE_COLUMNS = 'id, first_name, second_name, email, role, account_statu
 /** @type {import('react').Context<AuthContextValue | null>} */
 const AuthContext = createContext(/** @type {AuthContextValue | null} */ (null));
 
-/** @returns {import('@supabase/supabase-js').SupabaseClient<import('@/lib/database.types').Database> | null} */
+/** @returns {import('@/lib/supabase.js').AppSupabaseClient | null} */
 function clientOrNull() {
   try {
     return getSupabase();
@@ -42,7 +43,7 @@ function clientOrNull() {
 }
 
 /**
- * @param {import('@supabase/supabase-js').SupabaseClient<import('@/lib/database.types').Database>} supabase
+ * @param {import('@/lib/supabase.js').AppSupabaseClient} supabase
  * @param {Session} session
  * @returns {Promise<Pick<AuthState, 'profile' | 'aal' | 'nextAal'>>}
  */
@@ -70,6 +71,7 @@ export function AuthProvider({ children }) {
     aal: null,
     nextAal: null,
     configured: Boolean(supabase),
+    signedOutTo: null,
   }));
   const loadSeq = useRef(0);
 
@@ -84,7 +86,7 @@ export function AuthProvider({ children }) {
       try {
         const account = await loadAccount(supabase, session);
         if (seq !== loadSeq.current) return;
-        setState((s) => ({ ...s, status: 'signed-in', session, ...account }));
+        setState((s) => ({ ...s, status: 'signed-in', session, signedOutTo: null, ...account }));
       } catch {
         if (seq !== loadSeq.current) return;
         setState((s) => ({ ...s, status: 'error', session, profile: null }));
@@ -123,11 +125,18 @@ export function AuthProvider({ children }) {
     await applySession(data.session);
   }, [supabase, applySession]);
 
-  const signOut = useCallback(async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut({ scope: 'local' });
-    await applySession(null);
-  }, [supabase, applySession]);
+  const signOut = useCallback(
+    /** @param {{ to?: string }} [options] */
+    async (options) => {
+      if (!supabase) return;
+      // Set before the session ends, so guards send the user to this page and not to a
+      // "next" link back into the area they just left.
+      setState((s) => ({ ...s, signedOutTo: options?.to ?? '/login' }));
+      await supabase.auth.signOut({ scope: 'local' });
+      await applySession(null);
+    },
+    [supabase, applySession],
+  );
 
   const value = useMemo(() => ({ ...state, refresh, signOut }), [state, refresh, signOut]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
