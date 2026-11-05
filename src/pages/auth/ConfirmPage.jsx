@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router';
 import { AuthLayout, AuthSkeleton } from '@/components/auth/AuthLayout.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { MESSAGES } from '@/lib/auth/messages.js';
+import { INITIAL_URL } from '@/lib/auth/initial-url.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // /auth/confirm: where every email link lands (sign-up verification, password recovery, email
@@ -15,14 +16,18 @@ import { getSupabase } from '@/lib/supabase.js';
 //    works in the browser that started the flow. Opened on another device, the exchange fails; a
 //    sign-up is still verified by then, so the user is asked to sign in.
 //
-// The parameters are read once on arrival, because the client removes `code` from the address.
+// The parameters come from the address the app was opened with (initial-url.js), because the
+// client removes `code` from the address bar on start-up, possibly before this page loads.
 
 const TYPES = /** @type {const} */ (['signup', 'recovery', 'email_change']);
 
 /** @returns {{ tokenHash: string | null, code: string | null, type: typeof TYPES[number] | undefined, error: string | null }} */
 function readLink() {
-  const search = new URLSearchParams(window.location.search);
-  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  // Prefer the address the app was opened with: the client may already have removed `code`.
+  const opened = new URL(INITIAL_URL || window.location.href);
+  const source = opened.pathname === window.location.pathname ? opened : new URL(window.location.href);
+  const search = source.searchParams;
+  const hash = new URLSearchParams(source.hash.replace(/^#/, ''));
   const rawType = search.get('type');
   return {
     tokenHash: search.get('token_hash'),
