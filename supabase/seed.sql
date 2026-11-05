@@ -4,6 +4,7 @@
 --
 -- Accounts are created through auth.users, so the real sign-up trigger makes each one a LEARNER;
 -- roles are then applied by the trusted path (as set-user-role will do in Phase 4), which audits.
+-- suspended@ddtc.test is SUSPENDED, for the refusal tests.
 -- The administrator still needs TOTP enrolment (Phase 3) before any AAL2-only screen works.
 
 do $$
@@ -14,7 +15,8 @@ declare
     {"email":"lecturer2@ddtc.test", "first":"Daniel",  "second":"Mensah",  "role":"LECTURER", "can_create":false},
     {"email":"learner1@ddtc.test",  "first":"Ama",     "second":"Asante",  "role":"LEARNER"},
     {"email":"learner2@ddtc.test",  "first":"Kwame",   "second":"Owusu",   "role":"LEARNER"},
-    {"email":"learner3@ddtc.test",  "first":"Esi",     "second":"Addo",    "role":"LEARNER"}
+    {"email":"learner3@ddtc.test",  "first":"Esi",     "second":"Addo",    "role":"LEARNER"},
+    {"email":"suspended@ddtc.test", "first":"John",    "second":"Osei",    "role":"LEARNER", "status":"SUSPENDED"}
   ]';
   v_person jsonb;
   v_id uuid;
@@ -41,10 +43,11 @@ begin
       now(), now(), now()
     );
 
-    if v_person ->> 'role' <> 'LEARNER' then
+    if v_person ->> 'role' <> 'LEARNER' or v_person ? 'status' then
       update public.profiles
          set role = (v_person ->> 'role')::public.user_role,
-             can_create_courses = coalesce((v_person ->> 'can_create')::boolean, false)
+             can_create_courses = coalesce((v_person ->> 'can_create')::boolean, false),
+             account_status = coalesce(v_person ->> 'status', 'ACTIVE')::public.account_status
        where id = v_id;
     end if;
   end loop;

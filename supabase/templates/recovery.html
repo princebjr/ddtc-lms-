@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Reset your password</title></head>
+<!-- DDTC LMS email template (Phase 3). Inline styles only: email clients ignore stylesheets.
+     Colours are the D38 palette. The link goes to the app's /auth/confirm page, which verifies the
+     token hash, so it works on any device. -->
+<body style="margin:0;padding:0;background:#F1F5F9;font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0F172A">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5F9;padding:32px 16px">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#FFFFFF;border-radius:16px;padding:32px">
+        <tr><td style="font-size:13px;font-weight:600;letter-spacing:0.04em;color:#64748B">DYNAMIC DISCIPLESHIP TRAINING CENTRE</td></tr>
+        <tr><td style="padding-top:4px;font-size:22px;font-weight:700;color:#0F172A">DDTC LMS</td></tr>
+        <tr><td style="padding-top:24px;font-size:20px;font-weight:600">Reset your password</td></tr>
+        <tr><td style="padding-top:12px;font-size:16px;line-height:24px;color:#334155">We received a request to reset the password for your DDTC LMS account.</td></tr>
+        <tr><td style="padding-top:24px">
+          <a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery" style="display:inline-block;background:#2563EB;color:#FFFFFF;text-decoration:none;font-size:16px;font-weight:600;padding:14px 24px;border-radius:999px">Choose a new password</a>
+        </td></tr>
+        <tr><td style="padding-top:24px;font-size:14px;line-height:21px;color:#64748B">The link expires in 1 hour. If you did not ask for this, your password stays the same. If the button does not work, copy this link into your browser:<br><span style="word-break:break-all;color:#2563EB">{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=recovery</span></td></tr>
+      </table>
+      <p style="max-width:520px;margin:16px auto 0;font-size:12px;line-height:18px;color:#64748B">You received this email because this address was used on DDTC LMS. If this was not you, you can ignore it.</p>
+    </td></tr>
+  </table>
+</body>
+</html>
