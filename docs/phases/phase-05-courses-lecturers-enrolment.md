@@ -9,6 +9,7 @@
 **Build**
 
 - Migrations for `courses`, `course_lecturers`, `course_enrollments` with the constraints in Section 5.
+- SECURITY DEFINER helpers `is_lecturer_of(course_id)` and `is_enrolled(course_id)` in the `private` schema with `search_path = ''`, plus their pgTAP allow/deny tests (moved here from Phase 2 by owner decision on 2026-11-05, because their tables are created in this phase). Add the lecturer policy "read learners of own courses (name, avatar)" on `profiles`.
 - `create-course`; lifecycle DRAFT, PENDING_APPROVAL, PUBLISHED, ARCHIVED per D04; archive keeps all records.
 - Lecturer: My Courses, Create New Course when permitted, Course Editor, and workspace tabs (Overview, Lessons, Assignments, Learners, Gradebook, Analytics, Settings).
 - Administrator can grant/revoke `can_create_courses`; revocation blocks creation only and does not remove current course assignments. Provide owner transfer, course lecturer management, and reassignment workflow when a lecturer is deactivated. Preserve all course history and data.
