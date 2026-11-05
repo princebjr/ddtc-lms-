@@ -32,6 +32,7 @@ const signedOut = {
   aal: null,
   nextAal: null,
   configured: true,
+  signedOutTo: null,
   refresh: async () => {},
   signOut: async () => {},
 };

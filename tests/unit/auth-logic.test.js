@@ -107,6 +107,10 @@ describe('route guard order', () => {
   it('sends a signed-out visitor to Sign In with the page to return to', () => {
     expect(decideProtected({ ...base, status: 'signed-out', profile: null })).toEqual({ kind: 'redirect', to: '/login?next=%2Flearner%2Fdashboard' });
   });
+  it('after a deliberate sign-out, goes to the chosen page without a next link', () => {
+    expect(decideProtected({ ...base, status: 'signed-out', profile: null, signedOutTo: '/login' })).toEqual({ kind: 'redirect', to: '/login' });
+    expect(decideProtected({ ...base, status: 'signed-out', profile: null, signedOutTo: '/login?expired=1' })).toEqual({ kind: 'redirect', to: '/login?expired=1' });
+  });
   it('blocks suspended and deactivated accounts', () => {
     expect(decideProtected({ ...base, status: 'signed-in', profile: { ...learner, account_status: 'SUSPENDED' } })).toEqual({ kind: 'blocked', status: 'SUSPENDED' });
     expect(decideProtected({ ...base, status: 'signed-in', profile: { ...learner, account_status: 'DEACTIVATED' } })).toEqual({ kind: 'blocked', status: 'DEACTIVATED' });

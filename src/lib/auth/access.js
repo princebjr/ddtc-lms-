@@ -12,6 +12,7 @@ import { dashboardPath, safeNext } from './routing.js';
  * @property {{ role: Role, account_status: string, profile_completed: boolean } | null} profile
  * @property {'aal1' | 'aal2' | null} aal
  * @property {string} path      the path being opened (with its search string)
+ * @property {string | null} [signedOutTo] set after a deliberate sign-out: go there instead
  */
 
 /**
@@ -44,9 +45,9 @@ function accountGate(profile, aal, path) {
  * @param {AccessInput & { role: Role }} input
  * @returns {AccessDecision}
  */
-export function decideProtected({ status, profile, aal, path, role }) {
+export function decideProtected({ status, profile, aal, path, role, signedOutTo }) {
   if (status === 'loading') return { kind: 'loading' };
-  if (status === 'signed-out') return { kind: 'redirect', to: withNext('/login', path) };
+  if (status === 'signed-out') return { kind: 'redirect', to: signedOutTo ?? withNext('/login', path) };
   if (status === 'error' || !profile) return { kind: 'error' };
   const gate = accountGate(profile, aal, path);
   if (gate) return gate;

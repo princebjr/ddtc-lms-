@@ -12,11 +12,11 @@ for (const [app, userAgent] of Object.entries(IN_APP)) {
   test(`inside ${app} the notice appears without blocking the page`, async ({ browser }, testInfo) => {
     const context = await browser.newContext({ ...testInfo.project.use, userAgent });
     const page = await context.newPage();
-    await page.goto('/');
+    await page.goto('/login');
     const notice = page.getByRole('region', { name: 'Notice' });
     await expect(notice).toContainText('Open this page in Safari or Chrome.');
     await expect(notice).toContainText(`${app} browser`);
-    await expect(page.getByRole('heading', { level: 1, name: 'DDTC LMS' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeVisible();
     await notice.getByRole('button', { name: 'Dismiss notice' }).click();
     await expect(notice).toHaveCount(0);
     await context.close();
@@ -24,7 +24,7 @@ for (const [app, userAgent] of Object.entries(IN_APP)) {
 }
 
 test('a normal browser sees no notice', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'DDTC LMS' })).toBeVisible();
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Notice' })).toHaveCount(0);
 });

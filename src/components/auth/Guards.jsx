@@ -19,8 +19,8 @@ import { useAuth } from './AuthProvider.jsx';
 function Blocked({ status }) {
   const { signOut } = useAuth();
   useEffect(() => {
-    signOut();
-  }, [signOut]);
+    signOut({ to: `/login?blocked=${status.toLowerCase()}` });
+  }, [signOut, status]);
   return <Navigate to={`/login?blocked=${status.toLowerCase()}`} replace />;
 }
 

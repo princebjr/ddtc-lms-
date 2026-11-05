@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { ACTIVITY_INTERVAL_MS, readToken, sessionState } from '@/lib/auth/session-limits.js';
 import { getSupabase } from '@/lib/supabase.js';
@@ -36,7 +35,6 @@ function writeNumber(key, value) {
 export function SessionWatcher() {
   const auth = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
   const role = auth.profile?.role;
   const token = auth.session?.access_token;
   const sessionId = token ? readToken(token).sessionId : null;
@@ -77,7 +75,7 @@ export function SessionWatcher() {
       const s = sessionState({ role, startedAt, lastActiveAt: readNumber(activeKey, startedAt), now: Date.now() });
       if (s.state === 'expired') {
         toast.dismissId('session.expiring');
-        signOut().then(() => navigate('/login?expired=1', { replace: true }));
+        signOut({ to: '/login?expired=1' });
       } else if (s.state === 'warning' && !warned.current) {
         warned.current = true;
         // Only an idle session can be extended; the absolute limit cannot.
@@ -93,7 +91,7 @@ export function SessionWatcher() {
       for (const e of EVENTS) window.removeEventListener(e, markActive);
       clearInterval(timer);
     };
-  }, [role, sessionId, signOut, navigate, toast]);
+  }, [role, sessionId, signOut, toast]);
 
   return null;
 }

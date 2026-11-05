@@ -1,9 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-// Phase 0 smoke: the placeholder page loads on every device project in light and dark,
-// with no console errors, no horizontal overflow and no axe violations (WCAG 2.1 AA).
-test('placeholder page loads cleanly', async ({ page }) => {
+// Smoke (Phase 0, updated in Phase 3 when Sign In replaced the placeholder page): the first page
+// loads on every device project in light and dark, with no console errors, no horizontal overflow
+// and no axe violations (WCAG 2.1 AA). `/` sends a signed-out visitor to Sign In.
+test('the first page (Sign In) loads cleanly', async ({ page }) => {
   /** @type {string[]} */
   const consoleErrors = [];
   page.on('console', (msg) => {
@@ -12,8 +13,9 @@ test('placeholder page loads cleanly', async ({ page }) => {
   page.on('pageerror', (err) => consoleErrors.push(err.message));
 
   await page.goto('/');
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page).toHaveTitle('DDTC LMS');
-  await expect(page.getByRole('heading', { level: 1, name: 'DDTC LMS' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Welcome back' })).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, 'no horizontal page scroll').toBeLessThanOrEqual(0);

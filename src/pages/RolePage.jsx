@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { SessionWatcher } from '@/components/auth/SessionWatcher.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
@@ -16,14 +16,13 @@ export function RolePage({ role }) {
   const { slug = 'dashboard' } = useParams();
   const auth = useAuth();
   const toast = useToast();
-  const navigate = useNavigate();
   const destination = findDestination(role, slug);
   if (!destination || !auth.profile) return <NotFoundPage />;
 
   const onSignOut = async () => {
-    await auth.signOut();
+    // The guard sends the user to Sign In once the session has ended.
+    await auth.signOut({ to: '/login' });
     toast.show('account.signed-out');
-    navigate('/login', { replace: true });
   };
 
   return (

@@ -81,6 +81,8 @@
   --toast-edge: 1rem; /* 16 px from the screen edge */
   /* Phones: toasts sit above the pill bar, any FAB and the safe area */
   --toast-bottom-offset: calc(var(--bottom-nav-space) + var(--fab-clearance, 0px) + var(--safe-bottom) + var(--toast-edge));
+  /* Desktop: toasts sit top right, below the top bar, so they never cover the account menu */
+  --toast-top-offset: calc(var(--topbar-height) + var(--safe-top) + var(--toast-edge));
 
   /* Safe areas (notches, rounded corners, home indicator) */
   --safe-top: env(safe-area-inset-top, 0px);
