@@ -20,17 +20,18 @@ export const WARNING_MS = 2 * MINUTE;
 export const ACTIVITY_INTERVAL_MS = MINUTE;
 
 /**
- * @param {{ role: import('./routing.js').Role, startedAt: number, lastActiveAt: number, now: number }} s
+ * @param {{ role: import('./routing.js').Role, startedAt: number, lastActiveAt: number, now: number,
+ *   limits?: { idleMs: number, absoluteMs: number }, warningMs?: number }} s
+ *   limits and warningMs default to D32; the end-to-end build may shorten them (testLimits)
  * @returns {{ state: 'active' | 'warning' | 'expired', reason: 'idle' | 'absolute' | null, endsAt: number }}
  */
-export function sessionState({ role, startedAt, lastActiveAt, now }) {
-  const limits = SESSION_LIMITS[role];
+export function sessionState({ role, startedAt, lastActiveAt, now, limits = SESSION_LIMITS[role], warningMs = WARNING_MS }) {
   const idleEnd = lastActiveAt + limits.idleMs;
   const absoluteEnd = startedAt + limits.absoluteMs;
   const endsAt = Math.min(idleEnd, absoluteEnd);
   const reason = absoluteEnd <= idleEnd ? 'absolute' : 'idle';
   if (now >= endsAt) return { state: 'expired', reason, endsAt };
-  if (endsAt - now <= WARNING_MS) return { state: 'warning', reason, endsAt };
+  if (endsAt - now <= warningMs) return { state: 'warning', reason, endsAt };
   return { state: 'active', reason: null, endsAt };
 }
 
@@ -46,5 +47,27 @@ export function readToken(accessToken) {
     return { sessionId: typeof payload.session_id === 'string' ? payload.session_id : null, aal: payload.aal ?? null };
   } catch {
     return { sessionId: null, aal: null };
+  }
+}
+
+/**
+ * Shortened limits for the end-to-end tests (Phase 4: "using shortened test values"). Read only in
+ * builds with preview routes (dev server, CI, previews); production builds compile this to null,
+ * so nobody can lengthen or shorten a real session from the browser.
+ * @returns {{ idleMs: number, absoluteMs: number, warningMs: number, checkMs: number } | null}
+ */
+export function testLimits() {
+  if (import.meta.env.VITE_DEV_ROUTES !== 'true') return null;
+  try {
+    const raw = JSON.parse(window.localStorage.getItem('ddtc-test-session-limits') ?? 'null');
+    if (!raw || typeof raw !== 'object') return null;
+    const n = (/** @type {unknown} */ v) => (typeof v === 'number' && v > 0 ? v : null);
+    const idleMs = n(raw.idleMs);
+    const absoluteMs = n(raw.absoluteMs);
+    const warningMs = n(raw.warningMs);
+    const checkMs = n(raw.checkMs);
+    return idleMs && absoluteMs && warningMs && checkMs ? { idleMs, absoluteMs, warningMs, checkMs } : null;
+  } catch {
+    return null;
   }
 }

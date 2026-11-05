@@ -166,3 +166,33 @@ describe('reset-admin-mfa', () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe('provision-admin (ADR-003)', () => {
+  it('a learner or a lecturer cannot invite an administrator', async () => {
+    for (const role of /** @type {const} */ (['LEARNER', 'LECTURER'])) {
+      const caller = await signedInAs({ role });
+      const res = await call('provision-admin', caller.token, { firstName: 'New', secondName: 'Admin', email: `x-admin-${Date.now()}@ddtc.test` });
+      expect(res.status, role).toBe(403);
+    }
+  });
+
+  it('an administrator invites a new administrator by email, audited', async () => {
+    const email = `admin-invite-${Date.now()}@ddtc.test`;
+    const res = await call('provision-admin', admin.token, { firstName: 'Solomon', secondName: 'Nyamekye', email });
+    expect(res.status).toBe(200);
+    expect(res.body.invited).toBe(true);
+    const [profile] = await serviceGet(`profiles?select=role,first_name&id=eq.${res.body.userId}`);
+    expect(profile).toMatchObject({ role: 'ADMIN', first_name: 'Solomon' });
+    expect(await audited('admin.administrator_invited', res.body.userId)).toBe(true);
+    expect(await audited('profile.role_changed', res.body.userId)).toBe(true);
+  });
+
+  it('an existing learner can be made an administrator; an administrator cannot be invited twice', async () => {
+    const learner = await createAccount();
+    const res = await call('provision-admin', admin.token, { firstName: 'Test', secondName: 'Person', email: learner.email });
+    expect(res.status).toBe(200);
+    expect(res.body.invited).toBe(false);
+    const again = await call('provision-admin', admin.token, { firstName: 'Test', secondName: 'Person', email: learner.email });
+    expect(again.status).toBe(409);
+  });
+});

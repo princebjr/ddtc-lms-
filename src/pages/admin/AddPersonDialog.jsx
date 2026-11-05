@@ -10,12 +10,23 @@ import { signUpSchema, validate } from '@/lib/auth/schemas.js';
 import { callFunction } from '@/lib/functions.js';
 import * as z from 'zod/mini';
 
-// Add learner (bulk-import-learners with one row) and Provision lecturer (provision-lecturer).
-// Both send an invitation email; the person chooses their own password.
+// Add learner (bulk-import-learners with one row), Provision lecturer (provision-lecturer) and
+// Invite administrator (provision-admin, ADR-003). Each sends an invitation email; the person chooses
+// their own password. A new administrator must also set up two-step verification at first sign-in.
 
 const personSchema = z.pick(signUpSchema, { firstName: true, secondName: true, email: true });
 
-/** @param {{ kind: 'learner' | 'lecturer', onClose: () => void, onDone: () => void }} props */
+const TEXT = {
+  learner: { title: 'Add learner', body: 'They get an invitation email to set a password. Enrolment in courses comes with courses.', submit: 'Add learner' },
+  lecturer: { title: 'Provision lecturer', body: 'An existing account is made a lecturer; a new address gets an invitation email to set a password.', submit: 'Send invitation' },
+  admin: {
+    title: 'Invite administrator',
+    body: 'They get an invitation email, choose a password, and must set up two-step verification before any admin page opens. They count as an administrator once they accept.',
+    submit: 'Send invitation',
+  },
+};
+
+/** @param {{ kind: 'learner' | 'lecturer' | 'admin', onClose: () => void, onDone: () => void }} props */
 export function AddPersonDialog({ kind, onClose, onDone }) {
   const toast = useToast();
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
@@ -33,7 +44,10 @@ export function AddPersonDialog({ kind, onClose, onDone }) {
     setErrors({});
     setPending(true);
     try {
-      if (lecturer) {
+      if (kind === 'admin') {
+        await callFunction('provision-admin', result.data);
+        toast.show('admin.administrator-invited');
+      } else if (lecturer) {
         await callFunction('provision-lecturer', { ...result.data, canCreateCourses: canCreate });
         toast.show('admin.lecturer-invited');
       } else {
@@ -60,12 +74,8 @@ export function AddPersonDialog({ kind, onClose, onDone }) {
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{lecturer ? 'Provision lecturer' : 'Add learner'}</DialogTitle>
-          <DialogDescription>
-            {lecturer
-              ? 'An existing account is made a lecturer; a new address gets an invitation email to set a password.'
-              : 'They get an invitation email to set a password. Enrolment in courses comes with courses.'}
-          </DialogDescription>
+          <DialogTitle>{TEXT[kind].title}</DialogTitle>
+          <DialogDescription>{TEXT[kind].body}</DialogDescription>
         </DialogHeader>
         <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -85,7 +95,7 @@ export function AddPersonDialog({ kind, onClose, onDone }) {
               Cancel
             </Button>
             <Button type="submit" loading={pending} loadingLabel="Sending invitation">
-              {lecturer ? 'Send invitation' : 'Add learner'}
+              {TEXT[kind].submit}
             </Button>
           </DialogFooter>
         </form>

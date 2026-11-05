@@ -1,4 +1,4 @@
-import { FileUp, SlidersHorizontal, UserPlus, UserRoundPlus } from 'lucide-react';
+import { FileUp, ShieldPlus, SlidersHorizontal, UserPlus, UserRoundPlus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
@@ -49,7 +49,7 @@ export default function UsersPage({ view }) {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [selected, setSelected] = useState(/** @type {AdminUser | null} */ (null));
-  const [dialog, setDialog] = useState(/** @type {null | 'learner' | 'lecturer' | 'import'} */ (null));
+  const [dialog, setDialog] = useState(/** @type {null | 'learner' | 'lecturer' | 'admin' | 'import'} */ (null));
   const [reloadKey, setReloadKey] = useState(0);
 
   // Debounced search; any filter change starts again from the first page.
@@ -152,6 +152,7 @@ export default function UsersPage({ view }) {
   const actions = [
     { label: 'Add learner', icon: UserPlus, onSelect: () => setDialog('learner') },
     { label: 'Provision lecturer', icon: UserRoundPlus, onSelect: () => setDialog('lecturer') },
+    { label: 'Invite administrator', icon: ShieldPlus, onSelect: () => setDialog('admin') },
     { label: 'Import CSV', icon: FileUp, onSelect: () => setDialog('import') },
   ];
 
@@ -208,7 +209,7 @@ export default function UsersPage({ view }) {
           }}
         />
       ) : null}
-      {dialog === 'learner' || dialog === 'lecturer' ? <AddPersonDialog kind={dialog} onClose={() => setDialog(null)} onDone={reload} /> : null}
+      {dialog === 'learner' || dialog === 'lecturer' || dialog === 'admin' ? <AddPersonDialog kind={dialog} onClose={() => setDialog(null)} onDone={reload} /> : null}
       {dialog === 'import' ? <ImportSheet onClose={() => setDialog(null)} onDone={reload} /> : null}
     </div>
   );

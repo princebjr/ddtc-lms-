@@ -39,6 +39,7 @@ export const TOASTS = Object.freeze({
   // Administrator
   'admin.learner-added': { type: 'success', text: fixed('Learner added') },
   'admin.lecturer-invited': { type: 'success', text: fixed('Lecturer invited') },
+  'admin.administrator-invited': { type: 'success', text: fixed('Administrator invited') },
   'admin.csv-imported': { type: 'success', text: (p) => `Imported ${str(p, 'n')} learners, ${str(p, 'm')} errors`, action: 'View report', params: ['n', 'm'] },
   'admin.csv-imported-with-errors': { type: 'warning', text: (p) => `Imported ${str(p, 'n')} learners, ${str(p, 'm')} errors`, action: 'View report', params: ['n', 'm'] },
   'admin.permissions-updated': { type: 'success', text: fixed('Permissions updated') },

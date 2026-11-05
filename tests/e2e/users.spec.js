@@ -1,5 +1,5 @@
 import { expect as baseExpect, test } from '@playwright/test';
-import { createAccount, getProfile, SEED, SEED_PASSWORD } from './support/accounts.js';
+import { createAccount, emailLink, getProfile, SEED, SEED_PASSWORD } from './support/accounts.js';
 import { requireSupabase } from './support/local-supabase.js';
 import { signIn, signInNewAdmin } from './support/ui.js';
 
@@ -13,18 +13,6 @@ const expect = baseExpect.configure({ timeout: 15_000 });
 // These flows make many round trips (each photo is registered, uploaded and checked on the server),
 // which takes longer than 30 s on emulated phones; every assertion is unchanged.
 test.describe.configure({ timeout: 90_000 });
-
-/**
- * Moves the fake clock forward in 5-second steps until the session warning shows. The watcher checks
- * every 15 s and a warning toast lasts 8 s, so one big jump can land after the toast has gone.
- * @param {import('@playwright/test').Page} page
- */
-async function stepUntilWarning(page) {
-  const warning = page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' });
-  for (let i = 0; i < 40 && !(await warning.isVisible()); i += 1) await page.clock.runFor(5_000);
-  await expect(warning).toBeVisible();
-  return warning;
-}
 
 /**
  * Checks an error toast and dismisses it, as a person would: error toasts stay until dismissed, and
@@ -161,25 +149,75 @@ test('administrator: CSV import shows a preview with errors, then imports the va
   await expect(page.locator('[data-toast-id]').filter({ hasText: 'Imported 1 learners, 2 errors' })).toBeVisible();
 });
 
-test('session limits (D32): an idle learner is warned two minutes before the end, then signed out', async ({ page }) => {
-  await page.clock.install();
+// D32 with shortened test values (the phase file's wording): the end-to-end build reads shorter
+// limits from the browser so the real timers run in seconds. Production builds ignore this setting.
+/**
+ * @param {import('@playwright/test').Page} page
+ * @param {{ idleMs: number, absoluteMs: number, warningMs: number }} limits
+ */
+async function useShortLimits(page, limits) {
+  await page.addInitScript((l) => window.localStorage.setItem('ddtc-test-session-limits', JSON.stringify({ ...l, checkMs: 500 })), limits);
+}
+
+test('session limits (D32): an idle session warns before the end, then signs the user out', async ({ page }) => {
+  await useShortLimits(page, { idleMs: 20_000, absoluteMs: 600_000, warningMs: 12_000 });
   await signIn(page, SEED.learner, SEED_PASSWORD);
   await expect(page).toHaveURL(/\/learner\/dashboard$/);
-  // Learner idle limit is 7 days: jump to 3 minutes before it.
-  await page.clock.fastForward(7 * 24 * 3_600_000 - 2 * 60_000 - 20_000);
-  await stepUntilWarning(page);
-  await page.clock.fastForward(3 * 60_000);
-  await expect(page).toHaveURL(/\/login\?expired=1$/);
+  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' })).toBeVisible({ timeout: 20_000 });
+  await expect(page).toHaveURL(/\/login\?expired=1$/, { timeout: 30_000 });
   await expect(page.getByRole('alert')).toHaveText('Your session ended. Sign in again to continue.');
 });
 
 test('session limits (D32): "Stay signed in" keeps an idle administrator session going', async ({ page }) => {
-  await page.clock.install();
+  await useShortLimits(page, { idleMs: 25_000, absoluteMs: 600_000, warningMs: 15_000 });
   await signInNewAdmin(page);
-  // Administrator idle limit is 30 minutes: jump to the warning.
-  await page.clock.fastForward(28 * 60_000 - 20_000);
-  const warning = await stepUntilWarning(page);
+  const warning = page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' });
+  await expect(warning).toBeVisible({ timeout: 25_000 });
   await warning.getByRole('button', { name: 'Stay signed in' }).click();
-  await page.clock.fastForward(5 * 60_000);
+  // Without "Stay signed in" the session would have ended by now.
+  await page.waitForTimeout(12_000);
   await expect(page).toHaveURL(/\/admin\/dashboard$/);
+});
+
+test('session limits (D32): the absolute limit ends a session even while the user is active', async ({ page }) => {
+  await useShortLimits(page, { idleMs: 600_000, absoluteMs: 15_000, warningMs: 5_000 });
+  await signIn(page, SEED.lecturer, SEED_PASSWORD);
+  await expect(page).toHaveURL(/\/lecturer\/dashboard$/);
+  // Keep being active: activity cannot extend the absolute limit.
+  for (let i = 0; i < 6; i += 1) {
+    await page.mouse.click(5, 5);
+    await page.waitForTimeout(1_000);
+  }
+  await expect(page).toHaveURL(/\/login\?expired=1$/, { timeout: 30_000 });
+});
+
+test('administrator: invites a second administrator, who accepts by email, chooses a password and must set up two-step verification (ADR-003)', async ({ page, browser }, testInfo) => {
+  await signInNewAdmin(page);
+  await page.goto('/admin/users');
+  const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
+  if (desktop) await page.getByRole('button', { name: 'Invite administrator' }).click();
+  else {
+    await page.getByRole('button', { name: 'Add people' }).click();
+    await page.getByRole('button', { name: 'Invite administrator' }).click();
+  }
+  const email = `second-admin-${unique()}@ddtc.test`;
+  const dialog = page.getByRole('dialog', { name: 'Invite administrator' });
+  await dialog.getByLabel('First name').fill('Solomon');
+  await dialog.getByLabel('Second name').fill('Nyamekye');
+  await dialog.getByLabel('Email address').fill(email);
+  await dialog.getByRole('button', { name: 'Send invitation' }).click();
+  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Administrator invited' })).toBeVisible();
+
+  // The invited person, in their own browser.
+  const invitee = await browser.newContext({ ...testInfo.project.use });
+  const theirPage = await invitee.newPage();
+  await theirPage.goto(await emailLink(email, { subject: /invite/i }));
+  await expect(theirPage).toHaveURL(/\/reset-password$/);
+  await theirPage.getByLabel('New password', { exact: true }).fill('Second-Admin-2026');
+  await theirPage.getByLabel('Confirm new password').fill('Second-Admin-2026');
+  await theirPage.getByRole('button', { name: 'Save new password' }).click();
+  // No admin page before two-step verification.
+  await expect(theirPage).toHaveURL(/\/mfa/);
+  await expect(theirPage.getByRole('heading', { name: 'Set up two-step verification' })).toBeVisible();
+  await invitee.close();
 });
