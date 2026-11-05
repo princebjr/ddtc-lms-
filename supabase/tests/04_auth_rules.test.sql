@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(24);
+select plan(26);
 
 select set_config('t.admin', tests.create_user('admin@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.lect', tests.create_user('lect@example.test', 'Sarah', 'Ofori', 'LECTURER')::text, true);
@@ -83,6 +83,18 @@ select tests.reset();
 
 select tests.authenticate_as(tests.uid('admin'), 'aal2', tests.make_session(tests.uid('admin'), interval '2 hours', interval '31 minutes', 'aal2'));
 select is((select private.is_admin()), false, 'admin: 31 minutes without activity is refused');
+select tests.reset();
+
+-- A session with no activity recorded yet (the first requests right after MFA): idle time counts
+-- from the start of the session, so a fresh one is accepted and an old one is not.
+insert into auth.sessions (id, user_id, created_at, updated_at, aal)
+values ('00000000-0000-4000-8000-00000000f5e1', tests.uid('admin'), now() - interval '1 minute', now(), 'aal2'),
+       ('00000000-0000-4000-8000-00000000f5e2', tests.uid('admin'), now() - interval '31 minutes', now(), 'aal2');
+select tests.authenticate_as(tests.uid('admin'), 'aal2', '00000000-0000-4000-8000-00000000f5e1');
+select is((select private.is_admin()), true, 'admin: a fresh session with no activity yet is an administrator (no race after sign-in)');
+select tests.reset();
+select tests.authenticate_as(tests.uid('admin'), 'aal2', '00000000-0000-4000-8000-00000000f5e2');
+select is((select private.is_admin()), false, 'admin: a session 31 minutes old with no activity at all is refused');
 select tests.reset();
 
 select tests.authenticate_as(tests.uid('admin'), 'aal2', gen_random_uuid());
