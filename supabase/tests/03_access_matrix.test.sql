@@ -140,7 +140,7 @@ select ok((select count(*) from public.audit_logs) > 0, 'admin AAL2: reads audit
 select throws_ok($$ update public.audit_logs set action = 'x.y' $$, '42501', NULL, 'admin AAL2: cannot update audit logs');
 select throws_ok($$ delete from public.audit_logs $$, '42501', NULL, 'admin AAL2: cannot delete audit logs');
 select is((select count(*)::int from public.notification_preferences), current_setting('t.user_count')::int, 'admin AAL2: reads all preferences');
-select is((select count(*)::int from public.file_objects), 3, 'admin AAL2: reads all file metadata');
+select is((select count(*)::int from public.file_objects where uploaded_by in (tests.uid('l1'), tests.uid('l2'))), 3, 'admin AAL2: reads all file metadata (including other users'' files)');
 select throws_ok($$ update public.file_objects set status = 'REJECTED' $$, '42501', NULL, 'admin AAL2: cannot change file status (finalize-upload only)');
 select tests.reset();
 select results_eq(

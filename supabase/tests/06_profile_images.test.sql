@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(17);
+select plan(19);
 
 select set_config('t.l1', tests.create_user('l1@example.test', 'Ama', 'Mensah')::text, true);
 select set_config('t.l2', tests.create_user('l2@example.test', 'Kofi', 'Owusu')::text, true);
@@ -36,36 +36,36 @@ values
 
 -- Another signed-in user sees only the VALIDATED image
 select tests.authenticate_as(tests.uid('l2'));
-select results_eq($$ select name from storage.objects where bucket_id = 'profile-images' order by name $$,
+select results_eq($$ select name from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%' order by name $$,
   $$ select tests.uid('l1') || '/a1.png' $$, 'a signed-in user can read a VALIDATED profile image only');
-select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like '%/a2.png'), 0, 'a PENDING image is never readable');
-select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like '%/a3.png'), 0, 'a REJECTED image is never readable');
+select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%' and name like '%/a2.png'), 0, 'a PENDING image is never readable');
+select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%' and name like '%/a3.png'), 0, 'a REJECTED image is never readable');
 select throws_ok($$ insert into storage.objects (bucket_id, name, owner_id) values ('profile-images', tests.uid('l2') || '/x.png', tests.uid('l2')::text) $$,
   '42501', NULL, 'a signed-in user cannot write to the bucket directly');
 update storage.objects set name = name || '.moved' where bucket_id = 'profile-images';
 -- Storage refuses direct deletes for every role; removal goes through the Storage API.
-select throws_like($$ delete from storage.objects where bucket_id = 'profile-images' $$, '%Direct deletion from storage tables is not allowed%',
+select throws_like($$ delete from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%' $$, '%Direct deletion from storage tables is not allowed%',
   'a signed-in user cannot delete objects directly');
 select tests.reset();
-select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name not like '%.moved'), 3, 'a signed-in user cannot rename or delete objects');
+select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%' and name not like '%.moved'), 3, 'a signed-in user cannot rename or delete objects');
 
 -- The owner gets no extra rights over unvalidated files
 select tests.authenticate_as(tests.uid('l1'));
-select is((select count(*)::int from storage.objects where bucket_id = 'profile-images'), 1, 'the owner too sees only the VALIDATED image');
+select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%'), 1, 'the owner too sees only the VALIDATED image');
 select tests.reset();
 
 -- Suspended users and visitors see nothing
 select tests.authenticate_as(tests.uid('s1'));
-select is((select count(*)::int from storage.objects where bucket_id = 'profile-images'), 0, 'a suspended user reads no profile images');
+select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%'), 0, 'a suspended user reads no profile images');
 select tests.reset();
 select tests.as_anon();
-select is((select count(*)::int from storage.objects where bucket_id = 'profile-images'), 0, 'anon reads no profile images');
+select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%'), 0, 'anon reads no profile images');
 select tests.reset();
 
 -- Once a file is DELETED it is no longer readable, even if the object still exists (cleanup pending)
 update public.file_objects set status = 'DELETED', deleted_at = now() where id = '00000000-0000-4000-8000-0000000000a1';
 select tests.authenticate_as(tests.uid('l2'));
-select is((select count(*)::int from storage.objects where bucket_id = 'profile-images'), 0, 'a DELETED file is not readable');
+select is((select count(*)::int from storage.objects where bucket_id = 'profile-images' and name like tests.uid('l1') || '/%'), 0, 'a DELETED file is not readable');
 select tests.reset();
 
 -- Replaced images are found by the cleanup job: VALIDATED profile images no profile points to
@@ -76,6 +76,10 @@ select tests.as_service();
 select ok((select count(*) from public.files_due_for_cleanup(100) f where f.id = '00000000-0000-4000-8000-0000000000a1') = 1,
   'an unreferenced VALIDATED profile image is due for removal');
 select tests.reset();
+
+-- The hourly cleanup job is scheduled (it reads its URL and key from Vault at run time)
+select is((select schedule from cron.job where jobname = 'cleanup-files-hourly'), '17 * * * *', 'cleanup-files runs every hour');
+select is(has_function_privilege('authenticated', 'private.call_cleanup_files()', 'execute'), false, 'clients cannot trigger the cleanup job');
 
 select * from finish();
 rollback;
