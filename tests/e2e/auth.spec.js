@@ -70,12 +70,11 @@ test('a role sent in the sign-up request is ignored: the account is a LEARNER', 
     data: { email, password: 'A-good-password-26', data: { first_name: 'Sneaky', second_name: 'Admin', role: 'ADMIN' } },
   });
   expect(res.ok()).toBe(true);
-  // The raw API request uses Supabase's implicit link style, which the app (PKCE only) ignores.
-  // Opening the link still verifies the email at Supabase; then sign in as a real user would.
+  // The raw API request uses Supabase's implicit link style (tokens in the hash), which /auth/confirm
+  // accepts since Phase 4 (invitations use it): the link verifies and signs the person in.
   await page.goto(await emailLink(email, { subject: /Confirm your email|Verify your email/i }));
-  expect((await findUserByEmail(email))?.role).toBe('LEARNER');
-  await signIn(page, email, 'A-good-password-26');
   await expect(page).toHaveURL(/\/learner\/dashboard$/);
+  expect((await findUserByEmail(email))?.role).toBe('LEARNER');
 });
 
 test('a duplicate address gets the same answer as a new one', async ({ page }) => {

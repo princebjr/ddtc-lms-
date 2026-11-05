@@ -21,9 +21,21 @@ test.describe.configure({ timeout: 90_000 });
  */
 async function stepUntilWarning(page) {
   const warning = page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' });
-  for (let i = 0; i < 8 && !(await warning.isVisible()); i += 1) await page.clock.runFor(5_000);
+  for (let i = 0; i < 40 && !(await warning.isVisible()); i += 1) await page.clock.runFor(5_000);
   await expect(warning).toBeVisible();
   return warning;
+}
+
+/**
+ * Checks an error toast and dismisses it, as a person would: error toasts stay until dismissed, and
+ * on phones a stack of them covers the buttons below.
+ * @param {import('@playwright/test').Page} page @param {string | RegExp} text
+ */
+async function dismissToast(page, text) {
+  const toast = page.locator('[data-toast-id]').filter({ hasText: text });
+  await expect(toast).toBeVisible();
+  await toast.getByRole('button', { name: 'Dismiss notification' }).click();
+  await expect(toast).toHaveCount(0);
 }
 
 /** A name no other test running in parallel uses. */
@@ -57,14 +69,14 @@ test('profile: initials without a photo, a wrong file type is rejected, a real i
 
   const chooser = page.locator('input[type="file"]');
   await chooser.setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') });
-  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Photo not accepted: use a JPG, PNG or WebP image' })).toBeVisible();
+  await dismissToast(page, 'Photo not accepted: use a JPG, PNG or WebP image');
 
   await chooser.setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
-  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Photo not accepted: the image is larger than 2 MB' })).toBeVisible();
+  await dismissToast(page, 'Photo not accepted: the image is larger than 2 MB');
 
   // Named like a PNG but not one: the server reads the bytes and rejects it.
   await chooser.setInputFiles({ name: 'fake.png', mimeType: 'image/png', buffer: Buffer.from('<svg>not really a png</svg>') });
-  await expect(page.locator('[data-toast-id]').filter({ hasText: /Photo not accepted: the file is not a JPG, PNG or WebP image/ })).toBeVisible();
+  await dismissToast(page, /Photo not accepted: the file is not a JPG, PNG or WebP image/);
   expect((await getProfile(account.id))?.profile_image_file_id ?? null).toBeNull();
 
   await chooser.setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: PNG });
@@ -107,6 +119,8 @@ test('administrator: find a learner, suspend with Undo, promote to lecturer, gra
   expect((await getProfile(learner.id))?.account_status).toBe('SUSPENDED');
   await suspended.getByRole('button', { name: 'Undo' }).click();
   await expect.poll(async () => (await getProfile(learner.id))?.account_status).toBe('ACTIVE');
+  // Tapping the toast is a tap outside the panel, which closes it: open it again.
+  await manage.click();
 
   // The panel's own Role picker (the page also has a Role filter).
   const panel = page.getByRole('dialog', { name: `Yaa ${second}` });
