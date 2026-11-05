@@ -38,6 +38,8 @@ Local run on 2026-11-05 (Windows 11):
 
 Tests were written first and failed before the migrations existed (`01_schema`: tables, enums and helpers missing; `02_signup` and `03_access_matrix`: types missing). Two faults in the test code itself were fixed (an enum default compared as an expression; an expected count read from `auth.users` inside a client session, which correctly has no access). No database rule was relaxed.
 
+**Lighthouse in CI.** The first CI run on PR #6 scored Performance 0.75 (budget 0.8) on a single run, although no shipped JavaScript changed in this phase (the same build scored 0.99 locally and passed the last three Phase 1 CI runs). One run on a shared CI machine is noise-prone, so Lighthouse now collects 3 runs and every assertion uses `aggregationMethod: 'median'`, set explicitly because the multi-run default is the best run, which would loosen the budget. Budgets are unchanged.
+
 **Mutation check.** To show the matrix catches a real hole, `UPDATE (role)` was granted to `authenticated` and the guard trigger dropped on the local database: 7 tests failed, including "learner: cannot change own role" and "admin AAL2: cannot change a role directly". After restoring, 133 of 133 passed.
 
 **Through the real Auth API** (local GoTrue, not SQL): a sign-up sending `"role":"ADMIN"` produced a LEARNER; a sign-up without a second name was refused and left no auth user; the seeded `learner1@ddtc.test` signed in with a password.
