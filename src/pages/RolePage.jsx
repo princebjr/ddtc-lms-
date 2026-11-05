@@ -1,23 +1,46 @@
+import { lazy, Suspense } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { SessionWatcher } from '@/components/auth/SessionWatcher.jsx';
+import { DashboardSkeleton } from '@/components/feedback/Skeletons.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { AppShell } from '@/components/layout/AppShell.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { RolePlaceholder } from '@/components/layout/RolePlaceholder.jsx';
+import { useAvatarUrl } from '@/hooks/use-avatar-url.js';
 import { findDestination } from '@/lib/navigation.js';
 import NotFoundPage from './NotFoundPage.jsx';
 
-// A guarded role page (/admin/..., /lecturer/..., /learner/...): the role shell with the signed-in
-// user. Each destination shows its placeholder until the phase that builds it.
+// Guarded role pages (/admin/..., /lecturer/..., /learner/...). RoleShell is the layout for every
+// page of a role; BUILT maps the destinations delivered so far to their page (code-split), and the
+// rest show the placeholder naming the phase that builds them.
 
-/** @param {{ role: import('@/lib/navigation.js').RoleKey }} props */
-export function RolePage({ role }) {
-  const { slug = 'dashboard' } = useParams();
+/** @typedef {import('@/lib/navigation.js').RoleKey} RoleKey */
+
+const ProfilePage = lazy(() => import('./account/ProfilePage.jsx'));
+const AdminDashboardPage = lazy(() => import('./admin/AdminDashboardPage.jsx'));
+const UsersPage = lazy(() => import('./admin/UsersPage.jsx'));
+
+/** @type {Record<string, () => import('react').ReactNode>} */
+const BUILT = {
+  'admin/dashboard': () => <AdminDashboardPage />,
+  'admin/users': () => <UsersPage view="all" />,
+  'admin/lecturers': () => <UsersPage view="lecturers" />,
+  'admin/learners': () => <UsersPage view="learners" />,
+  'admin/profile': () => <ProfilePage />,
+  'lecturer/profile': () => <ProfilePage />,
+  'learner/profile': () => <ProfilePage />,
+};
+
+/**
+ * The role layout around a page: shell, signed-in user, session limits, sign-out.
+ * @param {{ role: RoleKey, slug: string, children: import('react').ReactNode }} props
+ */
+export function RoleShell({ role, slug, children }) {
   const auth = useAuth();
   const toast = useToast();
-  const destination = findDestination(role, slug);
-  if (!destination || !auth.profile) return <NotFoundPage />;
+  const imageUrl = useAvatarUrl(auth.profile?.profile_image_file_id);
+  if (!auth.profile) return <NotFoundPage />;
 
   const onSignOut = async () => {
     // The guard sends the user to Sign In once the session has ended.
@@ -29,14 +52,33 @@ export function RolePage({ role }) {
     <AppShell
       role={role}
       basePath={`/${role}`}
-      currentSlug={destination.slug}
-      user={{ firstName: auth.profile.first_name, secondName: auth.profile.second_name }}
+      currentSlug={slug}
+      user={{ firstName: auth.profile.first_name, secondName: auth.profile.second_name, imageUrl }}
       onSignOut={onSignOut}
     >
       <SessionWatcher />
-      <PageHeader title={destination.title} description={destination.description} />
-      <RolePlaceholder role={role} destination={destination} />
+      <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
     </AppShell>
+  );
+}
+
+/** @param {{ role: RoleKey }} props */
+export function RolePage({ role }) {
+  const { slug = 'dashboard' } = useParams();
+  const destination = findDestination(role, slug);
+  if (!destination) return <NotFoundPage />;
+  const built = BUILT[`${role}/${destination.slug}`];
+  return (
+    <RoleShell role={role} slug={destination.slug}>
+      {built ? (
+        built()
+      ) : (
+        <>
+          <PageHeader title={destination.title} description={destination.description} />
+          <RolePlaceholder role={role} destination={destination} />
+        </>
+      )}
+    </RoleShell>
   );
 }
 

@@ -84,3 +84,27 @@ export function validate(schema, values) {
   }
   return { ok: false, errors };
 }
+
+/** Same rule as the database CHECK on profiles.contact_number. */
+const CONTACT = /^\+?[0-9][0-9 ()-]{5,19}$/;
+
+export const profileSchema = z.object({
+  firstName: name('first name'),
+  secondName: name('second name'),
+  contactNumber: z.string().check(
+    z.trim(),
+    z.refine((v) => v === '' || CONTACT.test(v), 'Enter a phone number, for example +233 20 123 4567'),
+  ),
+});
+
+/** D17: profile photos are JPG, PNG or WebP, at most 2 MB (checked again on the server). */
+export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+export const PHOTO_MAX_BYTES = 2 * 1024 * 1024;
+
+/** @param {{ type: string, size: number }} file @returns {string | null} a reason, or null when fine */
+export function photoProblem(file) {
+  if (!PHOTO_TYPES.includes(file.type)) return 'use a JPG, PNG or WebP image';
+  if (file.size > PHOTO_MAX_BYTES) return 'the image is larger than 2 MB';
+  if (file.size === 0) return 'the file is empty';
+  return null;
+}

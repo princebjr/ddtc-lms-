@@ -19,6 +19,8 @@ import { parsePublicEnv } from './env.js';
  * @property {import('@supabase/auth-js').GoTrueClient} auth
  * @property {PostgrestClient<Database>['from']} from
  * @property {PostgrestClient<Database>['rpc']} rpc
+ * @property {string} url          the project URL (for Storage and Edge Functions)
+ * @property {typeof fetch} fetch   fetch that sends the user's token (used by the lazily loaded Storage client)
  */
 
 /** @type {AppSupabaseClient | null} */
@@ -55,6 +57,8 @@ export function createAppClient(url, key) {
 
   return {
     auth,
+    url: base.href.replace(/\/$/, ''),
+    fetch: fetchWithAuth,
     from: /** @type {PostgrestClient<Database>['from']} */ ((/** @type {any} */ relation) => rest.from(relation)),
     rpc: /** @type {PostgrestClient<Database>['rpc']} */ ((fn, args, options) => rest.rpc(fn, args, options)),
   };

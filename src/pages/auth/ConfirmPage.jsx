@@ -19,19 +19,26 @@ import { getSupabase } from '@/lib/supabase.js';
 // The parameters come from the address the app was opened with (initial-url.js), because the
 // client removes `code` from the address bar on start-up, possibly before this page loads.
 
-const TYPES = /** @type {const} */ (['signup', 'recovery', 'email_change']);
+const TYPES = /** @type {const} */ (['signup', 'recovery', 'email_change', 'invite']);
 
-/** @returns {{ tokenHash: string | null, code: string | null, type: typeof TYPES[number] | undefined, error: string | null }} */
+/**
+ * @returns {{ tokenHash: string | null, code: string | null, tokens: { access_token: string, refresh_token: string } | null,
+ *   type: typeof TYPES[number] | undefined, error: string | null }}
+ */
 function readLink() {
   // Prefer the address the app was opened with: the client may already have removed `code`.
   const opened = new URL(INITIAL_URL || window.location.href);
   const source = opened.pathname === window.location.pathname ? opened : new URL(window.location.href);
   const search = source.searchParams;
   const hash = new URLSearchParams(source.hash.replace(/^#/, ''));
-  const rawType = search.get('type');
+  const rawType = search.get('type') ?? hash.get('type');
+  const access = hash.get('access_token');
+  const refresh = hash.get('refresh_token');
   return {
     tokenHash: search.get('token_hash'),
     code: search.get('code'),
+    // Server-sent links (administrator invitations) use the implicit style: tokens in the hash.
+    tokens: access && refresh ? { access_token: access, refresh_token: refresh } : null,
     type: TYPES.find((t) => t === rawType),
     error: search.get('error') ?? hash.get('error'),
   };
@@ -40,11 +47,22 @@ function readLink() {
 export default function ConfirmPage() {
   const auth = useAuth();
   const [link] = useState(readLink);
-  const [otpState, setOtpState] = useState(/** @type {'working' | 'done' | 'failed'} */ (link.tokenHash && link.type ? 'working' : 'failed'));
+  const [otpState, setOtpState] = useState(/** @type {'working' | 'done' | 'failed'} */ ((link.tokenHash && link.type) || (link.tokens && link.type) ? 'working' : 'failed'));
   const started = useRef(false);
 
   useEffect(() => {
-    if (started.current || !link.tokenHash || !link.type) return;
+    if (started.current || !link.type) return;
+    if (link.tokens) {
+      started.current = true;
+      // Never leave tokens in the address bar or the history.
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      getSupabase()
+        .auth.setSession(link.tokens)
+        .then(({ error }) => setOtpState(error ? 'failed' : 'done'))
+        .catch(() => setOtpState('failed'));
+      return;
+    }
+    if (!link.tokenHash || link.type === 'invite') return;
     started.current = true;
     getSupabase()
       .auth.verifyOtp({ token_hash: link.tokenHash, type: link.type })
@@ -52,12 +70,13 @@ export default function ConfirmPage() {
       .catch(() => setOtpState('failed'));
   }, [link]);
 
-  const next = link.type === 'recovery' ? '/reset-password' : '/';
+  // Recovery and invitations continue to choosing a password.
+  const next = link.type === 'recovery' || link.type === 'invite' ? '/reset-password' : '/';
 
   /** @type {'working' | 'done' | 'verified-elsewhere' | 'failed'} */
   let state;
   if (link.error) state = 'failed';
-  else if (link.tokenHash) state = otpState;
+  else if (link.tokenHash || link.tokens) state = otpState;
   else if (link.code) {
     if (auth.status === 'loading') state = 'working';
     else if (auth.status === 'signed-in') state = 'done';
