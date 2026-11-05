@@ -2,9 +2,15 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect } from '@playwright/test';
 import { NAVIGATION, ROLE_KEYS } from '../../src/lib/navigation.js';
 
-/** Every route in the Phase 1 build (production routes plus the preview routes). */
+/** Every route in the build that opens signed out (production routes plus the preview routes). */
 export const ROUTES = [
   '/',
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/verify-email',
+  '/reset-password',
+  '/auth/confirm',
   '/offline',
   '/this-page-does-not-exist',
   '/dev',
