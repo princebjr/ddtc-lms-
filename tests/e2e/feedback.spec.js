@@ -14,6 +14,18 @@ test('toasts sit at the bottom on phones and tablets and top right on desktop', 
   await page.getByRole('button', { name: 'Success', exact: true }).click();
   const toast = toasts(page).filter({ hasText: 'Profile saved' });
   await expect(toast).toBeVisible();
+  // Sonner slides a toast in; measure its resting position once it has stopped moving.
+  /** @type {string | undefined} */
+  let previous;
+  await expect
+    .poll(async () => {
+      const b = await toast.boundingBox();
+      const now = b ? `${b.x},${b.y},${b.width},${b.height}` : 'none';
+      const settled = now !== 'none' && now === previous;
+      previous = now;
+      return settled;
+    }, { intervals: [100] })
+    .toBe(true);
   const box = await toast.boundingBox();
   const vp = page.viewportSize() ?? { width: 1280, height: 720 };
   if (!box) throw new Error('toast has no box');

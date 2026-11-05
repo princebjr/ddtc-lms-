@@ -39,6 +39,7 @@ Local run on 2026-11-05 (Windows 11), every step except the browser matrix, afte
 
 Faults found and fixed, with no test or rule weakened:
 - Lint: `scripts/capture-screenshots.mjs` used `document` inside `page.evaluate()` (browser code in a Node script) without declaring it, so `no-undef` failed. The local log showed this but it was first misread; CI's static job caught it on PR #5. Fixed by declaring the browser global for that file only.
+- End-to-end (CI, PR #5): "toasts sit above the FAB" failed on every phone project by 0.2 to 20 px, varying run to run. The test measured the toast while Sonner was still sliding it in; at rest it sits 16 px above the FAB (`--fab-clearance`). The test now waits until the toast's box is stable, then applies the same assertion. Rerun 18 of 18 on six projects, three repeats each.
 - The secret scan flagged a literal `sb_secret_` string in `tests/unit/platform.test.js`. The scanner stays strict; the test now builds the string at runtime.
 - `getInitials` created a new `Intl.Segmenter` on every call; it now reuses one.
 
