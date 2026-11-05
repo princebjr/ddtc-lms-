@@ -6,7 +6,7 @@ export const MESSAGES = {
   emailNotConfirmed: 'Verify your email address before signing in. Check your inbox for the link.',
   // Sign-up and recovery always answer the same way, whether or not the address is registered.
   checkInbox: 'If the address can be used, an email is on its way. Check your inbox.',
-  weakPassword: 'Choose a stronger password of at least 10 characters.',
+  weakPassword: 'Choose a stronger password of at least 8 characters.',
   rateLimited: 'Too many attempts. Wait a minute and try again.',
   captcha: 'Complete the security check and try again.',
   network: 'You seem to be offline. Check your connection and try again.',

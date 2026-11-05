@@ -5,8 +5,8 @@ import * as z from 'zod/mini';
 // 15.5 caps the first route at 200 KB of JavaScript). The database re-checks names (sign-up
 // trigger) and Supabase Auth re-checks the password length; these give inline errors first.
 
-/** D22: at least 10 characters. Supabase Auth hashes with bcrypt, which reads at most 72 bytes. */
-export const PASSWORD_MIN = 10;
+/** D22: at least 8 characters (owner change 2026-11-05, was 10). Supabase Auth hashes with bcrypt, which reads at most 72 bytes. */
+export const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 72;
 export const NAME_MAX = 100;
 

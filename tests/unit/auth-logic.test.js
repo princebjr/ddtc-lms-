@@ -25,9 +25,10 @@ describe('sign-up form validation', () => {
       expect(r.errors.secondName).toBe('Enter your second name');
     }
   });
-  it('requires a password of at least 10 characters (D22)', () => {
-    const r = validate(signUpSchema, { ...good, password: 'short-123' });
-    expect(!r.ok && r.errors.password).toBe('Use at least 10 characters');
+  it('requires a password of at least 8 characters (D22)', () => {
+    const r = validate(signUpSchema, { ...good, password: 'short-1' });
+    expect(!r.ok && r.errors.password).toBe('Use at least 8 characters');
+    expect(validate(signUpSchema, { ...good, password: 'exactly8' }).ok).toBe(true);
   });
   it('rejects a password longer than bcrypt reads (72 bytes)', () => {
     expect(validate(signUpSchema, { ...good, password: 'é'.repeat(40) }).ok).toBe(false);
