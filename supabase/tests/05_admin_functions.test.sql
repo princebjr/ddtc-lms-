@@ -8,7 +8,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(47);
+select plan(48);
 
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.a2', tests.create_user('a2@example.test', 'Solomon', 'Nyamekye', 'ADMIN')::text, true);
@@ -119,6 +119,18 @@ select is((select count(*)::int from public.audit_logs where action = 'admin.mfa
 select tests.as_service();
 select ok((public.launch_readiness() ->> 'active_admins')::int >= 2, 'launch_readiness counts active administrators');
 select tests.reset();
+-- ADR-003: an invited administrator counts only once the invitation is accepted (email confirmed).
+select set_config('t.inv', tests.create_user('invited@example.test', 'Invited', 'Admin', 'ADMIN')::text, true);
+update auth.users set email_confirmed_at = null where id = tests.uid('inv');
+select tests.as_service();
+select set_config('t.n_before', (public.launch_readiness() ->> 'active_admins'), true);
+select tests.reset();
+update auth.users set email_confirmed_at = now() where id = tests.uid('inv');
+select tests.as_service();
+select is((public.launch_readiness() ->> 'active_admins')::int, current_setting('t.n_before')::int + 1,
+  'an invited administrator counts towards launch only after accepting the invitation');
+select tests.reset();
+
 update public.profiles set account_status = 'SUSPENDED' where role = 'ADMIN' and id <> tests.uid('a1');
 select tests.as_service();
 select is((public.launch_readiness() ->> 'ok')::boolean, false, 'launch is refused with fewer than two active administrators');
