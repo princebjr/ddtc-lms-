@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
       const { error } = await getSupabase().auth.resend({
         type: 'signup',
         email,
-        options: { emailRedirectTo: appUrl('/auth/confirm'), ...(captcha ? { captchaToken: captcha } : {}) },
+        options: { emailRedirectTo: appUrl('/auth/confirm?type=signup'), ...(captcha ? { captchaToken: captcha } : {}) },
       });
       if (error && error.status === 429) setMessage(authErrorMessage(error, 'recovery'));
       else toast.show('account.verification-resent');

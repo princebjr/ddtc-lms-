@@ -41,7 +41,7 @@ export default function SignUpPage() {
         options: {
           // Names only. The role is never sent and would be ignored by the database.
           data: { first_name: firstName, second_name: secondName },
-          emailRedirectTo: appUrl('/auth/confirm'),
+          emailRedirectTo: appUrl('/auth/confirm?type=signup'),
           ...(captcha ? { captchaToken: captcha } : {}),
         },
       });

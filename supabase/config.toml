@@ -240,19 +240,23 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Branded templates (Phase 3). Links go to /auth/confirm with a token hash, so they work on any
-# device, not only the browser that started the flow.
-[auth.email.template.confirmation]
-subject = "Verify your email for DDTC LMS"
-content_path = "./supabase/templates/confirmation.html"
+# Branded templates (supabase/templates) are OFF until a custom SMTP sender exists: Supabase
+# refuses template changes on the free plan with its default mailer (staging push, 2026-11-05).
+# The app handles both link kinds (src/pages/auth/ConfirmPage.jsx). To switch them on, set up
+# SMTP (Resend once DDTC has a domain) and uncomment:
+# # Branded templates (Phase 3). Links go to /auth/confirm with a token hash, so they work on any
+# # device, not only the browser that started the flow.
+# [auth.email.template.confirmation]
+# subject = "Verify your email for DDTC LMS"
+# content_path = "./supabase/templates/confirmation.html"
 
-[auth.email.template.recovery]
-subject = "Reset your DDTC LMS password"
-content_path = "./supabase/templates/recovery.html"
+# [auth.email.template.recovery]
+# subject = "Reset your DDTC LMS password"
+# content_path = "./supabase/templates/recovery.html"
 
-[auth.email.template.email_change]
-subject = "Confirm your new email for DDTC LMS"
-content_path = "./supabase/templates/email-change.html"
+# [auth.email.template.email_change]
+# subject = "Confirm your new email for DDTC LMS"
+# content_path = "./supabase/templates/email-change.html"
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]

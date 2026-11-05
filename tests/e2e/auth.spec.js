@@ -50,7 +50,7 @@ test('register, verify by email, land on the learner dashboard, sign out', async
   await signIn(page, email, 'A-good-password-26');
   await expect(page.getByRole('alert')).toHaveText('Verify your email address before signing in. Check your inbox for the link.');
 
-  await page.goto(await emailLink(email, { subject: /Verify your email/ }));
+  await page.goto(await emailLink(email, { subject: /Confirm your email|Verify your email/i }));
   await expect(page).toHaveURL(/\/learner\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
 
@@ -70,9 +70,12 @@ test('a role sent in the sign-up request is ignored: the account is a LEARNER', 
     data: { email, password: 'A-good-password-26', data: { first_name: 'Sneaky', second_name: 'Admin', role: 'ADMIN' } },
   });
   expect(res.ok()).toBe(true);
-  await page.goto(await emailLink(email, { subject: /Verify your email/ }));
-  await expect(page).toHaveURL(/\/learner\/dashboard$/);
+  // The raw API request uses Supabase's implicit link style, which the app (PKCE only) ignores.
+  // Opening the link still verifies the email at Supabase; then sign in as a real user would.
+  await page.goto(await emailLink(email, { subject: /Confirm your email|Verify your email/i }));
   expect((await findUserByEmail(email))?.role).toBe('LEARNER');
+  await signIn(page, email, 'A-good-password-26');
+  await expect(page).toHaveURL(/\/learner\/dashboard$/);
 });
 
 test('a duplicate address gets the same answer as a new one', async ({ page }) => {
@@ -101,7 +104,7 @@ test('reset password by email, then sign in with the new password', async ({ pag
   await page.getByRole('button', { name: 'Send reset link' }).click();
   await expect(page.getByRole('status')).toHaveText('If the address can be used, an email is on its way. Check your inbox.');
 
-  await page.goto(await emailLink(account.email, { subject: /Reset your/ }));
+  await page.goto(await emailLink(account.email, { subject: /Reset your/i }));
   await expect(page).toHaveURL(/\/reset-password$/);
   await page.getByLabel('New password', { exact: true }).fill('A-brand-new-password-1');
   await page.getByLabel('Confirm new password').fill('A-brand-new-password-1');

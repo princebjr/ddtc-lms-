@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
     setPending(true);
     try {
       const { error } = await getSupabase().auth.resetPasswordForEmail(result.data.email, {
-        redirectTo: appUrl('/auth/confirm'),
+        redirectTo: appUrl('/auth/confirm?type=recovery'),
         ...(captcha ? { captchaToken: captcha } : {}),
       });
       // Only rate limits and connection problems are reported; everything else looks like success.
