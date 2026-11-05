@@ -111,7 +111,27 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "record_activity":
+            "admin_record_mfa_reset":
+{ Args: { "p_actor": string,"p_target": string }; Returns: undefined
+                           },
+"admin_set_user":
+{ Args: { "p_actor": string,"p_can_create"?: boolean,"p_role"?: Database["public"]['Enums']["user_role"],"p_status"?: Database["public"]['Enums']["account_status"],"p_target": string }; Returns: Json
+                           },
+"am_i_admin":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"bootstrap_first_admin":
+{ Args: { "p_user": string }; Returns: undefined
+                           },
+"files_due_for_cleanup":
+{ Args: { "p_limit"?: number }; Returns: {
+              "bucket_name": string,"id": string,"reason": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string
+            }[]
+                           },
+"launch_readiness":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            }
           }
