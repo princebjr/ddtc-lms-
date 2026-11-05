@@ -1,7 +1,7 @@
 # Phase 2 acceptance evidence: Database foundation and security core
 
 - Phase file: `docs/phases/phase-02-database-security-core.md`
-- Branch and pull request: `phase-2-database-security`, PR_LINK
+- Branch and pull request: `phase-2-database-security`, https://github.com/princebjr/ddtc-lms-/pull/6
 - Reviewer (O2): Prince Boateng
 - Evidence date: 2026-11-05
 - Plan approved by the owner on 2026-11-05 with the recommended option: `is_lecturer_of` and `is_enrolled` are built in Phase 5 with their tables (section 7).
@@ -34,7 +34,7 @@ Local run on 2026-11-05 (Windows 11):
 | Dependency audit (high and above) | PASS | 0 high or critical (K1 unchanged) |
 | Build | PASS | built in 4.1 s |
 | Database tests (pgTAP) | PASS | 4 files, 133 tests: `00_rls_guard` 3, `01_schema` 30, `02_signup` 20, `03_access_matrix` 80 |
-| End-to-end and Lighthouse (Phase 1 regression) | CI | CI_RESULTS |
+| End-to-end and Lighthouse (Phase 1 regression) | PASS (CI) | Commit `ab2dfee`, [CI run 41957338774](https://github.com/princebjr/ddtc-lms-/actions/runs/41957338774): Playwright 1,410 tests in 4 shards, Lighthouse (median of 3), pgTAP, database-type drift check, static checks, gitleaks and the CI gate all green |
 
 Tests were written first and failed before the migrations existed (`01_schema`: tables, enums and helpers missing; `02_signup` and `03_access_matrix`: types missing). Two faults in the test code itself were fixed (an enum default compared as an expression; an expected count read from `auth.users` inside a client session, which correctly has no access). No database rule was relaxed.
 
@@ -62,7 +62,7 @@ Also covered: anonymous denied on every table; suspended learner cannot edit or 
 
 | Line | Result | Proof |
 |---|---|---|
-| All pgTAP tests pass in CI | GATE_CI | CI job "Database tests (pgTAP on local Supabase)" |
+| All pgTAP tests pass in CI | PASS | [CI run 41957338774](https://github.com/princebjr/ddtc-lms-/actions/runs/41957338774), job "Database tests (pgTAP on local Supabase)": 4 files, 133 tests |
 
 ## 5. Screenshots
 
