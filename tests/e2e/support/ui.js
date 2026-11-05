@@ -14,9 +14,10 @@ export async function signIn(page, email, password) {
 /**
  * A fresh administrator, signed in through the UI with two-step verification enrolled.
  * @param {import('@playwright/test').Page} page
+ * @param {{ first?: string, second?: string }} [names] unique names keep parallel tests apart
  */
-export async function signInNewAdmin(page) {
-  const account = await createAccount({ role: 'ADMIN', first: 'Grace', second: 'Admin' });
+export async function signInNewAdmin(page, names = {}) {
+  const account = await createAccount({ role: 'ADMIN', first: names.first ?? 'Grace', second: names.second ?? 'Admin' });
   await signIn(page, account.email, account.password);
   await expect(page.getByRole('heading', { name: 'Set up two-step verification' })).toBeVisible({ timeout: 15_000 });
   const secret = (await page.getByTestId('totp-secret').textContent())?.trim() ?? '';

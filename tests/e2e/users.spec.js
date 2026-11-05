@@ -10,6 +10,24 @@ import { signIn, signInNewAdmin } from './support/ui.js';
 
 const expect = baseExpect.configure({ timeout: 15_000 });
 
+// These flows make many round trips (each photo is registered, uploaded and checked on the server),
+// which takes longer than 30 s on emulated phones; every assertion is unchanged.
+test.describe.configure({ timeout: 90_000 });
+
+/**
+ * Moves the fake clock forward in 5-second steps until the session warning shows. The watcher checks
+ * every 15 s and a warning toast lasts 8 s, so one big jump can land after the toast has gone.
+ * @param {import('@playwright/test').Page} page
+ */
+async function stepUntilWarning(page) {
+  const warning = page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' });
+  for (let i = 0; i < 8 && !(await warning.isVisible()); i += 1) await page.clock.runFor(5_000);
+  await expect(warning).toBeVisible();
+  return warning;
+}
+
+/** A name no other test running in parallel uses. */
+const unique = () => Math.random().toString(36).slice(2, 8);
 test.beforeAll(() => {
   requireSupabase();
 });
@@ -74,11 +92,12 @@ test('profile: names and contact number are saved', async ({ page }) => {
 });
 
 test('administrator: find a learner, suspend with Undo, promote to lecturer, grant course creation', async ({ page }) => {
-  const learner = await createAccount({ first: 'Yaa', second: 'Konadu' });
+  const second = `Konadu${unique()}`;
+  const learner = await createAccount({ first: 'Yaa', second });
   await signInNewAdmin(page);
   await page.goto('/admin/users');
-  await page.getByLabel('Search').fill('Konadu');
-  const manage = page.getByRole('button', { name: 'Manage Yaa Konadu' });
+  await page.getByLabel('Search').fill(second);
+  const manage = page.getByRole('button', { name: `Manage Yaa ${second}` });
   await expect(manage).toBeVisible();
 
   await manage.click();
@@ -89,21 +108,24 @@ test('administrator: find a learner, suspend with Undo, promote to lecturer, gra
   await suspended.getByRole('button', { name: 'Undo' }).click();
   await expect.poll(async () => (await getProfile(learner.id))?.account_status).toBe('ACTIVE');
 
-  await page.getByLabel('Role').click();
+  // The panel's own Role picker (the page also has a Role filter).
+  const panel = page.getByRole('dialog', { name: `Yaa ${second}` });
+  await panel.getByLabel('Role').click();
   await page.getByRole('option', { name: 'Lecturer' }).click();
   await page.getByRole('button', { name: 'Change role' }).click();
   await expect(page.locator('[data-toast-id]').filter({ hasText: 'Permissions updated' }).first()).toBeVisible();
   await expect.poll(async () => (await getProfile(learner.id))?.role).toBe('LECTURER');
 
-  await page.getByLabel('Can create courses').click();
+  await panel.getByLabel('Can create courses').click();
   await expect.poll(async () => (await getProfile(learner.id))?.can_create_courses).toBe(true);
 });
 
 test('administrator: cannot change their own role or status', async ({ page }) => {
-  await signInNewAdmin(page);
+  const second = `Self${unique()}`;
+  await signInNewAdmin(page, { first: 'Grace', second });
   await page.goto('/admin/users');
-  await page.getByLabel('Search').fill('Grace');
-  await page.getByRole('button', { name: /Manage Grace Admin/ }).first().click();
+  await page.getByLabel('Search').fill(second);
+  await page.getByRole('button', { name: `Manage Grace ${second}` }).click();
   await expect(page.getByText('This is your account. Another administrator must change your role or status.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Suspend account' })).toHaveCount(0);
 });
@@ -130,9 +152,8 @@ test('session limits (D32): an idle learner is warned two minutes before the end
   await signIn(page, SEED.learner, SEED_PASSWORD);
   await expect(page).toHaveURL(/\/learner\/dashboard$/);
   // Learner idle limit is 7 days: jump to 3 minutes before it.
-  await page.clock.fastForward(7 * 24 * 3_600_000 - 3 * 60_000);
-  await page.clock.fastForward(90_000);
-  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' })).toBeVisible();
+  await page.clock.fastForward(7 * 24 * 3_600_000 - 2 * 60_000 - 20_000);
+  await stepUntilWarning(page);
   await page.clock.fastForward(3 * 60_000);
   await expect(page).toHaveURL(/\/login\?expired=1$/);
   await expect(page.getByRole('alert')).toHaveText('Your session ended. Sign in again to continue.');
@@ -142,9 +163,8 @@ test('session limits (D32): "Stay signed in" keeps an idle administrator session
   await page.clock.install();
   await signInNewAdmin(page);
   // Administrator idle limit is 30 minutes: jump to the warning.
-  await page.clock.fastForward(28 * 60_000 + 30_000);
-  const warning = page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' });
-  await expect(warning).toBeVisible();
+  await page.clock.fastForward(28 * 60_000 - 20_000);
+  const warning = await stepUntilWarning(page);
   await warning.getByRole('button', { name: 'Stay signed in' }).click();
   await page.clock.fastForward(5 * 60_000);
   await expect(page).toHaveURL(/\/admin\/dashboard$/);
