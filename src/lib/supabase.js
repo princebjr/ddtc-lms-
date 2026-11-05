@@ -5,10 +5,12 @@ import { parsePublicEnv } from './env.js';
 // Edge Function; RLS enforces access for every query made with this client.
 // Created on first use, so pages that do not need Supabase (Phase 1) work without configuration.
 
-/** @type {import('@supabase/supabase-js').SupabaseClient | null} */
+/** @typedef {import('./database.types').Database} Database */
+
+/** @type {import('@supabase/supabase-js').SupabaseClient<Database> | null} */
 let client = null;
 
-/** @returns {import('@supabase/supabase-js').SupabaseClient} */
+/** @returns {import('@supabase/supabase-js').SupabaseClient<Database>} */
 export function getSupabase() {
   if (!client) {
     const env = parsePublicEnv(import.meta.env);

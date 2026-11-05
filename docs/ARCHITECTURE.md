@@ -224,6 +224,16 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - Learners cannot see another learner's submissions, marks or feedback; unreleased grades stay private.
 - Audit records are written for administrator actions, permission changes, grade changes, exports, settings changes and file deletions, and cannot be edited.
 
+### Database security as built (Phase 2)
+
+- **No default access.** Migration 1 removes Supabase's default grants to `anon` and `authenticated` for new tables, sequences and functions. Each table grants exactly what its policies need; `anon` has nothing in `public` (a standing pgTAP guard checks this, and that no client role can DELETE or TRUNCATE).
+- **Helpers** live in a `private` schema that the Data API does not expose: `is_active_user()`, `is_admin()` (role ADMIN, ACTIVE **and** an `aal2` session), `is_active_lecturer()`, `is_trusted_session()`, `write_audit()`. All are `SECURITY DEFINER` where they read `profiles`, each with `search_path = ''` (standing guard). `is_lecturer_of` and `is_enrolled` arrive with their tables in Phase 5 (owner decision, 2026-11-05).
+- **Column protection, two layers.** Column-level UPDATE grants let a signed-in user change only `first_name`, `second_name`, `contact_number` and `profile_image_file_id` on their own row while ACTIVE. The `profiles_guard` trigger also blocks role, status, `can_create_courses`, email and id changes from any client session (administrators included: those go through `set-user-role` with the service role), forbids blanking a name, requires the profile image to be the user's own VALIDATED `PROFILE_IMAGE` file, and derives `profile_completed`.
+- **Sign-up.** `on_auth_user_created` makes every new user LEARNER and ACTIVE; client metadata supplies names only. Email sign-up without both names is rejected (the auth user is not created); Google sign-up uses `given_name` and `family_name` and sets `profile_completed = false` when either is missing. Administrators and lecturers are promoted afterwards by trusted functions.
+- **Audit log** is append-only for every role including the owner (UPDATE, DELETE and TRUNCATE triggers), readable by AAL2 administrators. Triggers record role, status, course-creation and setting changes with old and new values.
+- **Settings** keep their JSON type; keys are added only by migrations; lecturers read rows not marked `is_sensitive`.
+- Local seed: `admin@ddtc.test`, `lecturer1@ddtc.test` (can create courses), `lecturer2@ddtc.test`, `learner1..3@ddtc.test`, password `DdtcLocal-2026` (local and CI only).
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.
