@@ -124,6 +124,10 @@
   --color-logo-white: var(--logo-white);
   --color-scrim: var(--scrim);
   --color-hero-tint: var(--hero-tint);
+  --color-wave-played: var(--wave-played);
+  --color-wave-unplayed: var(--wave-unplayed);
+  --color-wave-playhead: var(--wave-playhead);
+  --color-wave-recording: var(--wave-recording);
   --color-google-fill: var(--google-fill);
   --color-google-border: var(--google-border);
   --color-google-text: var(--google-text);
@@ -254,6 +258,45 @@
     transform: translate(-50%, -50%);
     animation: glow-spin var(--duration-glow) linear infinite;
     will-change: transform;
+  }
+}
+
+/* Audio waveform (ADR-006): bars and the playhead with its round handles */
+@utility wave-bars {
+  display: flex;
+  align-items: center;
+  gap: var(--wave-gap);
+}
+@utility wave-bar {
+  width: var(--wave-bar);
+  flex: none;
+  border-radius: var(--wave-bar);
+  min-height: var(--wave-bar);
+}
+@utility wave-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--wave-line);
+  margin-left: calc(var(--wave-line) / -2);
+  background-color: var(--wave-playhead);
+  pointer-events: none;
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: var(--wave-handle);
+    height: var(--wave-handle);
+    border-radius: 9999px;
+    background-color: var(--wave-playhead);
+    transform: translateX(-50%);
+  }
+  &::before {
+    top: calc(var(--wave-handle) / -2);
+  }
+  &::after {
+    bottom: calc(var(--wave-handle) / -2);
   }
 }
 

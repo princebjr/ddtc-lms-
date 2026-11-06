@@ -39,6 +39,11 @@
   /* Sign In and Sign Up card edge glow (owner request 2026-11-05, DESIGN.md 9 and 21) */
   --glow: #2563eb;
   --glow-halo: 0.45;
+  /* Audio waveform (ADR-006): played and unplayed bars, playhead, live recording */
+  --wave-played: #2563eb;
+  --wave-unplayed: #64748b;
+  --wave-playhead: #2563eb;
+  --wave-recording: #dc2626;
 
   /* Google button, light variant (Google identity branding guidelines) */
   --google-fill: #ffffff;
@@ -106,6 +111,11 @@
   --duration-glow: 6s; /* one lap of the auth card edge glow */
   --duration-logo-fade: 800ms; /* DDTC emblem fade-in on the auth hero */
   --glow-width: 2px;
+  /* Waveform geometry (ADR-006): 3 px bars, 2 px gaps, 2 px playhead with 8 px handles */
+  --wave-bar: 3px;
+  --wave-gap: 2px;
+  --wave-line: 2px;
+  --wave-handle: 8px;
   --glow-blur: 14px;
 }
 
@@ -140,6 +150,10 @@
   --hero-tint: #0d1a36;
   --glow: #60a5fa;
   --glow-halo: 0.7;
+  --wave-played: #60a5fa;
+  --wave-unplayed: #94a3b8;
+  --wave-playhead: #60a5fa;
+  --wave-recording: #f87171;
 
   /* Google button, dark variant */
   --google-fill: #131314;
