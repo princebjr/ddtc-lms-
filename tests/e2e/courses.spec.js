@@ -27,6 +27,24 @@ function toast(page, text) {
   return page.locator('[data-toast-id]').filter({ hasText: text }).first();
 }
 
+/**
+ * Dismisses every open toast, as a person would. On desktop (iPad landscape included) toasts sit top
+ * right, over the page's header button, and an Undo toast pauses while the pointer rests on it.
+ * @param {import('@playwright/test').Page} page
+ */
+async function dismissToasts(page) {
+  // A dismissed toast stays in the page for its exit animation (data-removed) and cannot be
+  // clicked, so only toasts that are not leaving count. Toasts stack; only the front one can be
+  // clicked, as for a person.
+  const toasts = page.locator('[data-sonner-toast]:not([data-removed="true"]) [data-toast-id]');
+  const front = page.locator('[data-sonner-toast][data-front="true"]:not([data-removed="true"]) [data-toast-id]');
+  for (let i = 0; i < 5 && (await toasts.count()) > 0; i += 1) {
+    await front.getByRole('button', { name: 'Dismiss notification' }).click();
+    await page.waitForTimeout(400);
+  }
+  await expect(toasts).toHaveCount(0);
+}
+
 /** @param {import('@playwright/test').Page} page */
 async function noOverflow(page) {
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
@@ -176,6 +194,7 @@ test('administrator enrols a learner with Undo, refuses a duplicate enrolment, a
   await noOverflow(page);
 
   const enrol = async () => {
+    await dismissToasts(page);
     await page.getByRole('button', { name: 'Enrol learners' }).click();
     const sheet = page.getByRole('dialog', { name: 'Enrol learners' });
     await sheet.getByLabel('Find learners').fill(second);
@@ -201,6 +220,7 @@ test('administrator enrols a learner with Undo, refuses a duplicate enrolment, a
   expect(await enrolmentStatuses(course.id, learner.id)).toEqual(['WITHDRAWN', 'ACTIVE']);
   await page.keyboard.press('Escape');
 
+  await dismissToasts(page);
   const row = page.getByRole('combobox', { name: `Status for Abena ${second} in ${course.code}, currently Active` });
   await row.click();
   await page.getByRole('option', { name: 'Completed' }).click();
