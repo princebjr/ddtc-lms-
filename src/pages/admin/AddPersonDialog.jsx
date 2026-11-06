@@ -17,7 +17,7 @@ import * as z from 'zod/mini';
 const personSchema = z.pick(signUpSchema, { firstName: true, secondName: true, email: true });
 
 const TEXT = {
-  learner: { title: 'Add learner', body: 'They get an invitation email to set a password. Enrolment in courses comes with courses.', submit: 'Add learner' },
+  learner: { title: 'Add learner', body: 'They get an invitation email to set a password. Enrol them in courses from Enrolments.', submit: 'Add learner' },
   lecturer: { title: 'Provision lecturer', body: 'An existing account is made a lecturer; a new address gets an invitation email to set a password.', submit: 'Send invitation' },
   admin: {
     title: 'Invite administrator',

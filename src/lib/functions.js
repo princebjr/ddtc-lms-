@@ -15,7 +15,8 @@ export class FunctionError extends Error {
 
 /**
  * @template T
- * @param {'set-user-role' | 'provision-lecturer' | 'provision-admin' | 'bulk-import-learners' | 'reset-admin-mfa' | 'register-upload' | 'finalize-upload'} name
+ * @param {'set-user-role' | 'provision-lecturer' | 'provision-admin' | 'bulk-import-learners' | 'reset-admin-mfa' | 'register-upload' | 'finalize-upload'
+ *   | 'create-course' | 'course-lifecycle' | 'course-lecturers' | 'manage-enrolments'} name
  * @param {Record<string, unknown>} body
  * @returns {Promise<T>}
  */

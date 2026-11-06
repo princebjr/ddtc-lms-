@@ -1,4 +1,4 @@
-import { GraduationCap, ShieldCheck, UserRoundX, Users, UsersRound } from 'lucide-react';
+import { BookOpen, ClipboardCheck, Clock, GraduationCap, ShieldCheck, UserRoundX, Users, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
@@ -6,14 +6,15 @@ import { ErrorState } from '@/components/feedback/States.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { fetchUserCounts } from '@/lib/admin/users.js';
+import { fetchCourseCounts } from '@/lib/courses/courses.js';
 
-// Administrator dashboard (Phase 4): account counts. Courses, approvals and enrolments join it in
-// Phase 5. A warning shows while fewer than two administrators are active (D32 launch rule).
+// Administrator dashboard: account counts (Phase 4) and published courses, courses waiting for
+// approval and active enrolments (Phase 5). A warning shows while fewer than two administrators are active (D32 launch rule).
 
 export default function AdminDashboardPage() {
   const [key, setKey] = useState(0);
   // Each answer is tagged with the request it belongs to; anything older counts as loading.
-  const [result, setResult] = useState(/** @type {{ key: number, counts?: Awaited<ReturnType<typeof fetchUserCounts>>, failed?: boolean } | null} */ (null));
+  const [result, setResult] = useState(/** @type {{ key: number, counts?: Awaited<ReturnType<typeof fetchUserCounts>> & Awaited<ReturnType<typeof fetchCourseCounts>>, failed?: boolean } | null} */ (null));
   const current = result?.key === key ? result : null;
   const counts = current?.counts ?? null;
   const failed = Boolean(current?.failed);
@@ -21,8 +22,8 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchUserCounts()
-      .then((c) => !cancelled && setResult({ key, counts: c }))
+    Promise.all([fetchUserCounts(), fetchCourseCounts()])
+      .then(([users, courses]) => !cancelled && setResult({ key, counts: { ...users, ...courses } }))
       .catch(() => !cancelled && setResult({ key, failed: true }));
     return () => {
       cancelled = true;
@@ -31,6 +32,9 @@ export default function AdminDashboardPage() {
 
   const tiles = counts
     ? [
+        { label: 'Waiting for approval', value: counts.pending, icon: Clock, to: '/admin/approvals' },
+        { label: 'Published courses', value: counts.published, icon: BookOpen, to: '/admin/courses' },
+        { label: 'Active enrolments', value: counts.enrolments, icon: ClipboardCheck, to: '/admin/enrolments' },
         { label: 'Active learners', value: counts.learners, icon: GraduationCap, to: '/admin/learners' },
         { label: 'Active lecturers', value: counts.lecturers, icon: UsersRound, to: '/admin/lecturers' },
         { label: 'Active administrators', value: counts.admins, icon: ShieldCheck, to: '/admin/users' },
@@ -41,7 +45,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Dashboard" description="Accounts at a glance" />
+      <PageHeader title="Dashboard" description="Courses and accounts at a glance" />
       {failed ? (
         <ErrorState title="The dashboard could not be loaded" onRetry={retry} />
       ) : (

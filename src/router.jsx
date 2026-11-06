@@ -16,6 +16,9 @@ import RouteErrorPage from '@/pages/RouteErrorPage.jsx';
  */
 const page = (load) => async () => ({ Component: (await load()).default });
 
+/** @param {'AdminNewCourse' | 'AdminCourse' | 'LecturerNewCourse' | 'LecturerCourse' | 'LearnerCourse'} name */
+const coursePage = (name) => async () => ({ Component: (await import('@/pages/courses/CourseRoutes.jsx'))[name] });
+
 /** @param {'AdminPage' | 'LecturerPage' | 'LearnerPage'} name */
 const rolePage = (name) => async () => ({ Component: (await import('@/pages/RolePage.jsx'))[name] });
 
@@ -43,9 +46,32 @@ const authRoutes = [
 
 /** @type {import('react-router').RouteObject[]} */
 const roleRoutes = [
-  { path: 'admin', element: <ProtectedRoute role="ADMIN" />, children: [{ path: ':slug?', lazy: rolePage('AdminPage') }] },
-  { path: 'lecturer', element: <ProtectedRoute role="LECTURER" />, children: [{ path: ':slug?', lazy: rolePage('LecturerPage') }] },
-  { path: 'learner', element: <ProtectedRoute role="LEARNER" />, children: [{ path: ':slug?', lazy: rolePage('LearnerPage') }] },
+  {
+    path: 'admin',
+    element: <ProtectedRoute role="ADMIN" />,
+    children: [
+      { path: 'courses/new', lazy: coursePage('AdminNewCourse') },
+      { path: 'courses/:courseId/:tab?', lazy: coursePage('AdminCourse') },
+      { path: ':slug?', lazy: rolePage('AdminPage') },
+    ],
+  },
+  {
+    path: 'lecturer',
+    element: <ProtectedRoute role="LECTURER" />,
+    children: [
+      { path: 'courses/new', lazy: coursePage('LecturerNewCourse') },
+      { path: 'courses/:courseId/:tab?', lazy: coursePage('LecturerCourse') },
+      { path: ':slug?', lazy: rolePage('LecturerPage') },
+    ],
+  },
+  {
+    path: 'learner',
+    element: <ProtectedRoute role="LEARNER" />,
+    children: [
+      { path: 'courses/:courseId', lazy: coursePage('LearnerCourse') },
+      { path: ':slug?', lazy: rolePage('LearnerPage') },
+    ],
+  },
 ];
 
 /** @type {import('react-router').RouteObject[]} */

@@ -4,11 +4,11 @@ import { getSupabase } from '@/lib/supabase.js';
 // every change goes through an Edge Function (src/lib/functions.js).
 
 /** @typedef {import('@/lib/database.types').Database['public']['Tables']['profiles']['Row']} ProfileRow */
-/** @typedef {Pick<ProfileRow, 'id' | 'first_name' | 'second_name' | 'email' | 'role' | 'account_status' | 'can_create_courses' | 'profile_image_file_id' | 'created_at'>} AdminUser */
+/** @typedef {Pick<ProfileRow, 'id' | 'first_name' | 'second_name' | 'email' | 'role' | 'account_status' | 'can_create_courses' | 'can_publish_directly' | 'profile_image_file_id' | 'created_at'>} AdminUser */
 /** @typedef {'all' | 'lecturers' | 'learners'} UsersView */
 
 export const PAGE_SIZE = 50;
-const COLUMNS = 'id, first_name, second_name, email, role, account_status, can_create_courses, profile_image_file_id, created_at';
+const COLUMNS = 'id, first_name, second_name, email, role, account_status, can_create_courses, can_publish_directly, profile_image_file_id, created_at';
 
 export const ROLE_LABEL = /** @type {const} */ ({ ADMIN: 'Administrator', LECTURER: 'Lecturer', LEARNER: 'Learner' });
 export const STATUS_LABEL = /** @type {const} */ ({ ACTIVE: 'Active', SUSPENDED: 'Suspended', DEACTIVATED: 'Deactivated' });

@@ -2,7 +2,8 @@
 // report they can download. The server re-validates every row (bulk-import-learners).
 
 export const MAX_IMPORT_ROWS = 500;
-export const TEMPLATE = 'first_name,second_name,email\nAma,Mensah,ama.mensah@example.org\n';
+// course_code is optional (Phase 5): when filled in, the learner is also enrolled in that course.
+export const TEMPLATE = 'first_name,second_name,email,course_code\nAma,Mensah,ama.mensah@example.org,BIB101\n';
 
 /**
  * RFC 4180 parsing: quoted fields, doubled quotes, commas and line breaks inside quotes.
@@ -47,9 +48,10 @@ const norm = (h) => h.trim().toLowerCase().replace(/[\s-]+/g, '_');
 
 /**
  * Turns parsed CSV into learner rows. The header must name first name, second name and email
- * (any order; "First name", "first_name" and "First-Name" all work).
+ * (any order; "First name", "first_name" and "First-Name" all work). An optional course_code column
+ * enrols each learner in that course.
  * @param {string[][]} table
- * @returns {{ ok: true, rows: Array<{ firstName: string, secondName: string, email: string }> } | { ok: false, message: string }}
+ * @returns {{ ok: true, rows: Array<{ firstName: string, secondName: string, email: string, courseCode?: string }> } | { ok: false, message: string }}
  */
 export function learnerRows(table) {
   if (table.length < 2) return { ok: false, message: 'The file has no learners. Use the template: first_name, second_name, email.' };
@@ -58,12 +60,17 @@ export function learnerRows(table) {
   const first = at(['first_name', 'firstname', 'first']);
   const second = at(['second_name', 'secondname', 'last_name', 'surname', 'second']);
   const email = at(['email', 'email_address']);
+  const course = at(['course_code', 'course', 'code']);
   if (first < 0 || second < 0 || email < 0) return { ok: false, message: 'The first row must be the headings first_name, second_name, email.' };
   const body = table.slice(1);
   if (body.length > MAX_IMPORT_ROWS) return { ok: false, message: `Import at most ${MAX_IMPORT_ROWS} learners at a time.` };
   return {
     ok: true,
-    rows: body.map((r) => ({ firstName: (r[first] ?? '').trim(), secondName: (r[second] ?? '').trim(), email: (r[email] ?? '').trim() })),
+    rows: body.map((r) => {
+      const row = { firstName: (r[first] ?? '').trim(), secondName: (r[second] ?? '').trim(), email: (r[email] ?? '').trim() };
+      const code = course >= 0 ? (r[course] ?? '').trim().toUpperCase() : '';
+      return code ? { ...row, courseCode: code } : row;
+    }),
   };
 }
 

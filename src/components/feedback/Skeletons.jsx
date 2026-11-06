@@ -121,3 +121,39 @@ export function ChartSkeleton() {
     </div>
   );
 }
+
+/** Course cards (My Courses): cover block, title and code lines, a chip. */
+export function CourseCardsSkeleton({ cards = 6 }) {
+  return (
+    <div data-skeleton="course-cards" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: cards }, (_, i) => (
+        <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-card">
+          <Skeleton className="aspect-video h-auto w-full rounded-none" />
+          <div className="flex flex-col gap-2 p-4">
+            <Skeleton className="w-3/4" />
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton shape="chip" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Course workspace: course title bar, tab bar blocks, then the active tab's skeleton (UI_FEEDBACK). */
+export function CourseWorkspaceSkeleton() {
+  return (
+    <div data-skeleton="course-workspace" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-3 w-1/4" />
+      </div>
+      <div className="flex gap-2 overflow-hidden">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} shape="chip" className="h-11 w-24 shrink-0" />
+        ))}
+      </div>
+      <FormSkeleton fields={3} />
+    </div>
+  );
+}
