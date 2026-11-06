@@ -241,6 +241,15 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - **Sessions (D32):** suspension and deactivation revoke every session; administrator idle and absolute limits are enforced on the server, lecturer and learner limits in the client (`SessionWatcher`).
 - **Bootstrap:** `scripts/bootstrap-admin.mjs`, run once per environment by the owner (`docs/RUNBOOK.md`).
 
+### Courses and enrolment as built (Phase 5)
+
+- **Tables:** `courses` (lifecycle DRAFT, PENDING_APPROVAL, PUBLISHED, ARCHIVED; unique capitalised `course_code`; `courses_guard` keeps status and lifecycle columns for trusted paths and makes ARCHIVED read-only), `course_lecturers` (OWNER or CO_LECTURER; removal sets `removed_at`, the row is kept), `course_enrollments` (ACTIVE, COMPLETED, WITHDRAWN, SUSPENDED; one current enrolment per learner and course; WITHDRAWN rows are history). `profiles.can_publish_directly` (ADR-005).
+- **Helpers:** `private.is_lecturer_of`, `private.is_enrolled` (ACTIVE or COMPLETED: read access), `private.is_actively_enrolled` (ACTIVE in a PUBLISHED course: the only state in which learners may write in later phases), `private.can_see_course`. Learners see PUBLISHED and ARCHIVED courses they are enrolled in; lecturers their own courses; AAL2 administrators everything.
+- **Names without personal data:** `course_roster()` (learners of a course, name and photo only, for its lecturers and administrators), `course_teachers()` (lecturers of a course, for anyone who may see it) and `course_cover_paths()`.
+- **Trusted functions and Edge Functions:** `create-course` (`course_create`), `course-lifecycle` (`course_transition`), `course-lecturers` (`course_lecturer_change`; lecturers name a colleague by email), `manage-enrolments` (`enrolment_add`, `enrolment_set_status`), `set-user-role` (`admin_set_direct_publish`). The Edge Function passes `p_as_admin` only after `am_i_admin()` succeeds with the caller's token. `admin_set_user` refuses to take a lecturer who owns a course that is not archived out of teaching until ownership is transferred.
+- **Covers:** private `course-covers` bucket, path `<course id>/<file id>.<ext>`, through `register-upload` and `finalize-upload`; replaced covers are removed and `cleanup-files` retries.
+- **Routes:** `/:role/courses/new`, `/:role/courses/:courseId/:tab?` (administrator and lecturer workspace), `/learner/courses/:courseId`.
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.

@@ -70,13 +70,14 @@ jobs:
         run: npx supabase stop --no-backup
 
   e2e:
-    name: End-to-end (Playwright, all device projects, light and dark, shard ${{ matrix.shard }}/4)
+    name: End-to-end (Playwright, all device projects, light and dark, shard ${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        # 8 shards (owner request 2026-11-06: CI was too slow): about 8 minutes of tests each instead of 16.
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -84,10 +85,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium firefox webkit
+      # A slow Ubuntu mirror once held this step for the whole 30-minute job (it normally takes under
+      # a minute). Fail it after 10 minutes instead, so only that shard needs re-running.
+      - name: Install browsers and their system libraries
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Start local Supabase (database, auth, Mailpit) for the authentication tests
         run: npm run db:start
-      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/8
       - if: always()
         uses: actions/upload-artifact@v4
         with:

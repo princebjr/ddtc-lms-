@@ -20,6 +20,12 @@ import NotFoundPage from './NotFoundPage.jsx';
 const ProfilePage = lazy(() => import('./account/ProfilePage.jsx'));
 const AdminDashboardPage = lazy(() => import('./admin/AdminDashboardPage.jsx'));
 const UsersPage = lazy(() => import('./admin/UsersPage.jsx'));
+const CoursesPage = lazy(() => import('./courses/CoursesPage.jsx'));
+const ApprovalsPage = lazy(() => import('./admin/ApprovalsPage.jsx'));
+const EnrolmentsPage = lazy(() => import('./admin/EnrolmentsPage.jsx'));
+const LearnerCoursesPage = lazy(() => import('./learner/LearnerCoursesPage.jsx'));
+const LecturerDashboardPage = lazy(() => import('./lecturer/LecturerDashboardPage.jsx'));
+const LearnerDashboardPage = lazy(() => import('./learner/LearnerDashboardPage.jsx'));
 
 /** @type {Record<string, () => import('react').ReactNode>} */
 const BUILT = {
@@ -27,7 +33,14 @@ const BUILT = {
   'admin/users': () => <UsersPage view="all" />,
   'admin/lecturers': () => <UsersPage view="lecturers" />,
   'admin/learners': () => <UsersPage view="learners" />,
+  'admin/courses': () => <CoursesPage role="admin" />,
+  'admin/approvals': () => <ApprovalsPage />,
+  'admin/enrolments': () => <EnrolmentsPage />,
   'admin/profile': () => <ProfilePage />,
+  'lecturer/dashboard': () => <LecturerDashboardPage />,
+  'lecturer/my-courses': () => <CoursesPage role="lecturer" />,
+  'learner/dashboard': () => <LearnerDashboardPage />,
+  'learner/my-courses': () => <LearnerCoursesPage />,
   'lecturer/profile': () => <ProfilePage />,
   'learner/profile': () => <ProfilePage />,
 };

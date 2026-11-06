@@ -12,18 +12,18 @@ import { callFunction } from '@/lib/functions.js';
 // Bulk learner import (D05, Phase 4): choose a CSV, see a preview with a result for every row
 // (the server validates), then import. The error report downloads as CSV ("View report").
 
-/** @typedef {{ row: number, email: string, status: 'ready' | 'created' | 'error', message?: string }} RowResult */
+/** @typedef {{ row: number, email: string, status: 'ready' | 'created' | 'enrolled' | 'error', message?: string }} RowResult */
 
-const TONE = /** @type {const} */ ({ ready: 'info', created: 'success', error: 'error' });
-const TEXT = { ready: 'Ready', created: 'Invited', error: 'Error' };
+const TONE = /** @type {const} */ ({ ready: 'info', created: 'success', enrolled: 'success', error: 'error' });
+const TEXT = { ready: 'Ready', created: 'Invited', enrolled: 'Enrolled', error: 'Error' };
 
 /** @param {{ onClose: () => void, onDone: () => void }} props */
 export function ImportSheet({ onClose, onDone }) {
   const toast = useToast();
   const input = useRef(/** @type {HTMLInputElement | null} */ (null));
-  const [rows, setRows] = useState(/** @type {Array<{ firstName: string, secondName: string, email: string }>} */ ([]));
+  const [rows, setRows] = useState(/** @type {Array<{ firstName: string, secondName: string, email: string, courseCode?: string }>} */ ([]));
   const [results, setResults] = useState(/** @type {RowResult[]} */ ([]));
-  const [summary, setSummary] = useState(/** @type {null | { total: number, ready: number, created: number, errors: number }} */ (null));
+  const [summary, setSummary] = useState(/** @type {null | { total: number, ready: number, created: number, enrolled?: number, errors: number }} */ (null));
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const [busy, setBusy] = useState(/** @type {null | 'preview' | 'import'} */ (null));
   const [committed, setCommitted] = useState(false);
@@ -61,7 +61,7 @@ export function ImportSheet({ onClose, onDone }) {
       setSummary(res.summary);
       setCommitted(true);
       const report = () => downloadText('learner-import-report.csv', reportCsv(res.results));
-      const params = { n: String(res.summary.created), m: String(res.summary.errors) };
+      const params = { n: String(res.summary.created + (res.summary.enrolled ?? 0)), m: String(res.summary.errors) };
       toast.show(res.summary.errors ? 'admin.csv-imported-with-errors' : 'admin.csv-imported', { params, onAction: report });
       onDone();
     } catch (error) {
@@ -73,7 +73,7 @@ export function ImportSheet({ onClose, onDone }) {
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent title="Import learners" description="A CSV file with the headings first_name, second_name, email. Up to 500 learners.">
+      <SheetContent title="Import learners" description="A CSV file with the headings first_name, second_name, email, and optionally course_code to enrol each learner in a course. Up to 500 learners.">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-2">
             <input
@@ -102,7 +102,7 @@ export function ImportSheet({ onClose, onDone }) {
           {summary ? (
             <p className="m-0 text-body-sm text-ink-secondary" role="status">
               {committed
-                ? `${summary.created} invited, ${summary.errors} with errors.`
+                ? `${summary.created} invited${summary.enrolled ? `, ${summary.enrolled} existing learners enrolled` : ''}, ${summary.errors} with errors.`
                 : `${summary.ready} ready to import, ${summary.errors} with errors. Rows with errors are skipped.`}
             </p>
           ) : null}

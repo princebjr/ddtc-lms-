@@ -1,29 +1,33 @@
 // finalize-upload (D18 step 3): verifies the uploaded object itself (real type from its first
 // bytes, size, ownership) and sets VALIDATED or REJECTED. Rejected objects are removed. For a
 // profile image the new file becomes the profile photo and the previous one is removed at once;
-// a failed removal is marked DELETE_FAILED and retried by cleanup-files.
+// a failed removal is marked DELETE_FAILED and retried by cleanup-files. For a course cover (Phase 5)
+// the uploader's right to edit the course is checked again, the new file becomes the course cover
+// and the previous cover is removed the same way.
 import { z } from 'npm:zod@4.6.7';
-import { requireUser, serviceClient } from '../_shared/auth.ts';
+import { requireStaff, serviceClient } from '../_shared/auth.ts';
+import { requireCourseEditor } from '../_shared/courses.ts';
 import { RESOURCES, sha256, sniffImage, type ResourceType } from '../_shared/files.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const Body = z.object({ fileId: z.uuid() });
 
 serve(async (req) => {
-  const caller = await requireUser(req);
+  const caller = await requireStaff(req);
   const parsed = Body.safeParse(await readJson(req));
   if (!parsed.success) throw new HttpError(400, 'invalid', 'A file id is required');
   const admin = serviceClient();
 
   const { data: file } = await admin
     .from('file_objects')
-    .select('id, bucket_name, storage_path, resource_type, status, uploaded_by, original_filename')
+    .select('id, bucket_name, storage_path, resource_type, resource_id, status, uploaded_by, original_filename')
     .eq('id', parsed.data.fileId)
     .maybeSingle();
   if (!file || file.uploaded_by !== caller.id) throw new HttpError(404, 'not_found', 'Upload not found');
   if (file.status !== 'PENDING') throw new HttpError(409, 'conflict', 'This upload has already been checked');
   const rule = RESOURCES[file.resource_type as ResourceType];
   if (!rule) throw new HttpError(400, 'invalid', 'Unsupported file');
+  if (file.resource_type === 'COURSE_COVER') await requireCourseEditor(admin, caller.id, caller.isAdmin, file.resource_id as string);
 
   const reject = async (reason: string) => {
     await admin.from('file_objects').update({ status: 'REJECTED', validation_error: reason }).eq('id', file.id);
@@ -62,6 +66,15 @@ serve(async (req) => {
     const previous = profile?.profile_image_file_id as string | null;
     const { error: setError } = await admin.from('profiles').update({ profile_image_file_id: file.id }).eq('id', caller.id);
     if (setError) throw new HttpError(500, 'server_error', 'Could not update the profile photo');
+    if (previous && previous !== file.id) await removeFile(admin, previous);
+  }
+
+  if (file.resource_type === 'COURSE_COVER') {
+    const courseId = file.resource_id as string;
+    const { data: course } = await admin.from('courses').select('cover_image_file_id').eq('id', courseId).single();
+    const previous = course?.cover_image_file_id as string | null;
+    const { error: setError } = await admin.from('courses').update({ cover_image_file_id: file.id }).eq('id', courseId);
+    if (setError) throw new HttpError(500, 'server_error', 'Could not update the course cover');
     if (previous && previous !== file.id) await removeFile(admin, previous);
   }
 

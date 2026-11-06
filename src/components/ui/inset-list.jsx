@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { Link } from 'react-router';
 import { cn } from '@/lib/utils.js';
 
 // Inset grouped list (DESIGN.md 8 and 11): rounded group, hairline dividers, 56 px rows with a
@@ -29,6 +30,25 @@ export function InsetListRow({ leading, title, secondary, trailing, chevron = fa
       </span>
       {trailing ? <span className="shrink-0 text-body-sm text-ink-secondary">{trailing}</span> : null}
       {chevron ? <ChevronRight className="size-5 shrink-0 text-ink-tertiary" aria-hidden="true" /> : null}
+    </li>
+  );
+}
+
+/**
+ * A row that opens a page: the whole row is one link inside its list item (valid list markup).
+ * @param {{ to: string, title: import('react').ReactNode, secondary?: import('react').ReactNode, trailing?: import('react').ReactNode, className?: string }} props
+ */
+export function InsetListLink({ to, title, secondary, trailing, className }) {
+  return (
+    <li>
+      <Link to={to} className={cn('flex min-h-14 items-center gap-3 px-4 py-2 hover:bg-fill focus-visible:focus-ring', className)}>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-body text-ink">{title}</span>
+          {secondary ? <span className="truncate text-body-sm text-ink-secondary">{secondary}</span> : null}
+        </span>
+        {trailing ? <span className="shrink-0 text-body-sm text-ink-secondary">{trailing}</span> : null}
+        <ChevronRight className="size-5 shrink-0 text-ink-tertiary" aria-hidden="true" />
+      </Link>
     </li>
   );
 }

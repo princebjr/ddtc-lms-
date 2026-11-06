@@ -102,7 +102,7 @@ This is the official design reference for the DDTC LMS (version 3.0). It replace
 | Where | Treatment |
 |---|---|
 | Sign In and Sign Up hero | DDTC emblem 120 px (phone 72 px), navy on light, white on dark, fading in once (800 ms) when the page opens, with the name DYNAMIC DISCIPLESHIP TRAINING CENTRE in bold and directly beneath it, at every width, the tagline "Be faithful, even to the point of death, and I will give you life as your victor's crown - Revelation 2:10b." (owner, Phase 3; ADR-004) |
-| Sidebar and top bar | DDTC emblem 28 to 32 px with "DDTC LMS" beside it on desktop; emblem only in the phone top bar |
+| Sidebar and top bar | DDTC emblem 28 to 32 px with "DDTC LMS" beside it on desktop; in the phone top bar the emblem with the short name **DDTC** in bold beside it (owner change 2026-11-06; the page title is not repeated there) |
 | **Brand block** | Directly below the whole Sign In and Sign Up form (including the Google button), centred: the gölarae logo (36 px tall), then directly beneath it the exact text `from gölarae` (13 px, weight 500, `text-secondary`), nothing between them. Never "powered by gölarae". |
 | App icon, PWA, apple-touch | White DDTC emblem on a `#0F172A` tile (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon-180`) |
 | Favicon | `favicon-32` and `favicon-48` are generated; the thin lines are hard to read at 32 px, so a simplified mark should replace them once supplied or approved |

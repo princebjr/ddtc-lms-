@@ -55,8 +55,22 @@ export function horizontalOverflow(page) {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
-/** @param {import('@playwright/test').Page} page */
+/**
+ * Checks the settled screen. A toast caught in its 200 ms fade-in is semi-transparent, which axe
+ * reports as low contrast although the toast passes once shown; so one-off animations and
+ * transitions are allowed to finish first. Looping ones (skeleton shimmer, the auth card glow)
+ * never finish and are not waited for.
+ * @param {import('@playwright/test').Page} page
+ */
 export async function expectNoAxeViolations(page) {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const summary = result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
   expect(summary, 'axe WCAG 2.1 AA violations').toEqual([]);
