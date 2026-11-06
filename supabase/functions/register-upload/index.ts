@@ -4,15 +4,20 @@
 //   PROFILE_IMAGE  any ACTIVE user, for their own profile; path <user id>/<file id>.<ext>
 //   COURSE_COVER   an administrator (two-step verified) or a lecturer of the course, never for an
 //                  archived course; path <course id>/<file id>.<ext>
+//   LESSON_AUDIO, LESSON_ATTACHMENT   the same, for a lesson of that course;
+//                  path <course id>/<lesson id>/<file id>.<ext> (DATA_MODEL section 6)
+// The answer includes the content type the browser must send, chosen from the extension (the
+// buckets accept only those); finalize-upload checks the real bytes.
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { requireCourseEditor } from '../_shared/courses.ts';
-import { extensionOf, RESOURCES, safeName } from '../_shared/files.ts';
+import { contentTypeFor, extensionOf, RESOURCES, safeName } from '../_shared/files.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const Body = z.object({
-  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER']),
+  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT']),
   courseId: z.uuid().optional(),
+  lessonId: z.uuid().optional(),
   filename: z.string().min(1).max(255),
   size: z.number().int().positive(),
 });
@@ -26,10 +31,20 @@ serve(async (req) => {
   const admin = serviceClient();
 
   let resourceId = caller.id;
+  let folder = caller.id;
   if (b.resourceType === 'COURSE_COVER') {
     if (!b.courseId) throw new HttpError(400, 'invalid', 'Choose the course first');
     await requireCourseEditor(admin, caller.id, caller.isAdmin, b.courseId);
     resourceId = b.courseId;
+    folder = b.courseId;
+  }
+  if (b.resourceType === 'LESSON_AUDIO' || b.resourceType === 'LESSON_ATTACHMENT') {
+    if (!b.courseId || !b.lessonId) throw new HttpError(400, 'invalid', 'Choose the lesson first');
+    await requireCourseEditor(admin, caller.id, caller.isAdmin, b.courseId);
+    const { data: lesson } = await admin.from('lessons').select('course_id').eq('id', b.lessonId).maybeSingle();
+    if (!lesson || lesson.course_id !== b.courseId) throw new HttpError(404, 'not_found', 'Lesson not found');
+    resourceId = b.lessonId;
+    folder = `${b.courseId}/${b.lessonId}`;
   }
 
   const { data: setting } = await admin.from('system_settings').select('value').eq('key', 'file_limits').single();
@@ -41,7 +56,7 @@ serve(async (req) => {
   if (!allowed.includes(ext)) throw new HttpError(400, 'wrong_type', `Use a ${allowed.map((e) => e.toUpperCase()).join(', ')} file`);
 
   const fileId = crypto.randomUUID();
-  const path = `${resourceId}/${fileId}.${ext}`;
+  const path = `${folder}/${fileId}.${ext}`;
   const { error: insertError } = await admin.from('file_objects').insert({
     id: fileId,
     bucket_name: rule.bucket,
@@ -57,6 +72,6 @@ serve(async (req) => {
 
   const { data: signed, error: signError } = await admin.storage.from(rule.bucket).createSignedUploadUrl(path);
   if (signError || !signed) throw new HttpError(500, 'server_error', 'Could not start the upload');
-  return json(req, 200, { fileId, bucket: rule.bucket, path, token: signed.token });
+  return json(req, 200, { fileId, bucket: rule.bucket, path, token: signed.token, contentType: contentTypeFor(b.resourceType, ext) });
 });
 
