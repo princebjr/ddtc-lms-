@@ -1,6 +1,6 @@
 # Owner request (2026-11-06): live presence and assignment performance reports
 
-Status: **recorded, not yet scheduled** (questions 1 and 2 answered; 3 to 7 open). Received during Phase 6. Nothing is built until the owner
+Status: **recorded, not yet scheduled** (questions 1, 2 and 5 answered; 3, 4, 6 and 7 open). Received during Phase 6. Nothing is built until the owner
 answers the open questions below and approves where it goes (an ADR in `docs/DECISIONS.md` when it
 is scheduled, as for any change to the build plan).
 
