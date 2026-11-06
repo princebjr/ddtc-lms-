@@ -83,7 +83,7 @@ export default function EnrolmentsPage() {
       card: /** @type {const} */ ('detail'),
       cell: (/** @type {EnrolmentRow} */ r) => (
         <Select value={r.enrolment_status} onValueChange={(v) => v !== r.enrolment_status && change(r, /** @type {EnrolmentStatus} */ (v))}>
-          <SelectTrigger className="sm:w-40" aria-label={`Status for ${r.learner.first_name} ${r.learner.second_name} in ${r.course.course_code}`}>
+          <SelectTrigger className="sm:w-40" aria-label={`Status for ${r.learner.first_name} ${r.learner.second_name} in ${r.course.course_code}, currently ${ENROLMENT_STATUS_LABEL[r.enrolment_status]}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

@@ -202,7 +202,8 @@ select throws_ok($$ select public.enrolment_set_status(tests.uid('t1'), array[te
   'a lecturer cannot change enrolment status');
 select lives_ok($$ select public.enrolment_set_status(tests.uid('a1'), array[tests.uid('e1')], 'ACTIVE') $$, 'Undo restores ACTIVE');
 select tests.reset();
-select is((select count(*)::int from public.audit_logs where action = 'enrolment.added'), 2, 'each new enrolment is audited');
+select is((select count(*)::int from public.audit_logs where action = 'enrolment.added' and metadata ->> 'course' = tests.uid('c1')::text), 2,
+  'each new enrolment is audited');
 select is((select count(*)::int from public.audit_logs where action = 'enrolment.status_changed' and entity_id = tests.uid('e1')::text), 2,
   'each status change is audited');
 
@@ -229,7 +230,7 @@ select tests.reset();
 select is((select count(*)::int from public.course_lecturers where lecturer_id = tests.uid('t1') and removed_at is null and permission_level = 'CO_LECTURER'), 0,
   'the deactivated lecturer''s co-lecturer places are closed (rows kept)');
 select is((select count(*)::int from public.course_lecturers where lecturer_id = tests.uid('t1')), 3, 'no teaching row was deleted');
-select is((select count(*)::int from public.courses), 4, 'no course was deleted');
+select is((select count(*)::int from public.courses where id in (tests.uid('c1'), tests.uid('c2'), tests.uid('c3'), tests.uid('c4'))), 4, 'no course was deleted');
 
 select * from finish();
 rollback;

@@ -131,7 +131,8 @@ select tests.reset();
 -- ---------------------------------------------------------------- courses: who sees what
 select tests.reset();
 select tests.authenticate_as(tests.uid('a1'), 'aal2');
-select is((select count(*)::int from public.courses), 5, 'an administrator (AAL2) sees every course');
+select is((select count(*)::int from public.courses where id in (tests.cid('1'), tests.cid('2'), tests.cid('3'), tests.cid('4'), tests.cid('5'))), 5,
+  'an administrator (AAL2) sees every course, whatever its status or lecturer');
 select tests.reset();
 select tests.authenticate_as(tests.uid('a1'), 'aal1');
 select is((select count(*)::int from public.courses), 0, 'an administrator without MFA (AAL1) sees no course');
