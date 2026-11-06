@@ -265,6 +265,9 @@
 @utility wave-bars {
   display: flex;
   align-items: center;
+  /* 2 px is the minimum gap: on very wide players (more than 160 bars of room) the bars spread
+     evenly across the full width instead of stopping short. */
+  justify-content: space-between;
   gap: var(--wave-gap);
 }
 @utility wave-bar {
