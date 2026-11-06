@@ -24,6 +24,9 @@ import { COURSE_STATUS_LABEL, COURSE_STATUS_TONE, fetchCourses } from '@/lib/cou
 
 /** @typedef {import('@/lib/courses/courses.js').CourseSummary} CourseSummary */
 
+/** @param {number} n */
+const learnerCount = (n) => `${n} ${n === 1 ? 'learner' : 'learners'}`;
+
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Accra' });
 
 /** @param {{ role: 'admin' | 'lecturer' }} props */
@@ -60,7 +63,7 @@ export default function CoursesPage({ role }) {
       ),
     },
     { key: 'owner', header: 'Lecturer', card: /** @type {const} */ ('secondary'), cell: (/** @type {CourseSummary} */ c) => c.owner || 'No owner' },
-    { key: 'learners', header: 'Learners', card: /** @type {const} */ ('detail'), cell: (/** @type {CourseSummary} */ c) => `${c.learners} learners` },
+    { key: 'learners', header: 'Learners', card: /** @type {const} */ ('detail'), cell: (/** @type {CourseSummary} */ c) => learnerCount(c.learners) },
     {
       key: 'status',
       header: 'Status',
@@ -145,7 +148,7 @@ function LecturerCards({ rows, base, empty }) {
             title={c.title}
             code={c.course_code}
             coverUrl={covers[c.id]}
-            chips={[courseStatusChip(c.status), ...(c.status === 'PUBLISHED' || c.status === 'ARCHIVED' ? [{ label: `${c.learners} learners` }] : [])]}
+            chips={[courseStatusChip(c.status), ...(c.status === 'PUBLISHED' || c.status === 'ARCHIVED' ? [{ label: learnerCount(c.learners) }] : [])]}
           />
         </li>
       ))}
