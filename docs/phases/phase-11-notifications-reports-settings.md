@@ -1,5 +1,7 @@
 # Phase 11: Notifications, reports, audit viewer and settings
 
+**Owner request (2026-11-06) to include here once its open questions are answered:** see `docs/requests/2026-11-06-presence-and-assignment-reports.md`.
+
 **Before you start:** read `CLAUDE.md`, `docs/DECISIONS.md`, `docs/PHASES.md` (protocol), `docs/TESTING.md`, and for this phase `docs/DATA_MODEL.md`, `docs/SECURITY_AND_ACCESS.md`, `docs/DESIGN.md`, `docs/RESPONSIVE.md`, `docs/UI_FEEDBACK.md` and the prototype. Do not start unless the previous phase is signed off and tagged.
 
 **Test emphasis:** Notification recipients, retry schedule, deduplication, settings audited.

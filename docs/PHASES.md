@@ -61,6 +61,10 @@ Tracker (tick after sign-off):
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
 - [ ] Phase 14: Staging acceptance and production release (`v1.0.0`)
 
+### Owner requests waiting to be scheduled
+
+- 2026-11-06: assignment performance reports (planned for Phase 10) and a live presence directory (planned for Phase 11). Open questions first: `docs/requests/2026-11-06-presence-and-assignment-reports.md`.
+
 ## Session prompt for each phase
 
 > Read `CLAUDE.md`, `docs/BUILD_PLAN.md`, `docs/DECISIONS.md` and `docs/ARCHITECTURE.md`. We are starting Phase N. Write a plan listing the migrations, files, policies and tests you will create, and wait for my approval. Write the allow and deny tests for every role before the feature code. Do not begin Phase N+1. When finished, run the full test suite and show the exit-gate checklist with pass or fail for each item.
