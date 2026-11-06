@@ -1,17 +1,20 @@
 import { BookOpen, ClipboardCheck, Clock, GraduationCap, ShieldCheck, UserRoundX, Users, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { fetchUserCounts } from '@/lib/admin/users.js';
 import { fetchCourseCounts } from '@/lib/courses/courses.js';
+import { greeting } from '@/lib/greeting.js';
 
 // Administrator dashboard: account counts (Phase 4) and published courses, courses waiting for
 // approval and active enrolments (Phase 5). A warning shows while fewer than two administrators are active (D32 launch rule).
 
 export default function AdminDashboardPage() {
+  const auth = useAuth();
   const [key, setKey] = useState(0);
   // Each answer is tagged with the request it belongs to; anything older counts as loading.
   const [result, setResult] = useState(/** @type {{ key: number, counts?: Awaited<ReturnType<typeof fetchUserCounts>> & Awaited<ReturnType<typeof fetchCourseCounts>>, failed?: boolean } | null} */ (null));
@@ -45,7 +48,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Dashboard" description="Courses and accounts at a glance" />
+      <PageHeader title={greeting(auth.profile?.first_name)} description="Courses and accounts at a glance" />
       {failed ? (
         <ErrorState title="The dashboard could not be loaded" onRetry={retry} />
       ) : (

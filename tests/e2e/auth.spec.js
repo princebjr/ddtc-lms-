@@ -52,7 +52,8 @@ test('register, verify by email, land on the learner dashboard, sign out', async
 
   await page.goto(await emailLink(email, { subject: /Confirm your email|Verify your email/i }));
   await expect(page).toHaveURL(/\/learner\/dashboard$/);
-  await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
+  // The dashboard greets the person by name (owner change 2026-11-06; it used to read "Dashboard").
+  await expect(page.getByRole('heading', { name: /^Good (morning|afternoon|evening), Abena$/, level: 1 })).toBeVisible();
 
   const user = await findUserByEmail(email);
   expect(user?.role).toBe('LEARNER');

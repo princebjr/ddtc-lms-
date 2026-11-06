@@ -9,6 +9,7 @@ import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { fetchMyEnrolledCourses } from '@/lib/courses/courses.js';
+import { greeting } from '@/lib/greeting.js';
 
 // Learner dashboard (Phase 5): the courses the learner is enrolled in. Assignments, due dates and
 // grades join it in later phases.
@@ -25,7 +26,7 @@ export default function LearnerDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={`Welcome, ${auth.profile?.first_name ?? ''}`} description="Your learning at a glance" />
+      <PageHeader title={greeting(auth.profile?.first_name)} description="Your learning at a glance" />
       {state === 'error' ? (
         <ErrorState title="The dashboard could not be loaded" onRetry={reload} />
       ) : (

@@ -1,5 +1,6 @@
 import { BookOpen, CircleCheck, Clock, UsersRound } from 'lucide-react';
 import { Link } from 'react-router';
+import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
@@ -8,11 +9,13 @@ import { InsetList, InsetListLink } from '@/components/ui/inset-list.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { COURSE_STATUS_LABEL, COURSE_STATUS_TONE, fetchCourses } from '@/lib/courses/courses.js';
+import { greeting } from '@/lib/greeting.js';
 
 // Lecturer dashboard (Phase 5): courses taught at a glance and the most recently changed courses.
 // Grading and activity join it in later phases.
 
 export default function LecturerDashboardPage() {
+  const auth = useAuth();
   const { state, data, reload } = useLoad(() => fetchCourses({}), []);
   const courses = data ?? [];
   const tiles = [
@@ -24,7 +27,7 @@ export default function LecturerDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Dashboard" description="Your teaching at a glance" />
+      <PageHeader title={greeting(auth.profile?.first_name)} description="Your teaching at a glance" />
       {state === 'error' ? (
         <ErrorState title="The dashboard could not be loaded" onRetry={reload} />
       ) : (

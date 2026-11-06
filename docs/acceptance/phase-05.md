@@ -21,6 +21,7 @@
 | ADR-005: course covers (D18) | `course-covers` bucket and `course_cover_paths()` in `20261106000300_course_covers.sql`; `register-upload`, `finalize-upload` |
 | ADR-005: CSV import with an optional `course_code` column | `bulk-import-learners`, `src/lib/admin/csv.js`, Import CSV panel |
 | Learner My Courses and course overview, lecturer and learner dashboards, course counts on the administrator dashboard | `src/pages/learner/`, `src/pages/lecturer/`, `AdminDashboardPage.jsx` |
+| Owner requests during the phase: every dashboard greets the person by time of day in Ghana and first name ("Good morning, Ama"; morning from midnight to noon, afternoon to 5 pm, then evening); the phone top bar shows the emblem with "DDTC" in bold instead of the page title | `src/lib/greeting.js` (unit-tested), the three dashboards, `AppShell.jsx`; `auth.spec.js` now expects the greeting |
 | Staging | the 3 migrations pushed and 8 Edge Functions deployed on 2026-11-06 with the owner's approval; checked read-only afterwards: RLS on all three tables, 9 functions present, `course-covers` private, clients cannot call the trusted functions |
 
 ## 2. `npm run verify`
