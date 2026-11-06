@@ -1,6 +1,6 @@
 # Owner request (2026-11-06): live presence and assignment performance reports
 
-Status: **recorded, not yet scheduled** (questions 1, 2 and 5 answered; 3, 4, 6 and 7 open). Received during Phase 6. Nothing is built until the owner
+Status: **recorded, not yet scheduled** (questions 1 to 5 answered; 6 and 7 open). Received during Phase 6. Nothing is built until the owner
 answers the open questions below and approves where it goes (an ADR in `docs/DECISIONS.md` when it
 is scheduled, as for any change to the build plan).
 
@@ -15,8 +15,8 @@ is scheduled, as for any change to the build plan).
 
 1. ~~Sections 1 and 2 missing~~ **Received 2026-11-06** (verbatim below).
 2. ~~Who sees whom~~ **Answered by the owner on 2026-11-06: people see only their course-mates** (the learners and lecturers who share a course with them). Administrators are never shown.
-3. **Privacy (CLAUDE.md section 8: legal and privacy questions go to the owner):** may a person hide their own presence ("Appear offline")? Recommended: yes, a switch in Profile settings, and no presence history is stored.
-4. **What "active" means**: signed in with the app open in a tab (Realtime Presence), dropping off within about a minute of leaving. Recommended.
+3. ~~Privacy: may a person hide their presence?~~ **Answered by the owner on 2026-11-06: no. There is no "Appear offline" option.** (Recorded as an owner decision; no presence history is stored.)
+4. ~~What "active" means~~ **Answered by the owner on 2026-11-06: people on the app at that moment are online; people not on the app are offline. No other states.** (A person leaving or losing their connection drops off within about a minute: Realtime Presence heartbeat.)
 5. ~~Report contents~~ Given in section 1: name, student ID, assignment title, submission date, score, maximum, percentage, "Not Submitted" for learners without a submission, plus totals, class average, highest, lowest and submission statistics; CSV and XLSX, one export per assignment, with DDTC branding.
 6. **Student ID**: learners have no student ID in the system yet. Should DDTC assign one (a new field set by administrators, for example in the CSV import), or should the report show the email address or an internal number instead? Recommended: a new optional learner number set by administrators.
 7. **Visibility scope**: section 2 says learners and lecturers see *all* active learners and lecturers; the owner later answered *course-mates only* (question 2). Following the later answer unless the owner says otherwise.
