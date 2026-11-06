@@ -212,12 +212,14 @@ describe('auth hero and card glow', () => {
       const { container, unmount } = renderPage(ui, path);
       const card = container.querySelector('section[aria-labelledby="auth-title"]');
       expect(card?.className).toContain('glow-edge');
-      // The halo sits behind the card, so the card's parent is its own stacking context.
-      expect(card?.parentElement?.className).toContain('isolate');
+      // The travelling light is a decorative ring inside the card, hidden from screen readers.
+      const ring = card?.querySelector('[data-slot="glow-ring"]');
+      expect(ring?.getAttribute('aria-hidden')).toBe('true');
       unmount();
     }
     const { container } = renderPage(<ForgotPasswordPage />, '/forgot-password');
     expect(container.querySelector('section[aria-labelledby="auth-title"]')?.className).not.toContain('glow-edge');
+    expect(container.querySelector('[data-slot="glow-ring"]')).toBeNull();
   });
 
   it('the session-check skeleton for Sign In and Sign Up has the same glowing card; step skeletons do not', () => {

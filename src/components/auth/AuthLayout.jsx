@@ -30,8 +30,9 @@ export function AuthLayout({ title, description, children, footer, brand = false
     <div className="grid min-h-dvh-screen grid-cols-1 bg-page pt-safe pr-safe pb-safe pl-safe lg:grid-cols-2">
       <AuthHero />
       <main id="main" className="flex min-w-0 flex-col items-center justify-center px-4 pt-2 pb-10 lg:bg-card lg:px-16 lg:py-12">
-        <div className="isolate flex w-full max-w-sm flex-col gap-6">
+        <div className="flex w-full max-w-sm flex-col gap-6">
           <section aria-labelledby="auth-title" data-glow={glow || undefined} className={glow ? GLOW_CARD : CARD}>
+            {glow ? <GlowRing /> : null}
             <header className="flex flex-col gap-1">
               <h1 id="auth-title" className="m-0 text-title-1 text-ink">
                 {title}
@@ -46,6 +47,11 @@ export function AuthLayout({ title, description, children, footer, brand = false
       </main>
     </div>
   );
+}
+
+/** The travelling light on the card edge: decorative, so hidden from assistive technology. */
+function GlowRing() {
+  return <span aria-hidden="true" data-slot="glow-ring" className="glow-ring" />;
 }
 
 // When the session-check skeleton hands over to the page, the hero mounts a second time. The emblem
@@ -84,8 +90,9 @@ export function AuthSkeleton({ fields = 2, brand = true, glow = brand }) {
     <div className="grid min-h-dvh-screen grid-cols-1 bg-page pt-safe pr-safe pb-safe pl-safe lg:grid-cols-2" aria-busy="true" data-slot="auth-skeleton">
       <AuthHero skeleton />
       <div className="flex min-w-0 flex-col items-center justify-center px-4 pt-2 pb-10 lg:bg-card lg:px-16 lg:py-12">
-        <div className="isolate flex w-full max-w-sm flex-col gap-6">
+        <div className="flex w-full max-w-sm flex-col gap-6">
           <div className={glow ? GLOW_CARD : CARD}>
+            {glow ? <GlowRing /> : null}
             <span className="sr-only" role="status">
               Checking your session
             </span>

@@ -42,7 +42,8 @@ Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
   `bootstrap_completed` after it succeeds, so the bootstrap cannot be used again. Every run is audited
   (`admin.bootstrap`).
 - Then: sign in, set up two-step verification (the app requires it), and add the second administrator
-  in the app (Users: Add learner, then change the role to Administrator in the user panel).
+  in the app (Users, Invite administrator; ADR-003). They accept the email invitation, choose a password
+  and enrol two-step verification; they count towards the two-administrator rule once they accept.
 - Production launch is refused while fewer than two administrators are active
   (`public.launch_readiness()`; the administrator dashboard also warns).
 

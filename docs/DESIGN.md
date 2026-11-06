@@ -217,7 +217,7 @@ Sizes in `rem`; sentence case; left-aligned except short headings and auth block
 - Durations: 120 ms for press and hover, 200 ms for fades and expands, 320 ms for sheets and drawers. Standard easing is `cubic-bezier(0.2, 0, 0, 1)`; sheets use `cubic-bezier(0.32, 0.72, 0, 1)`.
 - Allowed: route fade, sheet slide, toast slide and fade, FAB hide and show, speed-dial expand, accordion expand, button press scale to 0.98, skeleton shimmer.
 - Not allowed: parallax, looping decorative animation, autoplaying media, bouncing, animated gradients, long staggered entrances.
-- Owner-approved exceptions (ADR-004): the DDTC emblem on the auth hero fades in once over 800 ms; the Sign In and Sign Up cards carry a light that travels round their edge (`glow-edge`, 6 s per lap, `glow` token with a soft blurred halo). Under reduced motion the light stays still; in forced-colours mode the halo is removed.
+- Owner-approved exceptions (ADR-004): the DDTC emblem on the auth hero fades in once over 800 ms; the Sign In and Sign Up cards carry a light that travels round their edge (`glow-edge` and `glow-ring`, 6 s per lap, `glow` token, soft static halo; only a transform animates, so nothing is repainted per frame). Under reduced motion the light stays still; in forced-colours mode the ring is removed.
 - Reduced motion (`prefers-reduced-motion`): remove shimmer (static grey), replace slides and scales with a simple fade, and never auto-scroll.
 
 ## 10. Icons (Lucide React)
