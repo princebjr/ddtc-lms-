@@ -131,7 +131,7 @@ select tests.authenticate_as(tests.uid('a1'), 'aal2');
 select is((select count(*)::int from public.profiles), current_setting('t.user_count')::int, 'admin AAL2: reads all profiles');
 select throws_ok($$ update public.profiles set role = 'LECTURER' where id = tests.uid('l1') $$, '42501', NULL, 'admin AAL2: cannot change a role directly (Edge Function only)');
 select throws_ok($$ update public.profiles set account_status = 'SUSPENDED' where id = tests.uid('l1') $$, '42501', NULL, 'admin AAL2: cannot change a status directly (Edge Function only)');
-select is((select count(*)::int from public.system_settings), 15, 'admin AAL2: reads all settings');
+select is((select count(*)::int from public.system_settings), 16, 'admin AAL2: reads all settings (15 defaults and bootstrap_completed)');
 select lives_ok($$ update public.system_settings set value = 'false' where key = 'require_course_approval' $$, 'admin AAL2: can change a setting');
 select throws_ok($$ update public.system_settings set value = '"no"' where key = 'require_course_approval' $$, '22023', NULL, 'admin AAL2: a setting keeps its JSON type');
 select throws_ok($$ insert into public.system_settings (key, value) values ('new_key', '1') $$, '42501', NULL, 'admin AAL2: cannot add settings (migrations only)');
@@ -140,7 +140,7 @@ select ok((select count(*) from public.audit_logs) > 0, 'admin AAL2: reads audit
 select throws_ok($$ update public.audit_logs set action = 'x.y' $$, '42501', NULL, 'admin AAL2: cannot update audit logs');
 select throws_ok($$ delete from public.audit_logs $$, '42501', NULL, 'admin AAL2: cannot delete audit logs');
 select is((select count(*)::int from public.notification_preferences), current_setting('t.user_count')::int, 'admin AAL2: reads all preferences');
-select is((select count(*)::int from public.file_objects), 3, 'admin AAL2: reads all file metadata');
+select is((select count(*)::int from public.file_objects where uploaded_by in (tests.uid('l1'), tests.uid('l2'))), 3, 'admin AAL2: reads all file metadata (including other users'' files)');
 select throws_ok($$ update public.file_objects set status = 'REJECTED' $$, '42501', NULL, 'admin AAL2: cannot change file status (finalize-upload only)');
 select tests.reset();
 select results_eq(

@@ -36,6 +36,9 @@
   --logo-white: #ffffff;
   --scrim: rgb(15 23 42 / 0.48);
   --hero-tint: #eef4ff;
+  /* Sign In and Sign Up card edge glow (owner request 2026-11-05, DESIGN.md 9 and 21) */
+  --glow: #2563eb;
+  --glow-halo: 0.45;
 
   /* Google button, light variant (Google identity branding guidelines) */
   --google-fill: #ffffff;
@@ -100,6 +103,10 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   --duration-shimmer: 1.4s;
+  --duration-glow: 6s; /* one lap of the auth card edge glow */
+  --duration-logo-fade: 800ms; /* DDTC emblem fade-in on the auth hero */
+  --glow-width: 2px;
+  --glow-blur: 14px;
 }
 
 .dark {
@@ -131,6 +138,8 @@
   --logo: #ffffff;
   --scrim: rgb(2 6 23 / 0.64);
   --hero-tint: #0d1a36;
+  --glow: #60a5fa;
+  --glow-halo: 0.7;
 
   /* Google button, dark variant */
   --google-fill: #131314;

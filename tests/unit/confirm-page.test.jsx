@@ -14,14 +14,16 @@ vi.mock('@/lib/auth/initial-url.js', () => ({
     return opened.url;
   },
 }));
-vi.mock('@/lib/supabase.js', () => ({ getSupabase: () => ({ auth: { verifyOtp: async () => ({ error: null }) } }) }));
+const setSession = vi.hoisted(() => vi.fn(async () => ({ error: null })));
+vi.mock('@/lib/supabase.js', () => ({ getSupabase: () => ({ auth: { verifyOtp: async () => ({ error: null }), setSession } }) }));
 
 const { default: ConfirmPage } = await import('@/pages/auth/ConfirmPage.jsx');
 
 /** @param {'loading' | 'signed-in' | 'signed-out'} status */
 function renderAt(status) {
   // What the address bar shows once the client has removed the code.
-  window.history.replaceState(null, '', '/auth/confirm?type=' + new URL(opened.url).searchParams.get('type'));
+  const u = new URL(opened.url);
+  window.history.replaceState(null, '', '/auth/confirm?type=' + (u.searchParams.get('type') ?? new URLSearchParams(u.hash.slice(1)).get('type')) + u.hash);
   /** @type {any} */
   const auth = { status, session: null, profile: null, aal: null, nextAal: null, configured: true, signedOutTo: null, refresh: async () => {}, signOut: async () => {} };
   return render(
@@ -68,5 +70,13 @@ describe('/auth/confirm with a PKCE code', () => {
     opened.url = 'http://localhost/auth/confirm?type=recovery&code=abc';
     renderAt('signed-out');
     expect(screen.getByRole('heading', { name: 'This link cannot be used' })).toBeTruthy();
+  });
+
+  it('an administrator invitation (tokens in the hash) starts the session, clears the tokens and goes to choose a password', async () => {
+    opened.url = 'http://localhost/auth/confirm?type=invite#access_token=aaa&refresh_token=bbb&type=invite';
+    renderAt('signed-out');
+    expect(await screen.findByText('reset page')).toBeTruthy();
+    expect(setSession).toHaveBeenCalledWith({ access_token: 'aaa', refresh_token: 'bbb' });
+    expect(window.location.hash).toBe('');
   });
 });

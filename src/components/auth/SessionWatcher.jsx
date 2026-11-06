@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
-import { ACTIVITY_INTERVAL_MS, readToken, sessionState } from '@/lib/auth/session-limits.js';
+import { ACTIVITY_INTERVAL_MS, readToken, sessionState, testLimits } from '@/lib/auth/session-limits.js';
 import { getSupabase } from '@/lib/supabase.js';
 import { useAuth } from './AuthProvider.jsx';
 
@@ -44,6 +44,7 @@ export function SessionWatcher() {
 
   useEffect(() => {
     if (!role || !sessionId) return undefined;
+    const test = testLimits();
     const startKey = `ddtc-session-start:${sessionId}`;
     const activeKey = `ddtc-session-active:${sessionId}`;
     const now = Date.now();
@@ -72,7 +73,13 @@ export function SessionWatcher() {
     };
 
     const check = () => {
-      const s = sessionState({ role, startedAt, lastActiveAt: readNumber(activeKey, startedAt), now: Date.now() });
+      const s = sessionState({
+        role,
+        startedAt,
+        lastActiveAt: readNumber(activeKey, startedAt),
+        now: Date.now(),
+        ...(test ? { limits: test, warningMs: test.warningMs } : {}),
+      });
       if (s.state === 'expired') {
         toast.dismissId('session.expiring');
         signOut({ to: '/login?expired=1' });
@@ -85,7 +92,7 @@ export function SessionWatcher() {
 
     sendActivity(true);
     for (const e of EVENTS) window.addEventListener(e, markActive, { passive: true });
-    const timer = setInterval(check, CHECK_MS);
+    const timer = setInterval(check, test?.checkMs ?? CHECK_MS);
     check();
     return () => {
       for (const e of EVENTS) window.removeEventListener(e, markActive);

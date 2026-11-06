@@ -205,6 +205,71 @@
   animation: var(--animate-shimmer);
 }
 
+/*
+ * Sign In and Sign Up card: a light that travels round the card's edge (owner request 2026-11-05,
+ * an approved exception to DESIGN.md 9 and 19). The card (`glow-edge`) has a hairline border and a
+ * soft static halo. Inside it, `glow-ring` (an aria-hidden span) covers only the border, masked to
+ * a ring, and its ::before is a large square with one bright arc drawn once and spun with a
+ * transform. Only a transform animates, so the browser moves a ready-made layer instead of
+ * repainting every frame (cheap on phones and in headless test browsers). Reduced motion: the light
+ * stays still. Forced colours: plain system border.
+ */
+@keyframes glow-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0turn);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(1turn);
+  }
+}
+@utility glow-edge {
+  position: relative;
+  border: var(--glow-width) solid var(--hairline);
+  background-color: var(--card);
+  box-shadow: 0 0 var(--glow-blur) calc(var(--glow-width) * -1) color-mix(in srgb, var(--glow) calc(var(--glow-halo) * 100%), transparent);
+}
+@utility glow-ring {
+  position: absolute;
+  inset: calc(var(--glow-width) * -1);
+  border-radius: inherit;
+  padding: var(--glow-width);
+  overflow: hidden;
+  pointer-events: none;
+  /* Keep only the border band: the padding box minus the content box */
+  -webkit-mask:
+    linear-gradient(black, black) content-box,
+    linear-gradient(black, black);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(black, black) content-box exclude,
+    linear-gradient(black, black);
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300%;
+    aspect-ratio: 1;
+    background: conic-gradient(transparent 0turn 0.6turn, var(--glow) 0.85turn, transparent 0.98turn);
+    transform: translate(-50%, -50%);
+    animation: glow-spin var(--duration-glow) linear infinite;
+    will-change: transform;
+  }
+}
+
+/* The DDTC emblem on the auth hero fades in once when the page opens */
+@keyframes logo-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@utility animate-logo-fade-in {
+  animation: logo-fade-in var(--duration-logo-fade) var(--ease-standard) both;
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
@@ -263,8 +328,18 @@
       animation: none;
       background-image: none;
     }
+    /* !important: utilities sit in a later layer than base */
+    .glow-ring::before {
+      animation: none !important;
+    }
   }
   @media (forced-colors: active) {
+    .glow-edge {
+      border-color: CanvasText !important;
+    }
+    .glow-ring {
+      display: none !important;
+    }
     .bg-pill,
     .bg-card {
       border: 1px solid CanvasText;

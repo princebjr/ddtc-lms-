@@ -36,6 +36,7 @@ Type: S = success, I = info, W = warning, E = error.
 | Everyone | Any save or request fails | "Could not save. Try again" (E) | Retry |
 | Administrator | Learner added or invitation sent | "Learner added" (S) | none |
 | Administrator | Lecturer provisioned | "Lecturer invited" (S) | none |
+| Administrator | Administrator invited (ADR-003) | "Administrator invited" (S) | none |
 | Administrator | CSV import finished | "Imported N learners, M errors" (S or W) | View report |
 | Administrator | Role or course-creation permission changed | "Permissions updated" (S) | none |
 | Administrator | Account suspended or reactivated | "Account suspended" or "Account reactivated" (S) | Undo |
@@ -89,7 +90,7 @@ Type: S = success, I = info, W = warning, E = error.
 
 | Screen | FAB | Visible to |
 |---|---|---|
-| Administrator, Users | Speed dial: Add learner, Provision lecturer, Import CSV | Administrator |
+| Administrator, Users | Speed dial: Add learner, Provision lecturer, Invite administrator (ADR-003), Import CSV | Administrator |
 | Administrator, Courses | New course | Administrator |
 | Administrator, Enrolments | Enrol learners | Administrator |
 | Lecturer, My Courses | New course | Lecturer with `can_create_courses` |

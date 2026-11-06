@@ -14,6 +14,7 @@ const STEPS = [
   ['Dependency audit (high and above)', 'audit:deps'],
   ['Build (Vite)', 'build'],
   ['Database tests (pgTAP on local Supabase)', 'test:db'],
+  ['Edge Function integration tests (local Supabase)', 'test:functions'],
   ['End-to-end (Playwright, all device projects, light and dark)', 'test:e2e'],
   ['Lighthouse CI (mobile preset)', 'lighthouse'],
 ];
