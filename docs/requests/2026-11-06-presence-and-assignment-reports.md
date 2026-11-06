@@ -1,6 +1,6 @@
 # Owner request (2026-11-06): live presence and assignment performance reports
 
-Status: **recorded, not yet scheduled** (question 2 answered; 1, 3, 4 and 5 open). Received during Phase 6. Nothing is built until the owner
+Status: **recorded, not yet scheduled** (questions 1 and 2 answered; 3 to 7 open). Received during Phase 6. Nothing is built until the owner
 answers the open questions below and approves where it goes (an ADR in `docs/DECISIONS.md` when it
 is scheduled, as for any change to the build plan).
 
@@ -13,11 +13,13 @@ is scheduled, as for any change to the build plan).
 
 ## Open questions for the owner (to answer before scheduling)
 
-1. **Sections 1 and 2 of the request are missing**: the pasted text starts at the end of section 2 ("The number should represent..."). Please send the full text so nothing is missed.
+1. ~~Sections 1 and 2 missing~~ **Received 2026-11-06** (verbatim below).
 2. ~~Who sees whom~~ **Answered by the owner on 2026-11-06: people see only their course-mates** (the learners and lecturers who share a course with them). Administrators are never shown.
 3. **Privacy (CLAUDE.md section 8: legal and privacy questions go to the owner):** may a person hide their own presence ("Appear offline")? Recommended: yes, a switch in Profile settings, and no presence history is stored.
 4. **What "active" means**: signed in with the app open in a tab (Realtime Presence), dropping off within about a minute of leaving. Recommended.
-5. **Report contents**: per assignment, which columns (learner, submitted on time or late, score, percentage, band, released date)? Which formats (CSV and XLSX are already planned for exports)?
+5. ~~Report contents~~ Given in section 1: name, student ID, assignment title, submission date, score, maximum, percentage, "Not Submitted" for learners without a submission, plus totals, class average, highest, lowest and submission statistics; CSV and XLSX, one export per assignment, with DDTC branding.
+6. **Student ID**: learners have no student ID in the system yet. Should DDTC assign one (a new field set by administrators, for example in the CSV import), or should the report show the email address or an internal number instead? Recommended: a new optional learner number set by administrators.
+7. **Visibility scope**: section 2 says learners and lecturers see *all* active learners and lecturers; the owner later answered *course-mates only* (question 2). Following the later answer unless the owner says otherwise.
 
 ## Notes from the codebase (for whoever implements it)
 
@@ -26,6 +28,98 @@ is scheduled, as for any change to the build plan).
 - Presence must not write to the database on every heartbeat (Realtime Presence keeps state in memory).
 
 ## The request as received (verbatim)
+
+Sections 1 and 2 (sent separately, after the rest):
+
+> I want to introduce two important features to the existing Dynamic Discipleship Training Centre (DDTC) Learning Management System (LMS).
+>
+> Please examine the existing codebase, database structure, authentication system, and application architecture before implementing anything. Maintain the existing design system, branding, functionality, and technology stack. Do not break or remove any existing features.
+>
+> 1. Assignment Performance Export and Reporting
+>
+> The system should allow lecturers and administrators to export students’ assignment performance records.
+>
+> Required functionality:
+>
+> • Lecturers and administrators should be able to view the complete list of students who have participated in a particular assignment.
+> • Display each student’s name, student ID, assignment title, submission date, score, maximum possible score, and percentage.
+> • Include students who have not submitted the assignment, clearly indicating their status as “Not Submitted”.
+> • Allow lecturers and administrators to export the complete assignment performance records.
+> • Support Excel (.xlsx) and CSV (.csv) export formats.
+> • Each assignment should have its own export option.
+> • Allow administrators to access performance records across all courses and lecturers.
+> • Lecturers should only be able to export records for assignments and courses they are authorised to manage.
+> • Include assignment totals, class averages, highest score, lowest score, and submission statistics where applicable.
+>
+> Export experience:
+>
+> Provide a clean export interface with:
+>
+> • Assignment selection.
+> • Course selection where applicable.
+> • Export format selection.
+> • Download button.
+>
+> The exported documents should have professional formatting, clear column headings, and appropriate DDTC branding.
+>
+> 2. Real-Time User Presence and Activity Monitoring
+>
+> Introduce a real-time presence system that allows users to see other active members of the learning platform.
+>
+> The purpose is to make the LMS feel more interactive and connected, similar to modern collaborative learning platforms.
+>
+> Core requirement:
+>
+> Every learner and lecturer who is currently active on the application should be visible to other learners and lecturers in real time.
+>
+> However, administrators must be completely excluded from the visible presence list.
+>
+> Required functionality:
+>
+> 1. Display a live list of currently active learners and lecturers.
+> 2. Show users who are currently logged in and actively using the application.
+> 3. Update the presence list automatically without requiring users to refresh the page.
+> 4. Display each person’s:
+>  • Profile picture or profile initials.
+>  • Full name.
+>  • Role (Learner or Lecturer).
+>  • Online status indicator.
+> 5. Clearly distinguish active users using a green online indicator.
+> 6. When a user logs out, closes the application, or becomes inactive, their status should automatically update.
+> 7. Implement a heartbeat or presence mechanism to detect users who unexpectedly disconnect.
+> 8. Prevent users from appearing online indefinitely after closing their browser or losing their internet connection.
+>
+> Visibility and privacy rules:
+>
+> • Learners can see active learners and lecturers.
+> • Lecturers can see active learners and other lecturers.
+> • Administrators must not appear in the live presence directory.
+> • Administrators should not be counted or displayed as active members in the public presence list.
+> • Only authenticated users should access the presence information.
+> • Do not expose email addresses, passwords, private account information, or other sensitive user data.
+>
+> User interface:
+>
+> Introduce a dedicated section called “Who’s Online” or “Active Members”.
+>
+> It should:
+>
+> • Display the total number of currently active members.
+> • Show active users in a clean list or compact profile layout.
+> • Update automatically as people come online or go offline.
+> • Work seamlessly on desktop, tablets, and mobile devices.
+>
+> For example:
+>
+> Who’s Online (12)
+>
+> 🟢 John Mensah — Learner
+> 🟢 Grace Asante — Learner
+> 🟢 Michael Ofori — Lecturer
+> 🟢 Esther Boateng — Learner
+>
+
+Section 2 ends and sections 3 to 5 follow (sent first):
 
 > The number should represent the currently active, visible learners and lecturers, excluding administrators.
 >
