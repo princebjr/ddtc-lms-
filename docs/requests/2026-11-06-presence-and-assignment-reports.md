@@ -1,6 +1,6 @@
 # Owner request (2026-11-06): live presence and assignment performance reports
 
-Status: **recorded, not yet scheduled.** Received during Phase 6. Nothing is built until the owner
+Status: **recorded, not yet scheduled** (question 2 answered; 1, 3, 4 and 5 open). Received during Phase 6. Nothing is built until the owner
 answers the open questions below and approves where it goes (an ADR in `docs/DECISIONS.md` when it
 is scheduled, as for any change to the build plan).
 
@@ -14,7 +14,7 @@ is scheduled, as for any change to the build plan).
 ## Open questions for the owner (to answer before scheduling)
 
 1. **Sections 1 and 2 of the request are missing**: the pasted text starts at the end of section 2 ("The number should represent..."). Please send the full text so nothing is missed.
-2. **Who sees whom** in the presence directory: everyone signed in, or only people who share a course (learners and lecturers of the same course)? Recommended: only people who share a course, so learners do not see the whole institution.
+2. ~~Who sees whom~~ **Answered by the owner on 2026-11-06: people see only their course-mates** (the learners and lecturers who share a course with them). Administrators are never shown.
 3. **Privacy (CLAUDE.md section 8: legal and privacy questions go to the owner):** may a person hide their own presence ("Appear offline")? Recommended: yes, a switch in Profile settings, and no presence history is stored.
 4. **What "active" means**: signed in with the app open in a tab (Realtime Presence), dropping off within about a minute of leaving. Recommended.
 5. **Report contents**: per assignment, which columns (learner, submitted on time or late, score, percentage, band, released date)? Which formats (CSV and XLSX are already planned for exports)?
