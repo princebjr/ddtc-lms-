@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LogoMark } from '@/components/brand/LogoMark.jsx';
-import { findDestination, NAVIGATION } from '@/lib/navigation.js';
+import { NAVIGATION } from '@/lib/navigation.js';
 import { cn } from '@/lib/utils.js';
 import { AccountMenu } from './AccountMenu.jsx';
 import { PhoneNav } from './PhoneNav.jsx';
@@ -22,7 +22,8 @@ function readRailCollapsed() {
 
 /**
  * Role layout shell (BUILD_PLAN Phase 1, RESPONSIVE.md 15.1):
- * phones get a top bar (emblem, page title, avatar menu) and the floating pill bar;
+ * phones get a top bar (emblem, the institution's short name DDTC in bold, avatar menu; owner
+ * change 2026-11-06: the page title is no longer repeated there) and the floating pill bar;
  * tablets a collapsible side rail; desktops a persistent sidebar. Content is capped at 1280 px.
  * Phase 3 mounts this shell under guarded routes; until then it is reachable only on preview routes.
  *
@@ -31,7 +32,6 @@ function readRailCollapsed() {
 export function AppShell({ role, basePath, currentSlug, user, onSignOut, children }) {
   const [collapsed, setCollapsed] = useState(readRailCollapsed);
   const nav = NAVIGATION[role];
-  const title = findDestination(role, currentSlug)?.title ?? 'DDTC LMS';
 
   const toggle = () => {
     setCollapsed((prev) => {
@@ -62,8 +62,9 @@ export function AppShell({ role, basePath, currentSlug, user, onSignOut, childre
             <span className="sm:hidden">
               <LogoMark logo="ddtc" size="nav" label="DDTC LMS" />
             </span>
-            <span className="min-w-0 flex-1 truncate text-headline text-ink sm:invisible" aria-hidden="true">
-              {title}
+            {/* The emblem already names DDTC LMS for screen readers, so the short name is hidden from them. */}
+            <span className="min-w-0 flex-1 truncate text-headline font-bold tracking-wide text-ink sm:invisible" aria-hidden="true">
+              DDTC
             </span>
             <AccountMenu user={user} roleLabel={nav.roleLabel} profileHref={`${basePath}/profile`} onSignOut={onSignOut} />
           </div>
