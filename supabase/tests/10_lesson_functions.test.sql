@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(46);
+select plan(49);
 
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.t1', tests.create_user('t1@example.test', 'Ama', 'Boateng', 'LECTURER')::text, true);
@@ -74,6 +74,12 @@ select throws_ok($$ select public.lesson_save(tests.uid('t1'), false, tests.uid(
   'a lesson cannot be saved under another course');
 select lives_ok($$ select public.lesson_save(tests.uid('t1'), false, tests.uid('c1'), tests.uid('s1'), 'Welcome to the course', '<p>Welcome, everyone</p>') $$,
   'the lecturer updates a lesson');
+select throws_ok($$ select public.lesson_save(tests.uid('t1'), false, tests.uid('c1'), tests.uid('s1'), 'Unsafe', '<p>hi</p><script>alert(1)</script>') $$, '23514', NULL,
+  'a bare script element is refused by the database (second layer behind the server''s cleaning)');
+select throws_ok($$ select public.lesson_save(tests.uid('t1'), false, tests.uid('c1'), tests.uid('s1'), 'Unsafe', '<p><a href=" javascript:alert(1)">x</a></p>') $$, '23514', NULL,
+  'a script URL in a link is refused by the database');
+select lives_ok($$ select public.lesson_save(tests.uid('t1'), false, tests.uid('c1'), tests.uid('s1'), 'Welcome to the course', '<p>Read <a href="https://example.org/metadata:list">the list</a>. JavaScript: a language.</p>') $$,
+  'ordinary links and prose that mention "data:" or "JavaScript:" are fine');
 select throws_ok($$ select public.lesson_save(tests.uid('t1'), false, tests.uid('c1'), tests.uid('s1'), 'Unsafe', '<p onclick="x()">hi</p><script>alert(1)</script>') $$, '23514', NULL,
   'content with scripts or event handlers is refused by the database too (the server cleans it first)');
 select tests.reset();

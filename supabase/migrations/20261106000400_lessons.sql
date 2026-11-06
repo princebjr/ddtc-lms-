@@ -36,9 +36,11 @@ create table public.lessons (
   title text not null check (char_length(title) between 3 and 200),
   content text not null default '' check (
     char_length(content) <= 200000
-    and content !~* '<\s*/?\s*(script|iframe|frame|object|embed|style|form|input|button|textarea|select|link|meta|base|svg|math)\b'
+    -- (PostgreSQL regular expressions: \b is a backspace, so the tag name ends at a space, / or >.)
+    and content !~* '<\s*/?\s*(script|iframe|frame|object|embed|style|form|input|button|textarea|select|link|meta|base|svg|math)(\s|/|>)'
     and content !~* '<[^>]*\son[a-z]+\s*='
-    and content !~* '<[^>]*(javascript|vbscript|data)\s*:'
+    -- Script URLs only where an attribute value starts (a link to ".../metadata:x" is fine).
+    and content !~* '<[^>]*=\s*["'']?\s*(javascript|vbscript|data)\s*:'
   ),
   position integer not null check (position > 0),
   publication_status public.publication_status not null default 'DRAFT',
