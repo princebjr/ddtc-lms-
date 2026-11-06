@@ -175,9 +175,20 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
   );
 
   const downloadButton = onDownload ? (
-    <Button variant="outline" onClick={onDownload} aria-label={compact ? `Download audio${bytes ? `, ${fileSize(bytes)}` : ''}` : undefined}>
+    <Button
+      variant="outline"
+      className={compact ? undefined : 'min-w-0 flex-1 @md:flex-none'}
+      onClick={onDownload}
+      // One accessible name whatever the width: in a very narrow player only the icon and size show.
+      aria-label={compact ? `Download audio${bytes ? `, ${fileSize(bytes)}` : ''}` : `Download${bytes ? ` (${fileSize(bytes)})` : ''}`}
+    >
       <Download aria-hidden="true" />
-      {compact ? null : `Download${bytes ? ` (${fileSize(bytes)})` : ''}`}
+      {compact ? null : (
+        <span aria-hidden="true">
+          <span className="hidden @2xs:inline">Download </span>
+          {bytes ? `(${fileSize(bytes)})` : <span className="@2xs:hidden">Download</span>}
+        </span>
+      )}
     </Button>
   ) : null;
 
@@ -202,7 +213,7 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
       data-slot="audio-player"
       data-status={status}
       data-size={size}
-      className={cn('flex w-full flex-col gap-3 rounded-lg border border-hairline bg-card', compact ? 'p-2' : 'p-4 sm:p-5', className)}
+      className={cn('@container flex w-full flex-col gap-3 rounded-lg border border-hairline bg-card', compact ? 'p-2' : 'p-4 sm:p-5', className)}
     >
       {/* No autoplay; only metadata is fetched until the person presses play (RESPONSIVE.md 15.4). */}
       <audio ref={audio} src={src ?? undefined} preload="metadata" className="hidden" />
@@ -237,8 +248,10 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
             <span>{clock(current)}</span>
             <span aria-label={`${clock(remaining)} remaining`}>-{clock(remaining)}</span>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          {/* The player follows its own width (a container), not the screen's: in a narrow card the
+              play controls sit centred above speed and Download; from 28rem they share one row. */}
+          <div className="flex flex-col gap-3 @md:flex-row @md:items-center @md:justify-between">
+            <div className="flex items-center justify-center gap-2 @md:justify-start">
               <Button variant="ghost" className="px-3" onClick={() => skip(-15)} disabled={!src || broken} aria-label="Back 15 seconds">
                 <RotateCcw aria-hidden="true" />
                 <span className="text-caption">15</span>
@@ -249,7 +262,7 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
                 <RotateCw aria-hidden="true" />
               </Button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               {speedChip}
               {downloadButton}
             </div>

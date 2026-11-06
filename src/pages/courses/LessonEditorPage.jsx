@@ -236,8 +236,8 @@ function AudioCard({ lessonId, courseId, lessonTitle, courseTitle, archived }) {
       <CardTitle>Lesson audio</CardTitle>
       <LoadingRegion loading={media.state === 'loading'} skeleton={<LessonPageSkeleton />} onRetry={media.reload}>
         {audio ? (
+          // Standard size: the side card is too narrow for the one-row compact layout.
           <AudioPlayer
-            size="compact"
             title={lessonTitle}
             subtitle={courseTitle}
             getUrl={() => playbackUrl(audio)}
