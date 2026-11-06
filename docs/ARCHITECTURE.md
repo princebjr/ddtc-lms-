@@ -234,6 +234,13 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - **Settings** keep their JSON type; keys are added only by migrations; lecturers read rows not marked `is_sensitive`.
 - Local seed: `admin@ddtc.test`, `lecturer1@ddtc.test` (can create courses), `lecturer2@ddtc.test`, `learner1..3@ddtc.test`, password `DdtcLocal-2026` (local and CI only).
 
+### User management as built (Phase 4)
+
+- **Edge Functions** (service role inside the function only; each re-checks the caller is an ACTIVE administrator with an AAL2 session before acting): `set-user-role` (role, status, course creation; never on oneself), `provision-lecturer`, `provision-admin` (invite by email, ADR-003), `bulk-import-learners` (preview, then commit with an error report), `reset-admin-mfa` (3 per hour per administrator), and the D18 upload pair `register-upload` and `finalize-upload`. `cleanup-files` runs hourly from `pg_cron` and removes replaced and rejected objects.
+- **Trusted database functions** called only by those Edge Functions: `admin_set_user`, `admin_record_mfa_reset`, `bootstrap_first_admin` (one-time; sets `bootstrap_completed`), `launch_readiness()` (refuses launch below two active administrators who have accepted their invitation). Each writes an `audit_logs` row with the acting administrator.
+- **Sessions (D32):** suspension and deactivation revoke every session; administrator idle and absolute limits are enforced on the server, lecturer and learner limits in the client (`SessionWatcher`).
+- **Bootstrap:** `scripts/bootstrap-admin.mjs`, run once per environment by the owner (`docs/RUNBOOK.md`).
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.
