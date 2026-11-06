@@ -66,6 +66,7 @@ export default function LoginPage() {
       title="Welcome back"
       description="Sign in to your DDTC LMS account"
       brand
+      glow
       footer={
         <p className="m-0 text-center text-body-sm text-ink-secondary">
           Don&apos;t have an account?{' '}

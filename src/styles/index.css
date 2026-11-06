@@ -205,6 +205,56 @@
   animation: var(--animate-shimmer);
 }
 
+/*
+ * Sign In and Sign Up card: a light that travels round the card's edge (owner request 2026-11-05,
+ * an approved exception to DESIGN.md 9 and 19). The border is a conic gradient whose start angle
+ * turns; ::before repeats it blurred behind the card as a soft halo. The card's parent must be
+ * `isolate` so the halo sits behind the card but above the page. Reduced motion: the light stays
+ * still. Browsers without @property show a still light too.
+ */
+@property --glow-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+@keyframes glow-orbit {
+  to {
+    --glow-angle: 1turn;
+  }
+}
+@utility glow-edge {
+  position: relative;
+  border: var(--glow-width) solid transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    conic-gradient(from var(--glow-angle), var(--hairline) 0turn 0.55turn, var(--glow) 0.75turn, var(--hairline) 0.95turn 1turn) border-box;
+  animation: glow-orbit var(--duration-glow) linear infinite;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: calc(var(--glow-width) * -1);
+    z-index: -1;
+    border-radius: inherit;
+    background: conic-gradient(from var(--glow-angle), transparent 0turn 0.55turn, var(--glow) 0.75turn, transparent 0.95turn 1turn);
+    filter: blur(var(--glow-blur));
+    opacity: var(--glow-halo);
+    pointer-events: none;
+  }
+}
+
+/* The DDTC emblem on the auth hero fades in once when the page opens */
+@keyframes logo-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@utility animate-logo-fade-in {
+  animation: logo-fade-in var(--duration-logo-fade) var(--ease-standard) both;
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
@@ -263,8 +313,18 @@
       animation: none;
       background-image: none;
     }
+    /* !important: utilities sit in a later layer than base */
+    .glow-edge {
+      animation: none !important;
+    }
   }
   @media (forced-colors: active) {
+    .glow-edge {
+      border-color: CanvasText !important;
+    }
+    .glow-edge::before {
+      display: none !important;
+    }
     .bg-pill,
     .bg-card {
       border: 1px solid CanvasText;

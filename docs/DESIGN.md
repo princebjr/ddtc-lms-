@@ -101,7 +101,7 @@ This is the official design reference for the DDTC LMS (version 3.0). It replace
 
 | Where | Treatment |
 |---|---|
-| Sign In and Sign Up hero | DDTC emblem 120 px (phone 72 px), navy on light, white on dark, with the name DYNAMIC DISCIPLESHIP TRAINING CENTRE and the tagline "Equipping believers for deeper discipleship and lifelong learning." |
+| Sign In and Sign Up hero | DDTC emblem 120 px (phone 72 px), navy on light, white on dark, fading in once (800 ms) when the page opens, with the name DYNAMIC DISCIPLESHIP TRAINING CENTRE in bold and directly beneath it, at every width, the tagline "Be faithful, even to the point of death, and I will give you life as your victor's crown - Revelation 2:10b." (owner, Phase 3; ADR-004) |
 | Sidebar and top bar | DDTC emblem 28 to 32 px with "DDTC LMS" beside it on desktop; emblem only in the phone top bar |
 | **Brand block** | Directly below the whole Sign In and Sign Up form (including the Google button), centred: the gölarae logo (36 px tall), then directly beneath it the exact text `from gölarae` (13 px, weight 500, `text-secondary`), nothing between them. Never "powered by gölarae". |
 | App icon, PWA, apple-touch | White DDTC emblem on a `#0F172A` tile (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon-180`) |
@@ -217,6 +217,7 @@ Sizes in `rem`; sentence case; left-aligned except short headings and auth block
 - Durations: 120 ms for press and hover, 200 ms for fades and expands, 320 ms for sheets and drawers. Standard easing is `cubic-bezier(0.2, 0, 0, 1)`; sheets use `cubic-bezier(0.32, 0.72, 0, 1)`.
 - Allowed: route fade, sheet slide, toast slide and fade, FAB hide and show, speed-dial expand, accordion expand, button press scale to 0.98, skeleton shimmer.
 - Not allowed: parallax, looping decorative animation, autoplaying media, bouncing, animated gradients, long staggered entrances.
+- Owner-approved exceptions (ADR-004): the DDTC emblem on the auth hero fades in once over 800 ms; the Sign In and Sign Up cards carry a light that travels round their edge (`glow-edge`, 6 s per lap, `glow` token with a soft blurred halo). Under reduced motion the light stays still; in forced-colours mode the halo is removed.
 - Reduced motion (`prefers-reduced-motion`): remove shimmer (static grey), replace slides and scales with a simple fade, and never auto-scroll.
 
 ## 10. Icons (Lucide React)
@@ -389,12 +390,12 @@ shadcn's `--accent` is a subtle hover fill, not the brand blue; the brand blue i
 
 **Do:** blue pill buttons for the main action; navy for headings and logo; tokens, Lucide icons and shared components everywhere; icon plus text for every status; test every screen in light and dark at 375, 768 and 1280 px; keep motion short.
 
-**Don't:** use gradients, glow, heavy shadows or glass over text; copy Mobbin screens, other brands' assets or Apple's colours and symbols; use `hairline` or `text-tertiary` as body text colour; use colour as the only signal; create one-off components or hard-coded values; use text under 12 px, inputs under 16 px or targets under 44 px; recolour or alter the logos; write "modules", "terms" or "powered by gölarae".
+**Don't:** use gradients, glow (the Sign In and Sign Up card edge is the one exception, ADR-004), heavy shadows or glass over text; copy Mobbin screens, other brands' assets or Apple's colours and symbols; use `hairline` or `text-tertiary` as body text colour; use colour as the only signal; create one-off components or hard-coded values; use text under 12 px, inputs under 16 px or targets under 44 px; recolour or alter the logos; write "modules", "terms" or "powered by gölarae".
 
 ## 21. Sign In and Sign Up screens (layout)
 
-- **Desktop:** two panels. Left: hero with the DDTC emblem, full name and tagline on a very soft tint. Right: form card (max 400 px) with, in order: title, subtitle, fields, error message area, the main button (blue pill, 48 px), an "or" divider, the **Continue with Google** button, the switch link ("Don't have an account? Sign up"), then the brand block (gölarae logo and "from gölarae"), then the trial-logins card only in the prototype.
-- **Phone:** one column; the hero shrinks to the emblem and name; the form fills the width; the brand block stays directly below the form.
+- **Desktop:** two panels. Left: hero with the DDTC emblem, full name and tagline on a very soft tint. Right: form card (max 400 px) with a moving edge glow (ADR-004) and, in order: title, subtitle, fields, error message area, the main button (blue pill, 48 px), an "or" divider, the **Continue with Google** button, the switch link ("Don't have an account? Sign up"), then the brand block (gölarae logo and "from gölarae"), then the trial-logins card only in the prototype.
+- **Phone:** one column; the hero shrinks (72 px emblem) but keeps the bold name with the tagline beneath it, as on every auth page, verification pages included; the form fills the width; the brand block stays directly below the form.
 - **Continue with Google:** follows Google's identity branding guidelines: the official multi-colour G mark (never recoloured), the label "Continue with Google", Roboto Medium 14 px label colour per Google's guidance, height 48 px, pill or 12 px radius, light variant (white fill, 1px neutral border, dark text) in light mode and dark variant (dark fill, light text) in dark mode. It is full width and never styled as a primary button.
 - Sign Up adds first name and second name fields above email; both are required. A **Complete your profile** screen (same card style) asks for missing names after a Google sign-up.
 - Errors appear inline under the form in the error colour with an icon; they never reveal whether an email exists. Loading uses an inline spinner in the button.

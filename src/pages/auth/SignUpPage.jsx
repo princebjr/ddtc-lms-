@@ -58,6 +58,7 @@ export default function SignUpPage() {
       title="Create your account"
       description="Join DDTC LMS as a learner."
       brand
+      glow
       footer={
         <div className="flex flex-col gap-1 text-center text-body-sm text-ink-secondary">
           <p className="m-0">We will email you a link to verify your address.</p>
