@@ -34,7 +34,17 @@ export function fromDbError(error: { code?: string; message?: string }): HttpErr
     case '22023':
       return new HttpError(400, 'invalid', error.message ?? 'Invalid request');
     case 'P0002':
-      return new HttpError(404, 'not_found', 'User not found');
+      // The trusted functions raise "User not found" or "Course not found".
+      return new HttpError(404, 'not_found', error.message ?? 'Not found');
+    case '23505':
+      // Never pass the raw constraint text on; name the one duplicate users can fix.
+      return new HttpError(409, 'duplicate',
+        error.message?.includes('course_code') ? 'A course with this code already exists' : 'This already exists');
+    case '23514':
+      return new HttpError(400, 'invalid', 'Check the details and try again');
+    case 'P0409':
+      // A lecturer who owns courses cannot leave teaching until ownership is transferred.
+      return new HttpError(409, 'owns_courses', error.message ?? "Transfer this lecturer's courses first");
     case 'P0429':
       return new HttpError(429, 'rate_limited', 'Too many requests. Try again later.');
     default:

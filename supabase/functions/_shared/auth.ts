@@ -50,3 +50,14 @@ export async function requireAdmin(req: Request): Promise<Caller> {
   if (error || data !== true) throw new HttpError(403, 'forbidden', 'Administrator with two-step verification required');
   return caller;
 }
+
+/**
+ * Course work (Phase 5): an administrator verified as above, or any other ACTIVE signed-in user.
+ * `isAdmin` is true only when am_i_admin() succeeded with the caller's own token; the database
+ * functions then re-check the actor's role and course rights (never trusted from the client).
+ */
+export async function requireStaff(req: Request): Promise<Caller & { isAdmin: boolean }> {
+  const caller = await requireUser(req);
+  const { data } = await caller.client.rpc('am_i_admin');
+  return { ...caller, isAdmin: data === true };
+}

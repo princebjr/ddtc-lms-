@@ -1,14 +1,21 @@
-// File rules for the D18 upload pipeline. Phase 4 accepts profile images; later phases add the
-// other resource types here. Limits come from system_settings.file_limits (D17).
+// File rules for the D18 upload pipeline. Phase 4 accepts profile images, Phase 5 course covers;
+// later phases add the other resource types here. Limits come from system_settings.file_limits (D17).
 
-export type ResourceType = 'PROFILE_IMAGE';
+export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER';
+
+const IMAGE_TYPES = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
 
 export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string; types: Record<string, string[]> }> = {
   PROFILE_IMAGE: {
     bucket: 'profile-images',
     limitKey: 'profile_image',
     // detected MIME type -> allowed extensions
-    types: { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] },
+    types: IMAGE_TYPES,
+  },
+  COURSE_COVER: {
+    bucket: 'course-covers',
+    limitKey: 'course_cover',
+    types: IMAGE_TYPES,
   },
 };
 
