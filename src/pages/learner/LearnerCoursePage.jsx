@@ -1,5 +1,5 @@
-import { BookOpen, Library } from 'lucide-react';
-import { useParams } from 'react-router';
+import { BookOpen, CircleCheck, Circle, Library } from 'lucide-react';
+import { Link, useParams } from 'react-router';
 import { CourseWorkspaceSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
@@ -10,16 +10,23 @@ import { useCourseCovers } from '@/hooks/use-course-covers.js';
 import { useLoad } from '@/hooks/use-load.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { fetchCourse, fetchMyEnrolment, fetchTeachers } from '@/lib/courses/courses.js';
+import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 
-// A course as a learner sees it (Phase 5: overview; lessons arrive in Phase 6). A COMPLETED
+// A course as a learner sees it (Phase 5 overview; Phase 6 lessons with progress). A COMPLETED
 // enrolment (D05) and an ARCHIVED course (D07) are read-only: the page says so, and later phases
 // offer no submission there (private.is_actively_enrolled).
 
 export default function LearnerCoursePage() {
   const { courseId = '' } = useParams();
   const { state, data, reload } = useLoad(async () => {
-    const [course, teachers, enrolment] = await Promise.all([fetchCourse(courseId), fetchTeachers(courseId), fetchMyEnrolment(courseId)]);
-    return { course, teachers, enrolment };
+    const [course, teachers, enrolment, lessons, progress] = await Promise.all([
+      fetchCourse(courseId),
+      fetchTeachers(courseId),
+      fetchMyEnrolment(courseId),
+      fetchLessons(courseId),
+      fetchMyProgress(courseId),
+    ]);
+    return { course, teachers, enrolment, lessons, progress };
   }, [courseId]);
   const covers = useCourseCovers(data?.course?.cover_image_file_id ? [courseId] : []);
 
@@ -81,10 +88,54 @@ export default function LearnerCoursePage() {
               </ul>
             </Card>
           </div>
-          <EmptyState icon={Library} title="Lessons arrive in Phase 6" description="Your lessons will appear here." />
+          <Lessons courseId={course.id} lessons={data?.lessons ?? []} progress={data?.progress ?? {}} />
         </div>
       ) : null}
     </LoadingRegion>
+  );
+}
+
+/**
+ * Lessons in order with what the learner has completed, and the course progress.
+ * @param {{ courseId: string, lessons: import('@/lib/lessons/lessons.js').LessonSummary[], progress: Record<string, boolean> }} props
+ */
+function Lessons({ courseId, lessons, progress }) {
+  if (!lessons.length) return <EmptyState icon={Library} title="No lessons yet" description="Your lecturer has not published any lessons in this course yet." />;
+  const completed = lessons.filter((l) => progress[l.id]).length;
+  const percent = Math.round((completed / lessons.length) * 100);
+  return (
+    <section aria-labelledby="lessons-heading" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+        <h2 id="lessons-heading" className="m-0 text-title-3 text-ink">
+          Lessons
+        </h2>
+        <p className="m-0 text-body-sm text-ink-secondary">
+          {completed} of {lessons.length} lessons completed
+        </p>
+        <div role="progressbar" aria-label="Course progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-2 overflow-hidden rounded-full bg-fill">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+        </div>
+      </div>
+      <ol className="m-0 flex list-none flex-col divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-card p-0">
+        {lessons.map((l, i) => (
+          <li key={l.id}>
+            <Link to={`/learner/courses/${courseId}/lessons/${l.id}`} className="flex min-h-14 items-center gap-3 px-4 py-2 hover:bg-fill focus-visible:focus-ring">
+              {progress[l.id] ? (
+                <CircleCheck className="size-5 shrink-0 text-success" aria-hidden="true" />
+              ) : (
+                <Circle className="size-5 shrink-0 text-ink-tertiary" aria-hidden="true" />
+              )}
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-label text-ink">
+                  {i + 1}. {l.title}
+                </span>
+                <span className="text-caption text-ink-secondary">{progress[l.id] ? 'Completed' : 'Not completed'}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

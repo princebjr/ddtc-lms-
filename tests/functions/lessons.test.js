@@ -39,7 +39,7 @@ async function upload(token, resourceType, bytes, filename, extra = {}) {
   const put = await fetch(`${s.url}/storage/v1/object/upload/sign/${reg.body.bucket}/${reg.body.path}?token=${reg.body.token}`, {
     method: 'PUT',
     headers: { 'Content-Type': reg.body.contentType },
-    body: new Blob([bytes]),
+    body: new Blob([new Uint8Array(bytes)]),
   });
   expect(put.ok, await put.clone().text()).toBe(true);
   return call('finalize-upload', token, { fileId: reg.body.fileId, ...extra });

@@ -1,4 +1,4 @@
-import { BookOpen, ChartColumn, ClipboardCheck, ClipboardList, ImageUp, Library, UserMinus } from 'lucide-react';
+import { BookOpen, ChartColumn, ClipboardCheck, ClipboardList, ImageUp, UserMinus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
@@ -40,6 +40,7 @@ import { courseSchema, returnReasonSchema } from '@/lib/courses/schemas.js';
 import { callFunction } from '@/lib/functions.js';
 import { getStorage } from '@/lib/storage.js';
 import { TextArea } from './CourseEditorPage.jsx';
+import { LessonsTab } from './LessonsTab.jsx';
 
 // The course workspace for lecturers and administrators (prototype `lcw`): course title bar with the
 // lifecycle actions (D04, ADR-005), then the tabs Overview, Lessons, Assignments, Learners,
@@ -60,7 +61,6 @@ const TABS = /** @type {const} */ ([
 ]);
 
 const LATER = {
-  lessons: { phase: 6, icon: Library, title: 'Lessons' },
   assignments: { phase: 7, icon: ClipboardList, title: 'Assignments' },
   gradebook: { phase: 10, icon: ClipboardCheck, title: 'Gradebook' },
   analytics: { phase: 10, icon: ChartColumn, title: 'Analytics' },
@@ -116,6 +116,7 @@ export default function CourseWorkspacePage({ role }) {
             {/* Only the active section is rendered; it is the tab panel its tab points to. */}
             <TabsContent value={current}>
               {current === 'overview' ? <OverviewTab course={c} canEdit={canEdit} onSaved={course.reload} /> : null}
+              {current === 'lessons' ? <LessonsTab role={role} courseId={c.id} archived={archived} isLecturer={myPermission !== null} /> : null}
               {current === 'learners' ? <LearnersTab course={c} admin={admin} /> : null}
               {current === 'settings' ? <SettingsTab course={c} teachers={teachers} admin={admin} isOwner={isOwner} reload={course.reload} /> : null}
               {current in LATER ? <Later which={/** @type {keyof typeof LATER} */ (current)} /> : null}

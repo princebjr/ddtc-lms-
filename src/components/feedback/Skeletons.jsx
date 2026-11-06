@@ -157,3 +157,50 @@ export function CourseWorkspaceSkeleton() {
     </div>
   );
 }
+
+/** Lecturer lesson list (UI_FEEDBACK skeleton table): rows with a handle block, title line and status chip. */
+export function LessonListSkeleton({ rows = 5 }) {
+  return (
+    <div data-skeleton="lesson-list" className="flex flex-col divide-y divide-hairline rounded-md border border-hairline bg-card">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex min-h-16 items-center gap-3 px-4 py-3">
+          <Skeleton className="h-8 w-5" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="w-1/2" />
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+          <Skeleton shape="chip" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Lesson page: title, text lines, then the audio player's bars and controls. */
+export function LessonPageSkeleton() {
+  return (
+    <div data-skeleton="lesson-page" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-8 w-3/4" />
+      </div>
+      <div className="flex flex-col gap-3 rounded-lg border border-hairline bg-card p-4">
+        <div className="flex h-14 items-center gap-0.5 overflow-hidden">
+          {Array.from({ length: 48 }, (_, i) => (
+            <Skeleton key={i} className="w-1 flex-none" style={{ height: `${30 + ((i * 37) % 60)}%` }} />
+          ))}
+        </div>
+        <div className="flex items-center justify-center gap-4">
+          <Skeleton shape="circle" className="size-11" />
+          <Skeleton shape="circle" className="size-14" />
+          <Skeleton shape="circle" className="size-11" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
+        {['w-full', 'w-11/12', 'w-full', 'w-4/5', 'w-2/3'].map((w, i) => (
+          <Skeleton key={i} className={w} />
+        ))}
+      </div>
+    </div>
+  );
+}
