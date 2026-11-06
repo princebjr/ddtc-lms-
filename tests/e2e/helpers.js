@@ -15,6 +15,7 @@ export const ROUTES = [
   '/this-page-does-not-exist',
   '/dev',
   '/dev/design',
+  '/dev/audio',
   ...ROLE_KEYS.flatMap((role) => NAVIGATION[role].destinations.map((d) => `/dev/shell/${role}/${d.slug}`)),
 ];
 

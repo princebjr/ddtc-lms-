@@ -85,6 +85,7 @@ const devRoutes = devRoutesEnabled
   ? [
       { path: 'dev', lazy: page(() => import('@/pages/dev/DevIndexPage.jsx')) },
       { path: 'dev/design', lazy: page(() => import('@/pages/dev/DesignPage.jsx')) },
+      { path: 'dev/audio', lazy: page(() => import('@/pages/dev/AudioPreviewPage.jsx')) },
       { path: 'dev/shell/:role/:slug?', lazy: page(() => import('@/pages/dev/ShellPreviewPage.jsx')) },
     ]
   : [];
