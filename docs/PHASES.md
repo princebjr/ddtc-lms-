@@ -50,7 +50,7 @@ Tracker (tick after sign-off):
 - [x] Phase 2: Database foundation and security core (`phase-2-done`)
 - [x] Phase 3: Authentication (`phase-3-done`)
 - [x] Phase 4: Profiles, user management and avatars (`phase-4-done`)
-- [ ] Phase 5: Courses, lecturers and enrolment (`phase-5-done`)
+- [x] Phase 5: Courses, lecturers and enrolment (`phase-5-done`)
 - [ ] Phase 6: Lessons and lesson audio (`phase-6-done`)
 - [ ] Phase 7: Assignments and instruction audio (`phase-7-done`)
 - [ ] Phase 8: Submissions and file validation (`phase-8-done`)
