@@ -1,6 +1,6 @@
 import { expect as baseExpect, test } from '@playwright/test';
 import { mp3, pdf, wav } from '../fixtures/media.js';
-import { expectNoAxeViolations, horizontalOverflow } from './helpers.js';
+import { dismissToasts, expectNoAxeViolations, horizontalOverflow } from './helpers.js';
 import { createAccount } from './support/accounts.js';
 import { createCourseFixture, enrolFixture } from './support/courses.js';
 import { requireSupabase } from './support/local-supabase.js';
@@ -25,16 +25,6 @@ const unique = () => Math.random().toString(36).slice(2, 8);
 /** @param {import('@playwright/test').Page} page @param {string | RegExp} text */
 function toast(page, text) {
   return page.locator('[data-toast-id]').filter({ hasText: text }).first();
-}
-
-/** @param {import('@playwright/test').Page} page */
-async function dismissToasts(page) {
-  const toasts = page.locator('[data-sonner-toast]:not([data-removed="true"]) [data-toast-id]');
-  const front = page.locator('[data-sonner-toast][data-front="true"]:not([data-removed="true"]) [data-toast-id]');
-  for (let i = 0; i < 5 && (await toasts.count()) > 0; i += 1) {
-    await front.getByRole('button', { name: 'Dismiss notification' }).click();
-    await page.waitForTimeout(400);
-  }
 }
 
 /** Opens a new lesson, writes it and saves it; returns to the saved lesson's editor. @param {import('@playwright/test').Page} page @param {string} courseId @param {string} title */

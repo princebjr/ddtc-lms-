@@ -117,3 +117,23 @@ export function isPhoneProject(testInfo) {
   const width = testInfo.project.use.viewport?.width ?? 1280;
   return width < 640;
 }
+
+/**
+ * Dismisses every open toast, as a person would: only the front toast of the stack can be clicked,
+ * and a dismissed toast stays in the page for its exit animation (data-removed) and is skipped.
+ * A toast can also time out on its own between looking and clicking, so each click waits only
+ * briefly; at the end no toast may be left open.
+ * @param {import('@playwright/test').Page} page
+ */
+export async function dismissToasts(page) {
+  const open = page.locator('[data-sonner-toast]:not([data-removed="true"]) [data-toast-id]');
+  const front = page.locator('[data-sonner-toast][data-front="true"]:not([data-removed="true"]) [data-toast-id]');
+  for (let i = 0; i < 6 && (await open.count()) > 0; i += 1) {
+    await front
+      .getByRole('button', { name: 'Dismiss notification' })
+      .click({ timeout: 3000 })
+      .catch(() => undefined);
+    await page.waitForTimeout(400);
+  }
+  await expect(open).toHaveCount(0);
+}
