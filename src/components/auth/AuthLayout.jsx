@@ -170,13 +170,22 @@ export function OrDivider() {
 }
 
 /**
- * Form-level message (role=alert so screen readers announce it).
- * @param {{ tone?: 'error' | 'success', children: import('react').ReactNode }} props
+ * Form-level message: errors use role=alert so screen readers announce them; success and
+ * information (for example why the user was signed out) use role=status.
+ * @param {{ tone?: 'error' | 'success' | 'info', children: import('react').ReactNode }} props
  */
 export function FormMessage({ tone = 'error', children }) {
   if (!children) return null;
   return (
-    <p role={tone === 'error' ? 'alert' : 'status'} className={cn('m-0 text-body-sm', tone === 'error' ? 'text-error' : 'text-success')}>
+    <p
+      role={tone === 'error' ? 'alert' : 'status'}
+      className={cn(
+        'm-0 text-body-sm',
+        tone === 'error' && 'text-error',
+        tone === 'success' && 'text-success',
+        tone === 'info' && 'rounded-md bg-fill p-3 text-ink',
+      )}
+    >
       {children}
     </p>
   );

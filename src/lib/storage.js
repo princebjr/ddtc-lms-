@@ -1,4 +1,5 @@
 import { parsePublicEnv } from './env.js';
+import { clearOnSignOut } from './private-caches.js';
 import { getSupabase } from './supabase.js';
 
 // Supabase Storage, loaded only when a page needs a file (keeps the first route under the
@@ -23,6 +24,8 @@ export const PLAYBACK_SECONDS = 3600;
 
 /** @type {Map<string, { url: string, expires: number }>} */
 const cache = new Map();
+// Signed URLs are held only for the signed-in session (D43).
+clearOnSignOut(() => cache.clear());
 
 /**
  * A signed URL for an object, reused until shortly before it expires.

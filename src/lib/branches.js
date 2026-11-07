@@ -1,3 +1,4 @@
+import { clearOnSignOut } from '@/lib/private-caches.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // Learner branches (D42). The names live only in the `branches` table, never in the code. The list is
@@ -35,6 +36,7 @@ export function fetchBranches() {
 export function clearBranches() {
   cached = null;
 }
+clearOnSignOut(clearBranches);
 
 /**
  * The branches a learner can choose: the open ones in DDTC's order, plus their current branch if it

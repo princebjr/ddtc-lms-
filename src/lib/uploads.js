@@ -1,3 +1,4 @@
+import { holdAwake } from '@/lib/auth/activity.js';
 import { parsePublicEnv } from './env.js';
 import { callFunction, FunctionError } from './functions.js';
 
@@ -26,7 +27,22 @@ export const RESUMABLE_OVER = 25 * 1024 * 1024;
  * @param {UploadRequest} req
  * @returns {Promise<T>} finalize-upload's answer
  */
-export async function uploadFile({ resourceType, file, courseId, lessonId, assignmentId, replaceAudioId, finalize = {}, finalizeLater, onProgress }) {
+export async function uploadFile(req) {
+  // An upload in progress counts as activity: nobody is signed out for idleness during one (D43).
+  const release = holdAwake();
+  try {
+    return await upload(req);
+  } finally {
+    release();
+  }
+}
+
+/**
+ * @template T
+ * @param {UploadRequest} req
+ * @returns {Promise<T>}
+ */
+async function upload({ resourceType, file, courseId, lessonId, assignmentId, replaceAudioId, finalize = {}, finalizeLater, onProgress }) {
   const replace = replaceAudioId ? { replaceAudioId } : {};
   const reg = /** @type {{ fileId: string, bucket: string, path: string, token: string, contentType: string | null }} */ (
     await callFunction('register-upload', { resourceType, courseId, lessonId, assignmentId, filename: file.name, size: file.size, ...replace })

@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { Switch } from '@/components/ui/switch.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
+import { useDraftAutosave, useDraftStart } from '@/hooks/use-draft.js';
 import { useLoad } from '@/hooks/use-load.js';
 import {
   CONTENT_TYPE_LABEL,
@@ -97,18 +98,37 @@ export default function AssignmentEditorPage({ role }) {
 function Editor({ role, course, assignment, categories, lessons, onChanged }) {
   const navigate = useNavigate();
   const toast = useToast();
-  const [title, setTitle] = useState(assignment?.title ?? '');
-  const [description, setDescription] = useState(assignment?.description ?? '');
-  const [lessonId, setLessonId] = useState(assignment?.lesson_id ?? '');
-  const [categoryId, setCategoryId] = useState(assignment?.category_id ?? categories[0]?.id ?? '');
-  const [contentType, setContentType] = useState(/** @type {'TEXT' | 'AUDIO' | 'TEXT_AND_AUDIO'} */ (assignment?.content_type ?? 'TEXT'));
-  const [textInstructions, setTextInstructions] = useState(assignment?.text_instructions ?? '');
-  const [dueAt, setDueAt] = useState(assignment ? toGhanaInput(assignment.due_at) : defaultDue());
-  const [allowLate, setAllowLate] = useState(assignment?.allow_late ?? false);
-  const [maxMarks, setMaxMarks] = useState(assignment ? String(Number(assignment.max_marks)) : '100');
-  const [pdf, setPdf] = useState(assignment?.accepted_formats.includes('PDF') ?? false);
-  const [docx, setDocx] = useState(assignment?.accepted_formats.includes('DOCX') ?? false);
-  const [gradingCriteria, setGradingCriteria] = useState(assignment?.grading_criteria ?? '');
+  // Unsaved fields are kept as a draft on this device and put back after an idle sign-out (D43).
+  const draftKey = `assignment:${course.id}:${assignment?.id ?? 'new'}`;
+  const [saved, setSaved] = useState(() => ({
+    title: assignment?.title ?? '',
+    description: assignment?.description ?? '',
+    lessonId: assignment?.lesson_id ?? '',
+    categoryId: assignment?.category_id ?? categories[0]?.id ?? '',
+    contentType: /** @type {'TEXT' | 'AUDIO' | 'TEXT_AND_AUDIO'} */ (assignment?.content_type ?? 'TEXT'),
+    textInstructions: assignment?.text_instructions ?? '',
+    dueAt: assignment ? toGhanaInput(assignment.due_at) : defaultDue(),
+    allowLate: assignment?.allow_late ?? false,
+    maxMarks: assignment ? String(Number(assignment.max_marks)) : '100',
+    pdf: assignment?.accepted_formats.includes('PDF') ?? false,
+    docx: assignment?.accepted_formats.includes('DOCX') ?? false,
+    gradingCriteria: assignment?.grading_criteria ?? '',
+  }));
+  const start = useDraftStart(draftKey, saved, { isNew: !assignment });
+  const [title, setTitle] = useState(start.title);
+  const [description, setDescription] = useState(start.description);
+  const [lessonId, setLessonId] = useState(start.lessonId);
+  const [categoryId, setCategoryId] = useState(start.categoryId);
+  const [contentType, setContentType] = useState(start.contentType);
+  const [textInstructions, setTextInstructions] = useState(start.textInstructions);
+  const [dueAt, setDueAt] = useState(start.dueAt);
+  const [allowLate, setAllowLate] = useState(start.allowLate);
+  const [maxMarks, setMaxMarks] = useState(start.maxMarks);
+  const [pdf, setPdf] = useState(start.pdf);
+  const [docx, setDocx] = useState(start.docx);
+  const [gradingCriteria, setGradingCriteria] = useState(start.gradingCriteria);
+  const current = { title, description, lessonId, categoryId, contentType, textInstructions, dueAt, allowLate, maxMarks, pdf, docx, gradingCriteria };
+  const clearDraft = useDraftAutosave(draftKey, saved, current, { isNew: !assignment });
   const [reason, setReason] = useState('');
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
@@ -153,6 +173,8 @@ function Editor({ role, course, assignment, categories, lessons, onChanged }) {
         },
       });
       setTextInstructions(res.textInstructions);
+      clearDraft();
+      setSaved({ ...current, textInstructions: res.textInstructions });
       setReason('');
       if (!quiet) toast.show('lecturer.assignment-saved');
       if (!assignment) navigate(`${back}/${res.assignmentId}`, { replace: true });

@@ -1,11 +1,11 @@
 // Phase 3: pure authentication logic (schemas, non-revealing messages, safe redirects, guard order,
-// D32 session limits).
+// D32's absolute session limits; the D43 idle limit is tested in idle.test.jsx).
 import { describe, expect, it } from 'vitest';
 import { decideProtected, decideSignedOutOnly, decideStep } from '@/lib/auth/access.js';
 import { authErrorMessage, callbackErrorMessage, MESSAGES } from '@/lib/auth/messages.js';
 import { roleForPath, safeNext } from '@/lib/auth/routing.js';
 import { completeProfileSchema, otpSchema, resetPasswordSchema, signUpSchema, validate } from '@/lib/auth/schemas.js';
-import { readToken, SESSION_LIMITS, sessionState, WARNING_MS } from '@/lib/auth/session-limits.js';
+import { ABSOLUTE_LIMITS, absoluteState, readToken, WARNING_MS } from '@/lib/auth/session-limits.js';
 
 const learner = { role: /** @type {const} */ ('LEARNER'), account_status: 'ACTIVE', profile_completed: true };
 const admin = { ...learner, role: /** @type {const} */ ('ADMIN') };
@@ -137,22 +137,20 @@ describe('route guard order', () => {
   });
 });
 
-describe('session limits (D32)', () => {
+describe('absolute session limits (D32; the idle values were replaced by D43)', () => {
   const start = 1_000_000;
-  it('uses the D32 values', () => {
-    expect(SESSION_LIMITS.ADMIN).toEqual({ idleMs: 30 * 60_000, absoluteMs: 12 * 3_600_000 });
-    expect(SESSION_LIMITS.LECTURER.idleMs).toBe(8 * 3_600_000);
-    expect(SESSION_LIMITS.LEARNER.absoluteMs).toBe(30 * 24 * 3_600_000);
+  it('uses the D32 lifetimes', () => {
+    expect(ABSOLUTE_LIMITS).toEqual({ ADMIN: 12 * 3_600_000, LECTURER: 7 * 24 * 3_600_000, LEARNER: 30 * 24 * 3_600_000 });
   });
-  it('warns 2 minutes before an idle administrator session ends, then expires it', () => {
-    const idle = SESSION_LIMITS.ADMIN.idleMs;
-    expect(sessionState({ role: 'ADMIN', startedAt: start, lastActiveAt: start, now: start + idle - WARNING_MS - 1 }).state).toBe('active');
-    expect(sessionState({ role: 'ADMIN', startedAt: start, lastActiveAt: start, now: start + idle - WARNING_MS }).state).toBe('warning');
-    expect(sessionState({ role: 'ADMIN', startedAt: start, lastActiveAt: start, now: start + idle })).toMatchObject({ state: 'expired', reason: 'idle' });
+  it('warns 2 minutes before the end of an administrator session, then ends it, however active', () => {
+    const abs = ABSOLUTE_LIMITS.ADMIN;
+    expect(absoluteState({ role: 'ADMIN', startedAt: start, now: start + abs - WARNING_MS - 1 }).state).toBe('active');
+    expect(absoluteState({ role: 'ADMIN', startedAt: start, now: start + abs - WARNING_MS }).state).toBe('warning');
+    expect(absoluteState({ role: 'ADMIN', startedAt: start, now: start + abs })).toEqual({ state: 'expired', endsAt: start + abs });
   });
-  it('ends any session at its absolute limit, however active', () => {
-    const abs = SESSION_LIMITS.LECTURER.absoluteMs;
-    expect(sessionState({ role: 'LECTURER', startedAt: start, lastActiveAt: start + abs - 1, now: start + abs })).toMatchObject({ state: 'expired', reason: 'absolute' });
+  it('ends a lecturer session at 7 days and a learner session at 30 days', () => {
+    expect(absoluteState({ role: 'LECTURER', startedAt: start, now: start + ABSOLUTE_LIMITS.LECTURER }).state).toBe('expired');
+    expect(absoluteState({ role: 'LEARNER', startedAt: start, now: start + ABSOLUTE_LIMITS.LEARNER - 1 }).state).toBe('warning');
   });
   it('reads the session id from an access token', () => {
     const payload = btoa(JSON.stringify({ session_id: 'abc', aal: 'aal2' })).replace(/=+$/, '');

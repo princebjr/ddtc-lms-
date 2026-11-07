@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
+import { IdleSessionProvider } from '@/components/auth/IdleSessionProvider.jsx';
 import { SessionWatcher } from '@/components/auth/SessionWatcher.jsx';
 import { DashboardSkeleton } from '@/components/feedback/Skeletons.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
@@ -74,6 +75,7 @@ export function RoleShell({ role, slug, children }) {
       onSignOut={onSignOut}
     >
       <SessionWatcher />
+      <IdleSessionProvider />
       <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
     </AppShell>
   );

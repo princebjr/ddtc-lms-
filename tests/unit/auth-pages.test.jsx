@@ -12,7 +12,7 @@ import { BRAND_LINE } from '@/components/brand/BrandBlock.jsx';
 import { ToastProvider } from '@/components/feedback/ToastProvider.jsx';
 import { ThemeProvider } from '@/components/theme/ThemeProvider.jsx';
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage.jsx';
-import LoginPage, { BLOCKED_MESSAGES, EXPIRED_MESSAGE } from '@/pages/auth/LoginPage.jsx';
+import LoginPage, { BLOCKED_MESSAGES, EXPIRED_MESSAGE, idleMessage } from '@/pages/auth/LoginPage.jsx';
 import MfaPage from '@/pages/auth/MfaPage.jsx';
 import SignUpPage from '@/pages/auth/SignUpPage.jsx';
 import VerifyEmailPage from '@/pages/auth/VerifyEmailPage.jsx';
@@ -119,6 +119,19 @@ describe('Sign In', () => {
     two.unmount();
     renderPage(<LoginPage />, '/login?expired=1');
     expect(screen.getByRole('alert').textContent).toBe(EXPIRED_MESSAGE);
+  });
+
+  it('after an idle sign-out (D43) says why, as a status rather than an error, until the user signs in', () => {
+    expect(idleMessage(10)).toBe('You were signed out after 10 minutes of inactivity.');
+    const idle = renderPage(<LoginPage />, '/login?idle=10&next=%2Flearner%2Fdashboard');
+    const notice = screen.getByText('You were signed out after 10 minutes of inactivity.');
+    expect(notice).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.submit(/** @type {HTMLFormElement} */ (idle.container.querySelector('form')));
+    expect(screen.queryByText('You were signed out after 10 minutes of inactivity.')).toBeNull();
+    idle.unmount();
+    renderPage(<LoginPage />, '/login?idle=0');
+    expect(screen.queryByText(/signed out after/)).toBeNull();
   });
 
   it('inside an in-app browser, Google explains how to open the page instead of failing', () => {

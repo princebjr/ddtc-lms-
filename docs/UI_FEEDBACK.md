@@ -32,7 +32,8 @@ Type: S = success, I = info, W = warning, E = error.
 | Everyone | Connection restored | "Back online" (S) | none |
 | Everyone | New notification arrives | Notification title (I) | Open |
 | Everyone | New app version ready | "New version available" (I, stays) | Refresh |
-| Everyone | Session about to expire | "Your session ends in 2 minutes" (W) | Stay signed in |
+| Everyone | Session about to reach its absolute limit (D32; inactivity warns with a dialog instead, D43) | "Your session ends in 2 minutes" (W) | none |
+| Everyone | Unsaved work put back into an editor after an idle sign-out (D43) | "Draft restored" (I) | none |
 | Everyone | Any save or request fails | "Could not save. Try again" (E) | Retry |
 | Administrator | Learner added or invitation sent | "Learner added" (S) | none |
 | Administrator | Lecturer provisioned | "Lecturer invited" (S) | none |
@@ -88,6 +89,10 @@ Type: S = success, I = info, W = warning, E = error.
 | Learner | File rejected | "File not accepted: reason" (E) | Try again |
 | Learner | Upload interrupted then resumed | "Upload resumed" (I) | none |
 | Learner | Grade released | "New grade available" (I) | View |
+
+### Idle sign-out (D43, ADR-011)
+
+Not a toast: a dialog, because it needs an answer. After `idle_timeout_minutes` minus `idle_warning_seconds` without activity (8 minutes by default) an alert dialog opens: title "Your session ends in 2 minutes", the time the user has been away, a countdown (screen readers hear it at whole minutes and at 30 and 10 seconds), "You have unsaved changes. If you are signed out, they are kept on this device as a draft for 24 hours." when a screen has unsaved work, and the buttons **Continue Session** (focused first; Escape does the same) and **Sign out now**. A tap outside does nothing. At the limit the user is signed out and Sign In shows the status message "You were signed out after 10 minutes of inactivity." (the configured number of minutes); the next sign-in returns to the same page.
 
 ### Floating action buttons
 

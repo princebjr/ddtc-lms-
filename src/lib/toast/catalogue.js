@@ -33,7 +33,8 @@ export const TOASTS = Object.freeze({
   'network.online': { type: 'success', text: fixed('Back online') },
   'notification.new': { type: 'info', text: (p) => str(p, 'title'), action: 'Open', params: ['title'] },
   'app.update-ready': { type: 'info', text: fixed('New version available'), action: 'Refresh', sticky: true },
-  'session.expiring': { type: 'warning', text: fixed('Your session ends in 2 minutes'), action: 'Stay signed in' },
+  'session.expiring': { type: 'warning', text: fixed('Your session ends in 2 minutes') },
+  'draft.restored': { type: 'info', text: fixed('Draft restored') },
   'request.failed': { type: 'error', text: fixed('Could not save. Try again'), action: 'Retry' },
 
   // Administrator

@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { resumeDrafts, stopDrafts } from '@/lib/drafts.js';
+import { clearPrivateCaches } from '@/lib/private-caches.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // The single source of truth for who is signed in (ARCHITECTURE.md section 5, sign-in steps 1 to 5).
@@ -24,7 +26,7 @@ import { getSupabase } from '@/lib/supabase.js';
 /**
  * @typedef {AuthState & {
  *   refresh: () => Promise<void>,
- *   signOut: (options?: { to?: string }) => Promise<void>,
+ *   signOut: (options?: { to?: string, keepDrafts?: boolean }) => Promise<void>,
  * }} AuthContextValue
  */
 
@@ -80,9 +82,12 @@ export function AuthProvider({ children }) {
     async (session) => {
       const seq = ++loadSeq.current;
       if (!supabase || !session) {
+        // Nothing of the last session stays in memory: signed file URLs, paths, cached lists (D43).
+        clearPrivateCaches();
         setState((s) => ({ ...s, status: 'signed-out', session: null, profile: null, aal: null, nextAal: null }));
         return;
       }
+      resumeDrafts();
       try {
         const account = await loadAccount(supabase, session);
         if (seq !== loadSeq.current) return;
@@ -126,12 +131,21 @@ export function AuthProvider({ children }) {
   }, [supabase, applySession]);
 
   const signOut = useCallback(
-    /** @param {{ to?: string }} [options] */
+    /**
+     * @param {{ to?: string, keepDrafts?: boolean }} [options]
+     *   keepDrafts: an automatic sign-out (idle or session limit) keeps the user's drafts on this
+     *   device; a deliberate sign-out deletes them (D43)
+     */
     async (options) => {
       if (!supabase) return;
       // Set before the session ends, so guards send the user to this page and not to a
       // "next" link back into the area they just left.
       setState((s) => ({ ...s, signedOutTo: options?.to ?? '/login' }));
+      if (!options?.keepDrafts) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) stopDrafts(data.session.user.id);
+      }
+      // scope 'local': this device's session ends and its refresh token is revoked on the server.
       await supabase.auth.signOut({ scope: 'local' });
       await applySession(null);
     },

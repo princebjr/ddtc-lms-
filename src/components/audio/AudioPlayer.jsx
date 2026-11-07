@@ -2,6 +2,7 @@ import { Download, Pause, Play, RotateCcw, RotateCw, TriangleAlert, WifiOff } fr
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button.jsx';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.jsx';
+import { useKeepAwake } from '@/hooks/use-keep-awake.js';
 import { useWaveformPeaks } from '@/hooks/use-waveform-peaks.js';
 import { clock, fileSize } from '@/lib/audio/format.js';
 import { cn } from '@/lib/utils.js';
@@ -49,6 +50,8 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
   const audio = useRef(/** @type {HTMLAudioElement | null} */ (null));
   const [src, setSrc] = useState(/** @type {string | null} */ (null));
   const [status, setStatus] = useState(/** @type {'loading' | 'ready' | 'playing' | 'paused' | 'buffering' | 'error' | 'offline'} */ ('loading'));
+  // Listening counts as activity: nobody is signed out for idleness while audio plays (D43).
+  useKeepAwake(status === 'playing' || status === 'buffering');
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(durationSeconds ?? 0);
   const [speed, setSpeed] = useState(1);
