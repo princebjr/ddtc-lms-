@@ -1,7 +1,8 @@
-// manage-lessons (D08): course lecturers and administrators save lessons (content cleaned against
-// an allow-list first), publish and unpublish them, reorder all of a course's lessons at once, and
-// remove attachments (the row and file are kept). The database functions re-check the actor and the
-// course (archived courses are read-only) and audit every change.
+// manage-lessons (D08, ADR-007): course lecturers and administrators save lessons (content cleaned
+// against an allow-list first), publish and unpublish them, reorder all of a course's lessons at
+// once, and rename and reorder a lesson's audio files. Deleting media is delete-media's job. The
+// database functions re-check the actor and the course (archived courses are read-only) and audit
+// every change.
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
@@ -17,7 +18,12 @@ const Body = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('publish'), lessonId: z.uuid(), publish: z.boolean() }),
   z.object({ action: z.literal('reorder'), courseId: z.uuid(), lessonIds: z.array(z.uuid()).min(1).max(500) }),
-  z.object({ action: z.literal('remove-attachment'), attachmentId: z.uuid() }),
+  z.object({
+    action: z.literal('rename-audio'),
+    audioId: z.uuid(),
+    title: z.string().trim().min(1, 'Enter a title').max(200, 'Use 200 characters or fewer'),
+  }),
+  z.object({ action: z.literal('reorder-audio'), lessonId: z.uuid(), audioIds: z.array(z.uuid()).min(1).max(10) }),
 ]);
 
 serve(async (req) => {
@@ -52,8 +58,13 @@ serve(async (req) => {
       if (error) throw fromDbError(error);
       return json(req, 200, { ok: true });
     }
-    case 'remove-attachment': {
-      const { error } = await admin.rpc('lesson_attachment_remove', { ...actor, p_attachment: b.attachmentId });
+    case 'rename-audio': {
+      const { error } = await admin.rpc('lesson_audio_rename', { ...actor, p_audio: b.audioId, p_title: b.title });
+      if (error) throw fromDbError(error);
+      return json(req, 200, { ok: true });
+    }
+    case 'reorder-audio': {
+      const { error } = await admin.rpc('lesson_audio_reorder', { ...actor, p_lesson: b.lessonId, p_audio: b.audioIds });
       if (error) throw fromDbError(error);
       return json(req, 200, { ok: true });
     }

@@ -5,6 +5,9 @@ export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | '
 
 const IMAGE_TYPES = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
 
+/** Audio files a lesson may have at once (ADR-007, owner decision 2026-11-07); the database enforces it too. */
+export const MAX_LESSON_AUDIO = 10;
+
 export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string; types: Record<string, string[]> }> = {
   PROFILE_IMAGE: {
     bucket: 'profile-images',

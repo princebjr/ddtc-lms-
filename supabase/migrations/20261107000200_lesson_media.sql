@@ -132,7 +132,7 @@ begin
     v_title := coalesce(v_title, v_old.title);
   else
     if (select count(*) from public.lesson_audio_files where lesson_id = v_file.resource_id and lifecycle_status = 'ACTIVE') >= 10 then
-      raise exception 'A lesson can have up to 10 audio files. Delete one to add another.' using errcode = 'P0409';
+      raise exception 'A lesson can have up to 10 audio files. Delete one to add another.' using errcode = 'P0413';
     end if;
     v_position := coalesce((select max(position) from public.lesson_audio_files where lesson_id = v_file.resource_id and lifecycle_status = 'ACTIVE'), 0) + 1;
   end if;

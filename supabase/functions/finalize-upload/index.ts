@@ -5,9 +5,10 @@
 //   COURSE_COVER       (Phase 5) the uploader's right to edit the course is checked again; the new
 //                      file becomes the course cover and the previous cover is removed the same way.
 //   LESSON_AUDIO       (Phase 6) MP3, M4A or WAV within the size and duration limits (D17), read
-//                      from the file's own header; becomes the lesson's ACTIVE audio and any previous
-//                      one is kept as SUPERSEDED (D09). Waveform peaks from the uploader's browser are
-//                      stored when they have the right shape (ADR-006).
+//                      from the file's own header; added to the lesson with its title (up to 10,
+//                      ADR-007), or in place of replaceAudioId, which is kept as SUPERSEDED (D09).
+//                      Waveform peaks from the uploader's browser are stored when they have the right
+//                      shape (ADR-006).
 //   LESSON_ATTACHMENT  (Phase 6) PDF, DOCX or PPTX by content, macros refused; added to the lesson.
 // The file name's extension must match the real content.
 import { z } from 'npm:zod@4.6.7';
@@ -17,12 +18,14 @@ import { requireCourseEditor } from '../_shared/courses.ts';
 import { DOCUMENT_EXTENSIONS, inspectDocument } from '../_shared/documents.ts';
 import { extensionOf, RESOURCES, sha256, sniffImage, type ResourceType } from '../_shared/files.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
+import { removeStoredFile } from '../_shared/remove-file.ts';
 import { storageReader } from '../_shared/storage-reader.ts';
 
 const Body = z.object({
   fileId: z.uuid(),
   peaks: z.array(z.number()).optional(),
   title: z.string().trim().max(200).optional(),
+  replaceAudioId: z.uuid().optional(),
 });
 
 type Admin = ReturnType<typeof serviceClient>;
@@ -87,14 +90,14 @@ serve(async (req) => {
       const previous = profile?.profile_image_file_id as string | null;
       const { error: setError } = await admin.from('profiles').update({ profile_image_file_id: file.id }).eq('id', caller.id);
       if (setError) throw new HttpError(500, 'server_error', 'Could not update the profile photo');
-      if (previous && previous !== file.id) await removeFile(admin, previous);
+      if (previous && previous !== file.id) await removeStoredFile(admin, previous);
     } else {
       const courseId = file.resource_id as string;
       const { data: course } = await admin.from('courses').select('cover_image_file_id').eq('id', courseId).single();
       const previous = course?.cover_image_file_id as string | null;
       const { error: setError } = await admin.from('courses').update({ cover_image_file_id: file.id }).eq('id', courseId);
       if (setError) throw new HttpError(500, 'server_error', 'Could not update the course cover');
-      if (previous && previous !== file.id) await removeFile(admin, previous);
+      if (previous && previous !== file.id) await removeStoredFile(admin, previous);
     }
     return json(req, 200, { fileId: file.id, status: 'VALIDATED', mimeType: detected, size: bytes.length });
   }
@@ -115,7 +118,13 @@ serve(async (req) => {
       duration_seconds: Math.round(facts!.durationSeconds * 100) / 100,
       waveform_peaks: cleanPeaks(parsed.data.peaks),
     });
-    const { data, error } = await admin.rpc('lesson_audio_activate', { p_actor: caller.id, p_as_admin: caller.isAdmin, p_file: file.id });
+    const { data, error } = await admin.rpc('lesson_audio_activate', {
+      p_actor: caller.id,
+      p_as_admin: caller.isAdmin,
+      p_file: file.id,
+      p_replace: parsed.data.replaceAudioId ?? null,
+      p_title: parsed.data.title || null,
+    });
     if (error) await undo(admin, file, fromDbError(error));
     return json(req, 200, {
       fileId: file.id,
@@ -124,6 +133,7 @@ serve(async (req) => {
       size: reader.size,
       durationSeconds: facts!.durationSeconds,
       replaced: Boolean((data as { replaced?: boolean } | null)?.replaced),
+      audioId: (data as { audio?: string } | null)?.audio ?? null,
     });
   }
 
@@ -154,15 +164,4 @@ async function undo(admin: Admin, file: { id: string; bucket_name: string; stora
   const { error } = await admin.storage.from(file.bucket_name).remove([file.storage_path]);
   if (!error) await admin.from('file_objects').update({ status: 'DELETED', deleted_at: new Date().toISOString() }).eq('id', file.id);
   throw reason;
-}
-
-/** Removes a replaced file's object now; on failure cleanup-files retries (DELETE_FAILED). */
-async function removeFile(admin: Admin, fileId: string) {
-  const { data: old } = await admin.from('file_objects').select('bucket_name, storage_path').eq('id', fileId).single();
-  if (!old) return;
-  const { error } = await admin.storage.from(old.bucket_name).remove([old.storage_path]);
-  await admin
-    .from('file_objects')
-    .update(error ? { status: 'DELETE_FAILED' } : { status: 'DELETED', deleted_at: new Date().toISOString() })
-    .eq('id', fileId);
 }

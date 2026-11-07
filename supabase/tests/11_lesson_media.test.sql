@@ -116,7 +116,7 @@ select is(public.lesson_audio_activate(tests.uid('t1'), false, tests.id('b01'), 
 select lives_ok($$ select public.lesson_audio_activate(tests.uid('t3'), false, tests.id('b02'), null, null) $$, 'a co-lecturer adds a second audio');
 select lives_ok($$ select public.lesson_audio_activate(tests.uid('t1'), false, tests.id(n), null, null) from unnest(array['b03', 'b04', 'b05', 'b06', 'b07', 'b08', 'b09', 'b10']) n $$,
   'and more, up to ten');
-select throws_ok($$ select public.lesson_audio_activate(tests.uid('t1'), false, tests.id('b11'), null, null) $$, 'P0409', NULL,
+select throws_ok($$ select public.lesson_audio_activate(tests.uid('t1'), false, tests.id('b11'), null, null) $$, 'P0413', NULL,
   'an eleventh audio is refused (at most 10 per lesson)');
 select tests.reset();
 select results_eq($$ select title, position from public.lesson_audio_files where lesson_id = tests.id('e1') and position <= 2 order by position $$,
