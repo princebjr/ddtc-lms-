@@ -92,23 +92,28 @@ export default function LearnerLessonPage() {
             // One player per audio file, in the lecturer's order (ADR-007); starting one pauses the others.
             <section aria-label="Lesson audio" className="flex flex-col gap-3">
               {d.media.audios.map((audio) => (
-                <AudioPlayer
-                  key={audio.item_id}
-                  title={audio.title}
-                  subtitle={d.lesson?.title}
-                  getUrl={() => playbackUrl(audio)}
-                  durationSeconds={audio.duration_seconds}
-                  peaks={audio.waveform_peaks}
-                  fileSize={audio.file_size}
-                  onDownload={async () => {
-                    toast.show('learner.audio-download', { params: { size: fileSize(audio.file_size) || 'audio' } });
-                    try {
-                      await downloadMedia(audio);
-                    } catch {
-                      setMessage('The download did not start. Check your connection and try again.');
-                    }
-                  }}
-                />
+                <div key={audio.item_id} className="flex flex-col gap-2">
+                  {/* The title for the eye; the player region carries it for screen readers. */}
+                  <p className="m-0 truncate text-label text-ink" aria-hidden="true">
+                    {audio.title}
+                  </p>
+                  <AudioPlayer
+                    title={audio.title}
+                    subtitle={d.lesson?.title}
+                    getUrl={() => playbackUrl(audio)}
+                    durationSeconds={audio.duration_seconds}
+                    peaks={audio.waveform_peaks}
+                    fileSize={audio.file_size}
+                    onDownload={async () => {
+                      toast.show('learner.audio-download', { params: { size: fileSize(audio.file_size) || 'audio' } });
+                      try {
+                        await downloadMedia(audio);
+                      } catch {
+                        setMessage('The download did not start. Check your connection and try again.');
+                      }
+                    }}
+                  />
+                </div>
               ))}
             </section>
           ) : null}
@@ -125,8 +130,12 @@ export default function LearnerLessonPage() {
                 {d.media.attachments.map((a) => (
                   <li key={a.item_id} className="flex min-h-14 items-center gap-3 py-1">
                     <FileText className="size-5 shrink-0 text-ink-secondary" aria-hidden="true" />
-                    <span className="min-w-0 flex-1 truncate text-label text-ink">{a.title}</span>
-                    <Button variant="outline" onClick={() => downloadMedia(a).catch(() => setMessage('The download did not start. Try again.'))}>
+                    <span className="min-w-0 flex-1 line-clamp-2 break-words text-label text-ink">{a.title}</span>
+                    <Button
+                      variant="outline"
+                      onClick={() => downloadMedia(a).catch(() => setMessage('The download did not start. Try again.'))}
+                      aria-label={`Download ${a.title} (${fileSize(a.file_size)})`}
+                    >
                       <Download aria-hidden="true" />
                       <span>
                         Download <span className="text-ink-secondary">({fileSize(a.file_size)})</span>

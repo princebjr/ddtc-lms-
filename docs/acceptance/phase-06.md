@@ -46,7 +46,7 @@ Local results (Windows, local Supabase), 2026-11-06 and 2026-11-07:
 | Database (pgTAP) | 12 files, 573 tests, pass (Phase 6 new: 61 lesson access, 49 lesson functions, 72 lesson media) |
 | Edge Function integration | 4 files, 59 tests, pass (Phase 6 new: 14 for lessons and lesson media) |
 | End-to-end, Phase 6 spec (`tests/e2e/lessons.spec.js`, three flows) | locally each flow passed on desktop Chrome, and the lecturer flow on desktop Firefox; other local attempts stopped when the local functions runtime hit its memory limit (see section 8) |
-| Full end-to-end matrix and Lighthouse | CI on PR #10 (see the pull request checks) |
+| Full end-to-end matrix and Lighthouse | CI on PR #10: run 42383930174 (commit cb06e67, all ADR-007 work) green on every job: all 8 end-to-end shards across every device project in light and dark, pgTAP, lint, types, unit, build, secret scan, Lighthouse. The final run with the screenshot fixes is on the pull request. |
 
 The database and Edge Function tests for ADR-007 were written first and seen failing (the functions did not exist), then the migrations and `delete-media` made them pass. Tests 09 and 10 were changed to the owner's new rules (several audio files with distinct places instead of one; a deleted attachment's file is readable by nobody and is cleaned up), not loosened; one check in test 09 was scoped to its own fixture courses because other local runs leave files behind.
 
@@ -97,6 +97,7 @@ On an iPhone (Safari), an Android phone (Chrome) and a desktop browser, signed i
 - `dev-audio`: the audio player in every size and state (the living mockup);
 - `lecturer-lessons-tab`, `lecturer-lesson-editor` (rich text, audio with history, attachments);
 - `learner-course-lessons` (lessons and progress), `learner-lesson` (player, text, attachments, Previous and Next).
+- ADR-007: `lecturer-lesson-audio-list` (three titled audio files with Move, Rename, Replace and Delete, the count "3 of 10", attachments), `lecturer-delete-audio-dialog` (the confirmation; it rises from the bottom on phones), `lecturer-remove-cover-dialog`, `learner-lesson-several-audio` (one titled player per audio, no delete controls). Captured with a check that no page scrolls sideways, no text runs out of a button (this found the cover card's two buttons overrunning at 1280 px, fixed by stacking them) and no console errors.
 
 Captured with reduced motion and synthetic (silent) test audio, so the lesson waveforms are flat; `/dev/audio` uses a generated tone with a real shape. In full-page captures the phone navigation bar and the editor's sticky action bar are drawn once at the first screen's bottom edge; on a real screen the page has room for them.
 

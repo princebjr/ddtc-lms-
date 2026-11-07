@@ -436,13 +436,14 @@ export function CoverCard({ course, canEdit, onChanged }) {
               if (file) upload(file);
             }}
           />
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => input.current?.click()} loading={busy} loadingLabel="Uploading">
+          {/* Stacked: the cover card is narrow beside the details on desktop, and full width on phones. */}
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" onClick={() => input.current?.click()} loading={busy} loadingLabel="Uploading">
               <ImageUp aria-hidden="true" />
               {course.cover_image_file_id ? 'Replace cover' : 'Upload cover image'}
             </Button>
             {course.cover_image_file_id ? (
-              <Button variant="outline" className="flex-1 text-error" onClick={() => remover.ask({ id: course.id, name: course.title })} disabled={busy}>
+              <Button variant="outline" className="text-error" onClick={() => remover.ask({ id: course.id, name: course.title })} disabled={busy}>
                 <Trash2 aria-hidden="true" />
                 Remove cover image
               </Button>

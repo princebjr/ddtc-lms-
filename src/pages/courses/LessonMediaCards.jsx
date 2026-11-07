@@ -137,6 +137,10 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
           <ol className="m-0 flex list-none flex-col gap-3 p-0" aria-label="Audio files, in the order learners see them">
             {audios.map((a, i) => (
               <li key={a.item_id} className="flex flex-col gap-2" data-slot="lesson-audio-item">
+                <p className="m-0 flex min-w-0 gap-2 text-label text-ink" aria-hidden="true">
+                  <span className="tabular-nums text-ink-secondary">{i + 1}.</span>
+                  <span className="truncate">{a.title}</span>
+                </p>
                 {/* Standard size: the side card is too narrow for the one-row compact layout. */}
                 <AudioPlayer
                   title={a.title}
