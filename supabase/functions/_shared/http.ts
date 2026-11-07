@@ -45,6 +45,9 @@ export function fromDbError(error: { code?: string; message?: string }): HttpErr
     case 'P0409':
       // A lecturer who owns courses cannot leave teaching until ownership is transferred.
       return new HttpError(409, 'owns_courses', error.message ?? "Transfer this lecturer's courses first");
+    case 'P0413':
+      // A limit was reached, for example 10 audio files in a lesson; the message says what to do.
+      return new HttpError(409, 'limit_reached', error.message ?? 'The limit has been reached');
     case 'P0429':
       return new HttpError(429, 'rate_limited', 'Too many requests. Try again later.');
     default:

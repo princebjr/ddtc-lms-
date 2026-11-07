@@ -124,6 +124,10 @@
   --color-logo-white: var(--logo-white);
   --color-scrim: var(--scrim);
   --color-hero-tint: var(--hero-tint);
+  --color-wave-played: var(--wave-played);
+  --color-wave-unplayed: var(--wave-unplayed);
+  --color-wave-playhead: var(--wave-playhead);
+  --color-wave-recording: var(--wave-recording);
   --color-google-fill: var(--google-fill);
   --color-google-border: var(--google-border);
   --color-google-text: var(--google-text);
@@ -254,6 +258,153 @@
     transform: translate(-50%, -50%);
     animation: glow-spin var(--duration-glow) linear infinite;
     will-change: transform;
+  }
+}
+
+/* Audio waveform (ADR-006): bars and the playhead with its round handles */
+@utility wave-bars {
+  display: flex;
+  align-items: center;
+  /* 2 px is the minimum gap: on very wide players (more than 160 bars of room) the bars spread
+     evenly across the full width instead of stopping short. */
+  justify-content: space-between;
+  gap: var(--wave-gap);
+}
+@utility wave-bar {
+  width: var(--wave-bar);
+  flex: none;
+  border-radius: var(--wave-bar);
+  min-height: var(--wave-bar);
+}
+@utility wave-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--wave-line);
+  margin-left: calc(var(--wave-line) / -2);
+  background-color: var(--wave-playhead);
+  pointer-events: none;
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: var(--wave-handle);
+    height: var(--wave-handle);
+    border-radius: 9999px;
+    background-color: var(--wave-playhead);
+    transform: translateX(-50%);
+  }
+  &::before {
+    top: calc(var(--wave-handle) / -2);
+  }
+  &::after {
+    bottom: calc(var(--wave-handle) / -2);
+  }
+}
+
+/* Lesson text (Phase 6; RESPONSIVE.md 15.2): reading size and width, and content that never widens
+   the page: images shrink to fit, wide tables and code scroll inside their own box. Also styles the
+   lecturer's editor, so what they write is what learners see. */
+@utility lesson-content {
+  max-width: var(--reading-max);
+  font-size: var(--text-reading);
+  line-height: var(--text-reading--line-height);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+  & > * + * {
+    margin-top: 1rem;
+  }
+  & h2 {
+    font-size: var(--text-title-2);
+    line-height: var(--text-title-2--line-height);
+    font-weight: 600;
+    margin-top: 2rem;
+  }
+  & h3 {
+    font-size: var(--text-title-3);
+    line-height: var(--text-title-3--line-height);
+    font-weight: 600;
+    margin-top: 1.5rem;
+  }
+  & h4 {
+    font-size: var(--text-headline);
+    line-height: var(--text-headline--line-height);
+    font-weight: 600;
+    margin-top: 1.25rem;
+  }
+  & p,
+  & ul,
+  & ol,
+  & blockquote,
+  & pre,
+  & table {
+    margin-bottom: 0;
+  }
+  & ul,
+  & ol {
+    padding-left: 1.5rem;
+  }
+  & ul {
+    list-style: disc;
+  }
+  & ol {
+    list-style: decimal;
+  }
+  & li + li {
+    margin-top: 0.25rem;
+  }
+  & a {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  & blockquote {
+    border-left: 4px solid var(--hairline);
+    padding-left: 1rem;
+    color: var(--text-secondary);
+  }
+  & img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+  }
+  & table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+  & th,
+  & td {
+    border: 1px solid var(--hairline);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  & th {
+    background-color: var(--fill);
+    font-weight: 600;
+  }
+  & code {
+    font-size: 0.9em;
+    background-color: var(--fill);
+    border-radius: var(--radius-xs);
+    padding: 0.1em 0.3em;
+  }
+  & pre {
+    overflow-x: auto;
+    background-color: var(--fill);
+    border-radius: var(--radius-xs);
+    padding: 0.75rem 1rem;
+  }
+  & pre code {
+    background: none;
+    padding: 0;
+  }
+  & hr {
+    border: 0;
+    border-top: 1px solid var(--hairline);
   }
 }
 

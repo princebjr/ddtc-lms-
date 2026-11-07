@@ -14,6 +14,7 @@
 - Learner lesson page: audio player with play, pause, progress, current time, duration, Download Audio, previous and next, completion control, progress indicator.
 - Mobile audio standard (Section 15): full-width player, 44 px controls, touch-draggable seek bar, playback speed 0.75x to 2x, Media Session metadata for lock-screen controls, `preload` set to metadata only, no autoplay, file size shown before download, and lesson content, images and tables that reflow without overflow.
 - Audio replacement with SUPERSEDED history.
+- ADR-007 (owner, 2026-11-07): up to 10 titled, ordered audio files per lesson (rename, move up and down); Delete for lesson audio, attachments and course covers after a confirmation, through the `delete-media` Edge Function only (record kept, file removed from Storage, failures retried by `cleanup-files`).
 
 **Tests required**
 

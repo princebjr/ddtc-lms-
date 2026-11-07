@@ -56,6 +56,11 @@ const PAIRS = [
   ['on-error on destructive button', 'on-error', 'error', 4.5],
   ['focus ring on page', 'focus-ring', 'page', 3],
   ['text-primary on sidebar', 'text-primary', 'sidebar', 4.5],
+  // ADR-006 audio waveform: graphics, so 3:1 against the card
+  ['waveform played bars on card', 'wave-played', 'card', 3],
+  ['waveform unplayed bars on card', 'wave-unplayed', 'card', 3],
+  ['waveform playhead on card', 'wave-playhead', 'card', 3],
+  ['recording waveform on card', 'wave-recording', 'card', 3],
 ];
 
 describe.each([

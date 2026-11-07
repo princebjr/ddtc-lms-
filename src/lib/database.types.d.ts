@@ -135,19 +135,147 @@ isOneToOne: false
                   ]
                 },"file_objects": {
                   Row: {
-                    "bucket_name": string,"checksum": string | null,"created_at": string,"deleted_at": string | null,"detected_mime_type": string | null,"duration_seconds": number | null,"file_size": number | null,"id": string,"original_filename": string,"resource_id": string | null,"resource_type": string,"safe_download_filename": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string,"uploaded_at": string,"uploaded_by": string,"validated_at": string | null,"validation_error": string | null
+                    "bucket_name": string,"checksum": string | null,"created_at": string,"deleted_at": string | null,"detected_mime_type": string | null,"duration_seconds": number | null,"file_size": number | null,"id": string,"original_filename": string,"resource_id": string | null,"resource_type": string,"safe_download_filename": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string,"uploaded_at": string,"uploaded_by": string,"validated_at": string | null,"validation_error": string | null,"waveform_peaks": (number)[] | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "bucket_name": string,"checksum"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"original_filename": string,"resource_id"?: string | null,"resource_type": string,"safe_download_filename": string,"status"?: Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by": string,"validated_at"?: string | null,"validation_error"?: string | null
+                    "bucket_name": string,"checksum"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"original_filename": string,"resource_id"?: string | null,"resource_type": string,"safe_download_filename": string,"status"?: Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by": string,"validated_at"?: string | null,"validation_error"?: string | null,"waveform_peaks"?: (number)[] | null
                   }
                   Update: {
-                    "bucket_name"?: string,"checksum"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"original_filename"?: string,"resource_id"?: string | null,"resource_type"?: string,"safe_download_filename"?: string,"status"?: Database["public"]['Enums']["file_status"],"storage_path"?: string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by"?: string,"validated_at"?: string | null,"validation_error"?: string | null
+                    "bucket_name"?: string,"checksum"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"original_filename"?: string,"resource_id"?: string | null,"resource_type"?: string,"safe_download_filename"?: string,"status"?: Database["public"]['Enums']["file_status"],"storage_path"?: string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by"?: string,"validated_at"?: string | null,"validation_error"?: string | null,"waveform_peaks"?: (number)[] | null
                   }
                   Relationships: [
                     {
       foreignKeyName: "file_objects_uploaded_by_fkey"
       columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"lesson_attachments": {
+                  Row: {
+                    "created_at": string,"file_object_id": string,"id": string,"lesson_id": string,"position": number,"removed_at": string | null,"removed_by": string | null,"title": string,"updated_at": string,"uploaded_by": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"file_object_id": string,"id"?: string,"lesson_id": string,"position": number,"removed_at"?: string | null,"removed_by"?: string | null,"title": string,"updated_at"?: string,"uploaded_by": string
+                  }
+                  Update: {
+                    "created_at"?: string,"file_object_id"?: string,"id"?: string,"lesson_id"?: string,"position"?: number,"removed_at"?: string | null,"removed_by"?: string | null,"title"?: string,"updated_at"?: string,"uploaded_by"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lesson_attachments_file_object_id_fkey"
+      columns: ["file_object_id"]
+isOneToOne: true
+      referencedRelation: "file_objects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lesson_attachments_lesson_id_fkey"
+      columns: ["lesson_id"]
+isOneToOne: false
+      referencedRelation: "lessons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lesson_attachments_removed_by_fkey"
+      columns: ["removed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lesson_attachments_uploaded_by_fkey"
+      columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"lesson_audio_files": {
+                  Row: {
+                    "created_at": string,"deleted_at": string | null,"deleted_by": string | null,"file_object_id": string,"id": string,"lesson_id": string,"lifecycle_status": Database["public"]['Enums']["audio_lifecycle"],"position": number | null,"superseded_at": string | null,"title": string,"updated_at": string,"uploaded_by": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"deleted_at"?: string | null,"deleted_by"?: string | null,"file_object_id": string,"id"?: string,"lesson_id": string,"lifecycle_status"?: Database["public"]['Enums']["audio_lifecycle"],"position"?: number | null,"superseded_at"?: string | null,"title": string,"updated_at"?: string,"uploaded_by": string
+                  }
+                  Update: {
+                    "created_at"?: string,"deleted_at"?: string | null,"deleted_by"?: string | null,"file_object_id"?: string,"id"?: string,"lesson_id"?: string,"lifecycle_status"?: Database["public"]['Enums']["audio_lifecycle"],"position"?: number | null,"superseded_at"?: string | null,"title"?: string,"updated_at"?: string,"uploaded_by"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lesson_audio_files_deleted_by_fkey"
+      columns: ["deleted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lesson_audio_files_file_object_id_fkey"
+      columns: ["file_object_id"]
+isOneToOne: true
+      referencedRelation: "file_objects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lesson_audio_files_lesson_id_fkey"
+      columns: ["lesson_id"]
+isOneToOne: false
+      referencedRelation: "lessons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lesson_audio_files_uploaded_by_fkey"
+      columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"lesson_progress": {
+                  Row: {
+                    "completed_at": string | null,"completion_status": Database["public"]['Enums']["completion_status"],"created_at": string,"id": string,"learner_id": string,"lesson_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "completed_at"?: string | null,"completion_status"?: Database["public"]['Enums']["completion_status"],"created_at"?: string,"id"?: string,"learner_id": string,"lesson_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "completed_at"?: string | null,"completion_status"?: Database["public"]['Enums']["completion_status"],"created_at"?: string,"id"?: string,"learner_id"?: string,"lesson_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lesson_progress_learner_id_fkey"
+      columns: ["learner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lesson_progress_lesson_id_fkey"
+      columns: ["lesson_id"]
+isOneToOne: false
+      referencedRelation: "lessons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"lessons": {
+                  Row: {
+                    "content": string,"course_id": string,"created_at": string,"created_by": string,"id": string,"position": number,"publication_status": Database["public"]['Enums']["publication_status"],"published_at": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content"?: string,"course_id": string,"created_at"?: string,"created_by": string,"id"?: string,"position": number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "content"?: string,"course_id"?: string,"created_at"?: string,"created_by"?: string,"id"?: string,"position"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lessons_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "courses"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "lessons_created_by_fkey"
+      columns: ["created_by"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -239,6 +367,9 @@ isOneToOne: false
               "course_id": string,"storage_path": string
             }[]
                            },
+"course_cover_remove":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string }; Returns: Json
+                           },
 "course_create":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_category"?: string,"p_code": string,"p_description"?: string,"p_objectives"?: string,"p_owner": string,"p_title": string }; Returns: string
                            },
@@ -272,12 +403,47 @@ isOneToOne: false
 "launch_readiness":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"lesson_attachment_add":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string,"p_title": string }; Returns: string
+                           },
+"lesson_attachment_delete":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_attachment": string }; Returns: Json
+                           },
+"lesson_audio_activate":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string,"p_replace"?: string,"p_title"?: string }; Returns: Json
+                           },
+"lesson_audio_delete":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_audio": string }; Returns: Json
+                           },
+"lesson_audio_rename":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_audio": string,"p_title": string }; Returns: undefined
+                           },
+"lesson_audio_reorder":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_audio": (string)[],"p_lesson": string }; Returns: undefined
+                           },
+"lesson_media":
+{ Args: { "p_lesson": string }; Returns: {
+              "bucket_name": string,"duration_seconds": number,"file_object_id": string,"file_size": number,"item_id": string,"kind": string,"mime_type": string,"safe_download_filename": string,"sort_order": number,"storage_path": string,"title": string,"waveform_peaks": (number)[]
+            }[]
+                           },
+"lesson_reorder":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string,"p_lessons": (string)[] }; Returns: undefined
+                           },
+"lesson_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_content": string,"p_course": string,"p_lesson": string,"p_title": string }; Returns: string
+                           },
+"lesson_set_publication":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_lesson": string,"p_publish": boolean }; Returns: Json
+                           },
+"mark_lesson":
+{ Args: { "p_completed": boolean,"p_lesson": string }; Returns: string
+                           },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","publication_status": "DRAFT"|"PUBLISHED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -393,7 +559,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"publication_status": ["DRAFT", "PUBLISHED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const

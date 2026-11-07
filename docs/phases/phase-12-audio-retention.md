@@ -14,7 +14,7 @@
 **Tests required**
 
 - On staging with `retention_days` set to 0 and seeded fixtures, only eligible learner-submitted audio is deleted; production keeps `retention_days` at 180.
-- Never deletes lesson audio, instruction audio, attachments, text, PDF or Word files; never deletes ungraded, unreleased, held or too-recent files; submission, grade and history rows survive; failed deletions are logged and retried; dry-run changes nothing.
+- Never deletes lesson audio, instruction audio, attachments, text, PDF or Word files (the files of lesson audio and attachments that a lecturer or administrator deleted are removed by `delete-media` and `cleanup-files`, ADR-007, not by this job); never deletes ungraded, unreleased, held or too-recent files; submission, grade and history rows survive; failed deletions are logged and retried; dry-run changes nothing.
 
 **Exit gate (all must pass)**
 

@@ -1,9 +1,12 @@
-// File rules for the D18 upload pipeline. Phase 4 accepts profile images, Phase 5 course covers;
-// later phases add the other resource types here. Limits come from system_settings.file_limits (D17).
+// File rules for the D18 upload pipeline. Phase 4 accepts profile images, Phase 5 course covers,
+// Phase 6 lesson audio and lesson attachments; later phases add the other resource types here. Limits come from system_settings.file_limits (D17).
 
-export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER';
+export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT';
 
 const IMAGE_TYPES = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
+
+/** Audio files a lesson may have at once (ADR-007, owner decision 2026-11-07); the database enforces it too. */
+export const MAX_LESSON_AUDIO = 10;
 
 export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string; types: Record<string, string[]> }> = {
   PROFILE_IMAGE: {
@@ -17,7 +20,27 @@ export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string;
     limitKey: 'course_cover',
     types: IMAGE_TYPES,
   },
+  LESSON_AUDIO: {
+    bucket: 'lesson-audio',
+    limitKey: 'lesson_audio',
+    types: { 'audio/mpeg': ['mp3'], 'audio/mp4': ['m4a'], 'audio/wav': ['wav'] },
+  },
+  LESSON_ATTACHMENT: {
+    bucket: 'lesson-attachments',
+    limitKey: 'lesson_attachment',
+    types: {
+      'application/pdf': ['pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['docx'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['pptx'],
+    },
+  },
 };
+
+/** The content type the browser must send for a file with this extension (the bucket accepts only these). */
+export function contentTypeFor(type: ResourceType, ext: string): string | null {
+  for (const [mime, exts] of Object.entries(RESOURCES[type].types)) if (exts.includes(ext)) return mime;
+  return null;
+}
 
 /** The real type from the first bytes (magic numbers), never from the name or the browser. */
 export function sniffImage(bytes: Uint8Array): string | null {

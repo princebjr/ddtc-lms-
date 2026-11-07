@@ -1,10 +1,11 @@
-import { BookOpen, ChartColumn, ClipboardCheck, ClipboardList, ImageUp, Library, UserMinus } from 'lucide-react';
+import { BookOpen, ChartColumn, ClipboardCheck, ClipboardList, ImageUp, Trash2, UserMinus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
+import { ConfirmDeleteDialog } from '@/components/feedback/ConfirmDeleteDialog.jsx';
 import { CourseWorkspaceSkeleton, ListSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
@@ -21,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea.jsx';
 import { UserAvatar } from '@/components/UserAvatar.jsx';
 import { useCourseCovers } from '@/hooks/use-course-covers.js';
 import { useLoad } from '@/hooks/use-load.js';
+import { useMediaDelete } from '@/hooks/use-media-delete.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { validate } from '@/lib/auth/schemas.js';
 import {
@@ -40,6 +42,7 @@ import { courseSchema, returnReasonSchema } from '@/lib/courses/schemas.js';
 import { callFunction } from '@/lib/functions.js';
 import { getStorage } from '@/lib/storage.js';
 import { TextArea } from './CourseEditorPage.jsx';
+import { LessonsTab } from './LessonsTab.jsx';
 
 // The course workspace for lecturers and administrators (prototype `lcw`): course title bar with the
 // lifecycle actions (D04, ADR-005), then the tabs Overview, Lessons, Assignments, Learners,
@@ -60,7 +63,6 @@ const TABS = /** @type {const} */ ([
 ]);
 
 const LATER = {
-  lessons: { phase: 6, icon: Library, title: 'Lessons' },
   assignments: { phase: 7, icon: ClipboardList, title: 'Assignments' },
   gradebook: { phase: 10, icon: ClipboardCheck, title: 'Gradebook' },
   analytics: { phase: 10, icon: ChartColumn, title: 'Analytics' },
@@ -116,6 +118,7 @@ export default function CourseWorkspacePage({ role }) {
             {/* Only the active section is rendered; it is the tab panel its tab points to. */}
             <TabsContent value={current}>
               {current === 'overview' ? <OverviewTab course={c} canEdit={canEdit} onSaved={course.reload} /> : null}
+              {current === 'lessons' ? <LessonsTab role={role} courseId={c.id} archived={archived} isLecturer={myPermission !== null} /> : null}
               {current === 'learners' ? <LearnersTab course={c} admin={admin} /> : null}
               {current === 'settings' ? <SettingsTab course={c} teachers={teachers} admin={admin} isOwner={isOwner} reload={course.reload} /> : null}
               {current in LATER ? <Later which={/** @type {keyof typeof LATER} */ (current)} /> : null}
@@ -369,13 +372,18 @@ function OverviewTab({ course, canEdit, onSaved }) {
   );
 }
 
-/** Course cover through the D18 pipeline. @param {{ course: Course, canEdit: boolean, onChanged: () => void }} props */
-function CoverCard({ course, canEdit, onChanged }) {
+/**
+ * Course cover through the D18 pipeline; Remove (ADR-007) deletes the file and the course falls back
+ * to the placeholder everywhere.
+ * @param {{ course: Course, canEdit: boolean, onChanged: () => void }} props
+ */
+export function CoverCard({ course, canEdit, onChanged }) {
   const covers = useCourseCovers(course.cover_image_file_id ? [course.id] : []);
   const input = useRef(/** @type {HTMLInputElement | null} */ (null));
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState(/** @type {null | { tone: 'error' | 'success', text: string }} */ (null));
   const url = course.cover_image_file_id ? covers[course.id] : undefined;
+  const remover = useMediaDelete({ kind: 'course-cover', onDeleted: () => onChanged() });
 
   /** @param {File} file */
   const upload = async (file) => {
@@ -428,13 +436,28 @@ function CoverCard({ course, canEdit, onChanged }) {
               if (file) upload(file);
             }}
           />
-          <Button variant="outline" onClick={() => input.current?.click()} loading={busy} loadingLabel="Uploading">
-            <ImageUp aria-hidden="true" />
-            {course.cover_image_file_id ? 'Replace cover' : 'Upload cover image'}
-          </Button>
+          {/* Stacked: the cover card is narrow beside the details on desktop, and full width on phones. */}
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" onClick={() => input.current?.click()} loading={busy} loadingLabel="Uploading">
+              <ImageUp aria-hidden="true" />
+              {course.cover_image_file_id ? 'Replace cover' : 'Upload cover image'}
+            </Button>
+            {course.cover_image_file_id ? (
+              <Button variant="outline" className="text-error" onClick={() => remover.ask({ id: course.id, name: course.title })} disabled={busy}>
+                <Trash2 aria-hidden="true" />
+                Remove cover image
+              </Button>
+            ) : null}
+          </div>
         </>
       ) : null}
       <FormMessage tone={note?.tone}>{note?.text}</FormMessage>
+      <ConfirmDeleteDialog
+        state={remover}
+        title="Remove this cover image?"
+        description={() => 'The course will show the standard placeholder instead. This cannot be undone.'}
+        confirmLabel="Remove"
+      />
     </Card>
   );
 }

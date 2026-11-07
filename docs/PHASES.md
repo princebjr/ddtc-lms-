@@ -50,8 +50,8 @@ Tracker (tick after sign-off):
 - [x] Phase 2: Database foundation and security core (`phase-2-done`)
 - [x] Phase 3: Authentication (`phase-3-done`)
 - [x] Phase 4: Profiles, user management and avatars (`phase-4-done`)
-- [ ] Phase 5: Courses, lecturers and enrolment (`phase-5-done`)
-- [ ] Phase 6: Lessons and lesson audio (`phase-6-done`)
+- [x] Phase 5: Courses, lecturers and enrolment (`phase-5-done`)
+- [x] Phase 6: Lessons and lesson audio (`phase-6-done`)
 - [ ] Phase 7: Assignments and instruction audio (`phase-7-done`)
 - [ ] Phase 8: Submissions and file validation (`phase-8-done`)
 - [ ] Phase 9: Grading, feedback and history (`phase-9-done`)
@@ -60,6 +60,10 @@ Tracker (tick after sign-off):
 - [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
 - [ ] Phase 14: Staging acceptance and production release (`v1.0.0`)
+
+### Owner requests waiting to be scheduled
+
+- 2026-11-06: assignment performance reports (planned for Phase 10) and a live presence directory (planned for Phase 11). Open questions first: `docs/requests/2026-11-06-presence-and-assignment-reports.md`.
 
 ## Session prompt for each phase
 

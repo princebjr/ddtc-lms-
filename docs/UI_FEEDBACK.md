@@ -57,11 +57,15 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer | Co-lecturer added or removed | "Co-lecturer added" or "Co-lecturer removed" (S) | Undo |
 | Lecturer | Lesson saved | "Lesson saved" (S) | none |
 | Lecturer | Lesson published or unpublished | "Lesson published" or "Lesson unpublished" (S) | Undo |
-| Lecturer | Lessons reordered | "Order saved" (S) | Undo |
+| Lecturer | Lessons or a lesson's audio files reordered | "Order saved" (S) | Undo |
 | Lecturer | Lesson audio passes checks | "Audio ready" (S) | none |
 | Lecturer | Lesson audio rejected | "Audio rejected: reason" (E) | Try again |
 | Lecturer | Lesson audio replaced | "Audio replaced" (S) | none |
 | Lecturer | Attachment added | "Attachment added" (S) | none |
+| Lecturer or administrator | Lesson audio deleted, after confirming (ADR-007) | "Audio deleted" (S) | none |
+| Lecturer or administrator | Attachment deleted, after confirming (ADR-007) | "Attachment deleted" (S) | none |
+| Lecturer or administrator | Course cover removed, after confirming (ADR-007) | "Cover image removed" (S) | none |
+| Lecturer or administrator | A delete failed; the item stays (ADR-007) | "Could not delete: reason" (E) | Try again |
 | Lecturer | Assignment saved or published | "Assignment saved" or "Assignment published" (S) | none |
 | Lecturer | Extension granted | "Extension granted" (S) | Undo |
 | Lecturer | Grade draft saved | "Grade saved as draft" (S) | none |

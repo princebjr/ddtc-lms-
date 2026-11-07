@@ -1,5 +1,5 @@
 import { expect as baseExpect, test } from '@playwright/test';
-import { expectNoAxeViolations, horizontalOverflow } from './helpers.js';
+import { dismissToasts, expectNoAxeViolations, horizontalOverflow } from './helpers.js';
 import { createAccount } from './support/accounts.js';
 import { canPublishDirectly, courseByTitle, courseState, createCourseFixture, enrolFixture, enrolmentStatuses, uniqueCode } from './support/courses.js';
 import { requireSupabase } from './support/local-supabase.js';
@@ -25,24 +25,6 @@ const unique = () => Math.random().toString(36).slice(2, 8);
 /** @param {import('@playwright/test').Page} page @param {string | RegExp} text */
 function toast(page, text) {
   return page.locator('[data-toast-id]').filter({ hasText: text }).first();
-}
-
-/**
- * Dismisses every open toast, as a person would. On desktop (iPad landscape included) toasts sit top
- * right, over the page's header button, and an Undo toast pauses while the pointer rests on it.
- * @param {import('@playwright/test').Page} page
- */
-async function dismissToasts(page) {
-  // A dismissed toast stays in the page for its exit animation (data-removed) and cannot be
-  // clicked, so only toasts that are not leaving count. Toasts stack; only the front one can be
-  // clicked, as for a person.
-  const toasts = page.locator('[data-sonner-toast]:not([data-removed="true"]) [data-toast-id]');
-  const front = page.locator('[data-sonner-toast][data-front="true"]:not([data-removed="true"]) [data-toast-id]');
-  for (let i = 0; i < 5 && (await toasts.count()) > 0; i += 1) {
-    await front.getByRole('button', { name: 'Dismiss notification' }).click();
-    await page.waitForTimeout(400);
-  }
-  await expect(toasts).toHaveCount(0);
 }
 
 /** @param {import('@playwright/test').Page} page */

@@ -19,6 +19,11 @@ export default function DevIndexPage() {
                 Components in light and dark
               </Link>
             </li>
+            <li>
+              <Link to="/dev/audio" className="flex min-h-14 items-center px-4 text-body text-link hover:bg-fill focus-visible:focus-ring">
+                Audio player: every size and state (ADR-006)
+              </Link>
+            </li>
           </InsetList>
         </section>
         {ROLE_KEYS.map((role) => (
