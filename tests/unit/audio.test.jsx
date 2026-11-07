@@ -4,7 +4,7 @@
 // play and pause, skip, speed, Download with size, error with Retry).
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AudioPlayer } from '@/components/audio/AudioPlayer.jsx';
+import { AudioPlayer, END_GUARD_SECONDS } from '@/components/audio/AudioPlayer.jsx';
 import { Waveform } from '@/components/audio/Waveform.jsx';
 import { clock, fileSize, spoken } from '@/lib/audio/format.js';
 import { barsForWidth, resamplePeaks } from '@/lib/audio/peaks.js';
@@ -174,6 +174,33 @@ describe('AudioPlayer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Download (12.4 MB)' }));
     expect(onDownload).toHaveBeenCalled();
     expect(screen.getByText('-12:40')).toBeInTheDocument();
+  });
+
+  // Told to seek exactly to the end, Firefox fails to decode a WAV file and WebKit on Linux asks for
+  // bytes past the end of the file; both then report the audio as broken (found in CI on Phase 6).
+  it('never seeks exactly to the end: End stops just short and shows the end, and Play there starts again', async () => {
+    const { container } = render(<AudioPlayer {...props} getUrl={async () => 'https://example.test/a.mp3'} onDownload={() => {}} />);
+    await act(async () => {});
+    const audio = /** @type {HTMLAudioElement} */ (container.querySelector('audio'));
+    const slider = screen.getByRole('slider');
+
+    fireEvent.keyDown(slider, { key: 'End' });
+    expect(END_GUARD_SECONDS).toBeGreaterThan(0);
+    expect(audio.currentTime).toBeCloseTo(760 - END_GUARD_SECONDS, 6);
+    expect(slider).toHaveAttribute('aria-valuenow', '760');
+    expect(slider).toHaveAttribute('aria-valuetext', '12 minutes 40 seconds of 12 minutes 40 seconds');
+    expect(screen.getByText('12:40')).toBeInTheDocument();
+    expect(screen.getByText('-0:00')).toBeInTheDocument();
+
+    // From the end the arrows count from the end the person sees; the skip and drag stop short too.
+    fireEvent.keyDown(slider, { key: 'ArrowLeft' });
+    expect(audio.currentTime).toBe(755);
+    fireEvent.click(screen.getByRole('button', { name: 'Forward 15 seconds' }));
+    expect(audio.currentTime).toBeCloseTo(760 - END_GUARD_SECONDS, 6);
+
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Play Welcome and overview' })));
+    expect(audio.currentTime).toBe(0);
+    expect(play).toHaveBeenCalledTimes(1);
   });
 
   it('shows an error with Retry, and Retry asks for a fresh link', async () => {

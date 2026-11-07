@@ -16,6 +16,19 @@ import { Waveform } from './Waveform.jsx';
 const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
 
 /**
+ * How close to the very end a seek may go. Told to seek exactly to the end, Firefox fails to decode
+ * a WAV file and WebKit on Linux asks for bytes past the end of the file, and both then report the
+ * audio as broken. Playing up to the end works everywhere, so seeks (End, the far right of the
+ * waveform, Forward 15 near the end) stop this far short of it and the player shows the end.
+ */
+export const END_GUARD_SECONDS = 0.1;
+/** Positions this close to the end show as the end (a little more than the guard, for rounding). */
+const END_SHOWN_WITHIN = END_GUARD_SECONDS * 1.5;
+
+/** @param {number} seconds @param {number} end */
+const nearEnd = (seconds, end) => end > END_SHOWN_WITHIN && seconds >= end - END_SHOWN_WITHIN;
+
+/**
  * @typedef {object} AudioPlayerProps
  * @property {string} title                 shown on the lock screen and announced
  * @property {string} [subtitle]            for example the course name
@@ -66,9 +79,11 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
   useEffect(() => {
     const el = audio.current;
     if (!el) return undefined;
+    const takeDuration = () => Number.isFinite(el.duration) && el.duration > 0 && setDuration(el.duration);
     /** @type {Array<[string, () => void]>} */
     const handlers = [
-      ['loadedmetadata', () => Number.isFinite(el.duration) && el.duration > 0 && setDuration(el.duration)],
+      ['loadedmetadata', takeDuration],
+      ['durationchange', takeDuration],
       ['timeupdate', () => setCurrent(el.currentTime)],
       ['playing', () => setStatus('playing')],
       ['pause', () => setStatus('paused')],
@@ -92,6 +107,12 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
     if (audio.current) audio.current.playbackRate = speed;
   }, [speed, src]);
 
+  /** The end as the browser knows it (it can differ a little from the stored duration). */
+  const mediaEnd = () => {
+    const el = audio.current;
+    return el && Number.isFinite(el.duration) && el.duration > 0 ? el.duration : duration;
+  };
+
   const toggle = async () => {
     const el = audio.current;
     if (!el || !src) return;
@@ -100,6 +121,8 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
       el.pause();
       return;
     }
+    // At the end, Play starts again from the beginning, as the browsers' own controls do.
+    if (el.ended || nearEnd(el.currentTime, mediaEnd())) el.currentTime = 0;
     try {
       await el.play();
     } catch {
@@ -111,7 +134,9 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
   const seekTo = (seconds) => {
     const el = audio.current;
     if (!el) return;
-    el.currentTime = Math.min(duration || seconds, Math.max(0, seconds));
+    const end = mediaEnd();
+    const latest = end > END_GUARD_SECONDS ? end - END_GUARD_SECONDS : end;
+    el.currentTime = Math.max(0, end ? Math.min(latest, seconds) : seconds);
     setCurrent(el.currentTime);
   };
   /** @param {number} delta */
@@ -153,7 +178,9 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
   const playing = status === 'playing' || status === 'buffering';
   const broken = status === 'error' || status === 'offline';
   const compact = size === 'compact';
-  const remaining = Math.max(0, (duration || 0) - current);
+  // What the person sees: just short of the end (END_GUARD_SECONDS) shows as the end.
+  const shown = nearEnd(current, duration) ? duration : current;
+  const remaining = Math.max(0, (duration || 0) - shown);
 
   const speedChip = (
     <DropdownMenu>
@@ -225,10 +252,10 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
         <div className="flex items-center gap-3">
           {playButton}
           <div className="min-w-0 flex-1">
-            <Waveform peaks={wave.peaks} state={status === 'loading' ? 'loading' : wave.state} currentSeconds={current} durationSeconds={duration} onSeek={seekTo} size="compact" label={`${title} position`} disabled={broken} />
+            <Waveform peaks={wave.peaks} state={status === 'loading' ? 'loading' : wave.state} currentSeconds={shown} durationSeconds={duration} onSeek={seekTo} size="compact" label={`${title} position`} disabled={broken} />
           </div>
           <span className="shrink-0 text-caption tabular-nums text-ink-secondary">
-            {clock(current)} / {clock(duration)}
+            {clock(shown)} / {clock(duration)}
           </span>
           {downloadButton}
         </div>
@@ -237,7 +264,7 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
           <Waveform
             peaks={wave.peaks}
             state={status === 'loading' ? 'loading' : wave.state}
-            currentSeconds={current}
+            currentSeconds={shown}
             durationSeconds={duration}
             onSeek={seekTo}
             size={size === 'full' ? 'full' : 'standard'}
@@ -245,7 +272,7 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
             disabled={broken}
           />
           <div className="flex items-center justify-between text-caption tabular-nums text-ink-secondary">
-            <span>{clock(current)}</span>
+            <span>{clock(shown)}</span>
             <span aria-label={`${clock(remaining)} remaining`}>-{clock(remaining)}</span>
           </div>
           {/* The player follows its own width (a container), not the screen's: in a narrow card the
