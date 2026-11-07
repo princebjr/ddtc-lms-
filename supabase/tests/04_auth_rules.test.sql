@@ -2,7 +2,7 @@
 -- D27 (4): a Google sign-in whose email matches an ADMIN or LECTURER is refused and links nothing.
 -- D27 (5): a verified-email match links to the existing LEARNER; an unverified match is refused.
 -- D27 (2): only Google accounts whose email is verified are accepted.
--- D32: ADMIN sessions end after 12 hours, or after 30 minutes without activity, enforced in is_admin().
+-- D32: ADMIN sessions end after 12 hours, or after a period without activity (D43: idle_timeout_minutes, 10 by default; was 30), enforced in is_admin().
 begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql

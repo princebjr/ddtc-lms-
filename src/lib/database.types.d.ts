@@ -577,6 +577,9 @@ isOneToOne: false
 "grade_categories_save":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_categories": Json,"p_course": string }; Returns: Json
                            },
+"idle_settings":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "launch_readiness":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
