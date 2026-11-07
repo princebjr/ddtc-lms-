@@ -45,8 +45,10 @@ async function writeLesson(page, courseId, title) {
   await text.click();
   const bold = page.getByRole('button', { name: 'Bold', exact: true });
   await bold.click();
-  // Type only once bold is on (the toolbar reports it), so every letter is bold.
+  // Type only once bold is on (the toolbar reports it) and the text still has the focus (pressing
+  // the button must not take it), so every letter lands in the lesson and is bold.
   await expect(bold).toHaveAttribute('aria-pressed', 'true');
+  await expect(text).toBeFocused();
   await page.keyboard.type('Read Genesis 1 slowly.');
   await page.getByRole('button', { name: 'Save lesson' }).click();
   await expect(toast(page, 'Lesson saved')).toBeVisible();

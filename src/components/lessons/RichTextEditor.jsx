@@ -91,6 +91,10 @@ export default function RichTextEditor({ value, onChange, label, disabled = fals
             <button
               key={t.label}
               type="button"
+              // A mouse or finger press keeps the focus in the text, so typing carries on where it
+              // was and a phone keyboard stays open; keyboard users reach the buttons with Tab and
+              // each command returns the focus to the text.
+              onMouseDown={(e) => e.preventDefault()}
               onClick={t.run}
               disabled={t.disabled}
               aria-label={t.label}
