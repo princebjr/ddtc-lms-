@@ -8,7 +8,7 @@ import { getSupabase } from '@/lib/supabase.js';
 
 /** @typedef {import('@supabase/supabase-js').Session} Session */
 /** @typedef {import('@/lib/database.types').Database['public']['Tables']['profiles']['Row']} ProfileRow */
-/** @typedef {Pick<ProfileRow, 'id' | 'id_number' | 'first_name' | 'second_name' | 'email' | 'contact_number' | 'role' | 'account_status' | 'profile_completed' | 'profile_image_file_id' | 'can_create_courses' | 'can_publish_directly'>} Profile */
+/** @typedef {Pick<ProfileRow, 'id' | 'id_number' | 'first_name' | 'second_name' | 'email' | 'contact_number' | 'role' | 'account_status' | 'profile_completed' | 'profile_image_file_id' | 'can_create_courses' | 'can_publish_directly' | 'branch_id'>} Profile */
 
 /**
  * @typedef {object} AuthState
@@ -28,7 +28,7 @@ import { getSupabase } from '@/lib/supabase.js';
  * }} AuthContextValue
  */
 
-const PROFILE_COLUMNS = 'id, id_number, first_name, second_name, email, contact_number, role, account_status, profile_completed, profile_image_file_id, can_create_courses, can_publish_directly';
+const PROFILE_COLUMNS = 'id, id_number, first_name, second_name, email, contact_number, role, account_status, profile_completed, profile_image_file_id, can_create_courses, can_publish_directly, branch_id';
 
 /** @type {import('react').Context<AuthContextValue | null>} */
 const AuthContext = createContext(/** @type {AuthContextValue | null} */ (null));

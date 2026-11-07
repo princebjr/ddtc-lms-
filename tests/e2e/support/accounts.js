@@ -54,7 +54,7 @@ export async function createAccount({ role = 'LEARNER', status = 'ACTIVE', passw
 
 /** @param {string} id */
 export async function getProfile(id) {
-  const rows = await admin(`/rest/v1/profiles?id=eq.${id}&select=role,account_status,first_name,second_name,can_create_courses,profile_image_file_id,id_number`);
+  const rows = await admin(`/rest/v1/profiles?id=eq.${id}&select=role,account_status,first_name,second_name,can_create_courses,profile_image_file_id,id_number,branch_id`);
   return rows[0];
 }
 

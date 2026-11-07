@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
+import { BranchField } from '@/components/branches/BranchField.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { ThemeSwitch } from '@/components/layout/ThemeSwitch.jsx';
@@ -19,8 +20,8 @@ import { getStorage } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // Profile settings (prototype `prof`; Phase 4): photo through the D18 pipeline, names and contact
-// number, theme, and password. Role, status and email are not editable here (D02, D03); the ID
-// number is shown with Copy and never changes (ADR-008).
+// number, a learner's branch (D42), theme, and password. Role, status and email are not editable
+// here (D02, D03); the ID number is shown with Copy and never changes (ADR-008).
 
 const ROLE_KEY = /** @type {const} */ ({ ADMIN: 'admin', LECTURER: 'lecturer', LEARNER: 'learner' });
 
@@ -174,12 +175,29 @@ function lower(text) {
   return t.charAt(0).toLowerCase() + t.slice(1);
 }
 
-function DetailsForm() {
+/**
+ * Names, contact number and, for learners, their branch (D42). Save changes is enabled once anything
+ * differs from what is saved. The database re-checks everything: only learners have a branch, and
+ * only an open one.
+ */
+export function DetailsForm() {
   const auth = useAuth();
   const toast = useToast();
   const profile = /** @type {NonNullable<typeof auth.profile>} */ (auth.profile);
+  const isLearner = profile.role === 'LEARNER';
+  const savedBranch = profile.branch_id ?? '';
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [pending, setPending] = useState(false);
+  const [textChanged, setTextChanged] = useState(false);
+  const [branchId, setBranchId] = useState(savedBranch);
+  const changed = textChanged || (isLearner && branchId !== savedBranch);
+
+  /** @param {import('react').FormEvent<HTMLFormElement>} event */
+  const onEdit = (event) => {
+    const values = formValues(event.currentTarget);
+    const saved = { firstName: profile.first_name, secondName: profile.second_name, contactNumber: profile.contact_number ?? '' };
+    setTextChanged(Object.entries(saved).some(([key, value]) => (values[key] ?? '').trim() !== value));
+  };
 
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   const onSubmit = async (event) => {
@@ -190,16 +208,24 @@ function DetailsForm() {
     setPending(true);
     const { error } = await getSupabase()
       .from('profiles')
-      .update({ first_name: result.data.firstName, second_name: result.data.secondName, contact_number: result.data.contactNumber || null })
+      .update({
+        first_name: result.data.firstName,
+        second_name: result.data.secondName,
+        contact_number: result.data.contactNumber || null,
+        ...(isLearner ? { branch_id: branchId || null } : {}),
+      })
       .eq('id', profile.id);
     setPending(false);
+    // 22023: the branch is no longer open (closed while the page was open).
+    if (error?.code === '22023') return setErrors({ branchId: 'Choose one of the branches' });
     if (error) return toast.show('request.failed');
     await auth.refresh();
+    setTextChanged(false);
     toast.show('profile.saved');
   };
 
   return (
-    <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form noValidate onSubmit={onSubmit} onChange={onEdit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="First name" name="firstName" autoComplete="given-name" defaultValue={profile.first_name} error={errors.firstName} />
         <FormField label="Second name" name="secondName" autoComplete="family-name" defaultValue={profile.second_name} error={errors.secondName} />
@@ -214,8 +240,20 @@ function DetailsForm() {
         defaultValue={profile.contact_number ?? ''}
         error={errors.contactNumber}
       />
+      {isLearner ? (
+        <BranchField
+          value={branchId}
+          currentId={profile.branch_id}
+          onChange={(id) => {
+            setBranchId(id);
+            setErrors((e) => ({ ...e, branchId: '' }));
+          }}
+          hint="Your lecturers and administrators can see your branch."
+          error={errors.branchId}
+        />
+      ) : null}
       <div>
-        <Button type="submit" loading={pending} loadingLabel="Saving">
+        <Button type="submit" disabled={!changed} loading={pending} loadingLabel="Saving">
           Save changes
         </Button>
       </div>
