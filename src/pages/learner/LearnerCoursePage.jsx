@@ -1,4 +1,4 @@
-import { BookOpen, CircleCheck, Circle, Library } from 'lucide-react';
+import { BookOpen, CircleCheck, Circle, ClipboardList, Library } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { CourseWorkspaceSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
@@ -10,23 +10,27 @@ import { useCourseCovers } from '@/hooks/use-course-covers.js';
 import { useLoad } from '@/hooks/use-load.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { fetchCourse, fetchMyEnrolment, fetchTeachers } from '@/lib/courses/courses.js';
+import { CONTENT_TYPE_LABEL, fetchMyAssignments } from '@/lib/assignments/assignments.js';
+import { dueStatus } from '@/lib/assignments/due.js';
 import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 
-// A course as a learner sees it (Phase 5 overview; Phase 6 lessons with progress). A COMPLETED
+// A course as a learner sees it (Phase 5 overview; Phase 6 lessons with progress; Phase 7 its
+// assignments with due dates). A COMPLETED
 // enrolment (D05) and an ARCHIVED course (D07) are read-only: the page says so, and later phases
 // offer no submission there (private.is_actively_enrolled).
 
 export default function LearnerCoursePage() {
   const { courseId = '' } = useParams();
   const { state, data, reload } = useLoad(async () => {
-    const [course, teachers, enrolment, lessons, progress] = await Promise.all([
+    const [course, teachers, enrolment, lessons, progress, assignments] = await Promise.all([
       fetchCourse(courseId),
       fetchTeachers(courseId),
       fetchMyEnrolment(courseId),
       fetchLessons(courseId),
       fetchMyProgress(courseId),
+      fetchMyAssignments(),
     ]);
-    return { course, teachers, enrolment, lessons, progress };
+    return { course, teachers, enrolment, lessons, progress, assignments: assignments.filter((a) => a.course_id === courseId) };
   }, [courseId]);
   const covers = useCourseCovers(data?.course?.cover_image_file_id ? [courseId] : []);
 
@@ -89,6 +93,7 @@ export default function LearnerCoursePage() {
             </Card>
           </div>
           <Lessons courseId={course.id} lessons={data?.lessons ?? []} progress={data?.progress ?? {}} />
+          <Assignments courseId={course.id} assignments={data?.assignments ?? []} />
         </div>
       ) : null}
     </LoadingRegion>
@@ -143,4 +148,42 @@ function Lessons({ courseId, lessons, progress }) {
 function Teacher({ first, second, path }) {
   const imageUrl = useProfileImage(path);
   return <UserAvatar firstName={first} secondName={second} imageUrl={imageUrl} size={40} decorative />;
+}
+
+/**
+ * The course's published assignments, soonest due first, each with its due-date chip (Ghana time,
+ * with the learner's own extension; D13).
+ * @param {{ courseId: string, assignments: Awaited<ReturnType<typeof fetchMyAssignments>> }} props
+ */
+function Assignments({ courseId, assignments }) {
+  const now = new Date();
+  const rows = assignments
+    .map((a) => ({ ...a, due: dueStatus({ dueAt: a.due_at, allowLate: a.allow_late, extendedTo: a.extended_to }, now) }))
+    .sort((x, y) => Date.parse(x.due.effective) - Date.parse(y.due.effective));
+  return (
+    <section aria-labelledby="assignments-heading" className="flex flex-col gap-3">
+      <h2 id="assignments-heading" className="m-0 text-title-3 text-ink">
+        Assignments
+      </h2>
+      {rows.length ? (
+        <ul className="m-0 flex list-none flex-col divide-y divide-hairline rounded-md border border-hairline bg-card p-0">
+          {rows.map((a) => (
+            <li key={a.id}>
+              <Link to={`/learner/courses/${courseId}/assignments/${a.id}`} className="flex min-h-14 flex-col gap-1 px-4 py-2 hover:bg-fill focus-visible:focus-ring sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-label text-ink">{a.title}</span>
+                  <span className="text-body-sm text-ink-secondary">{CONTENT_TYPE_LABEL[a.content_type]} instructions</span>
+                </span>
+                <span className="shrink-0">
+                  <StatusChip tone={a.due.tone}>{a.due.label}</StatusChip>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState icon={ClipboardList} title="No assignments yet" description="Your lecturer has not published any assignments in this course yet." />
+      )}
+    </section>
+  );
 }

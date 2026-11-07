@@ -12,6 +12,7 @@
 - Assignment editor with all fields in Section 5, instruction-type validation (TEXT needs text; AUDIO needs audio; TEXT_AND_AUDIO needs both), category selection, publish.
 - `assignment-instructions-audio` bucket, separate from lesson audio but using the same D18 registry and validation pipeline.
 - Learner assignment list and due-date view.
+- ADR-009 (owner, 2026-11-07): every assignment accepts text and audio answers whatever the instruction type; the lecturer may also allow PDF and Word (`accepted_formats` always contains TEXT and AUDIO).
 
 **Tests required**
 

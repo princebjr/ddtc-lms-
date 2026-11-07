@@ -26,6 +26,8 @@ const EnrolmentsPage = lazy(() => import('./admin/EnrolmentsPage.jsx'));
 const LearnerCoursesPage = lazy(() => import('./learner/LearnerCoursesPage.jsx'));
 const LecturerDashboardPage = lazy(() => import('./lecturer/LecturerDashboardPage.jsx'));
 const LearnerDashboardPage = lazy(() => import('./learner/LearnerDashboardPage.jsx'));
+const AdminAssignmentsPage = lazy(() => import('./admin/AdminAssignmentsPage.jsx'));
+const LearnerAssignmentsPage = lazy(() => import('./learner/LearnerAssignmentsPage.jsx'));
 
 /** @type {Record<string, () => import('react').ReactNode>} */
 const BUILT = {
@@ -36,11 +38,13 @@ const BUILT = {
   'admin/courses': () => <CoursesPage role="admin" />,
   'admin/approvals': () => <ApprovalsPage />,
   'admin/enrolments': () => <EnrolmentsPage />,
+  'admin/assignments': () => <AdminAssignmentsPage />,
   'admin/profile': () => <ProfilePage />,
   'lecturer/dashboard': () => <LecturerDashboardPage />,
   'lecturer/my-courses': () => <CoursesPage role="lecturer" />,
   'learner/dashboard': () => <LearnerDashboardPage />,
   'learner/my-courses': () => <LearnerCoursesPage />,
+  'learner/assignments': () => <LearnerAssignmentsPage />,
   'lecturer/profile': () => <ProfilePage />,
   'learner/profile': () => <ProfilePage />,
 };
