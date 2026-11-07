@@ -119,9 +119,9 @@ export async function fetchTeachers(id) {
 }
 
 /**
- * Learners of a course by name and photo only (lecturers and administrators).
+ * Learners of a course by name, photo and ID number only (lecturers and administrators; ADR-008).
  * @param {string} id
- * @returns {Promise<Array<{ enrolment_id: string, learner_id: string, first_name: string, second_name: string, profile_image_path: string | null, enrolment_status: EnrolmentStatus, enrolled_at: string }>>}
+ * @returns {Promise<Array<{ enrolment_id: string, learner_id: string, first_name: string, second_name: string, id_number: number, profile_image_path: string | null, enrolment_status: EnrolmentStatus, enrolled_at: string }>>}
  */
 export async function fetchRoster(id) {
   const { data, error } = await getSupabase().rpc('course_roster', { p_course: id });

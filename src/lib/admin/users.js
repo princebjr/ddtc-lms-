@@ -1,14 +1,15 @@
+import { parseIdNumber } from '@/lib/id-number.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // Administrator user data. Reads go through RLS (an AAL2 administrator reads every profile);
 // every change goes through an Edge Function (src/lib/functions.js).
 
 /** @typedef {import('@/lib/database.types').Database['public']['Tables']['profiles']['Row']} ProfileRow */
-/** @typedef {Pick<ProfileRow, 'id' | 'first_name' | 'second_name' | 'email' | 'role' | 'account_status' | 'can_create_courses' | 'can_publish_directly' | 'profile_image_file_id' | 'created_at'>} AdminUser */
+/** @typedef {Pick<ProfileRow, 'id' | 'id_number' | 'first_name' | 'second_name' | 'email' | 'role' | 'account_status' | 'can_create_courses' | 'can_publish_directly' | 'profile_image_file_id' | 'created_at'>} AdminUser */
 /** @typedef {'all' | 'lecturers' | 'learners'} UsersView */
 
 export const PAGE_SIZE = 50;
-const COLUMNS = 'id, first_name, second_name, email, role, account_status, can_create_courses, can_publish_directly, profile_image_file_id, created_at';
+const COLUMNS = 'id, id_number, first_name, second_name, email, role, account_status, can_create_courses, can_publish_directly, profile_image_file_id, created_at';
 
 export const ROLE_LABEL = /** @type {const} */ ({ ADMIN: 'Administrator', LECTURER: 'Lecturer', LEARNER: 'Learner' });
 export const STATUS_LABEL = /** @type {const} */ ({ ACTIVE: 'Active', SUSPENDED: 'Suspended', DEACTIVATED: 'Deactivated' });
@@ -31,6 +32,20 @@ export function likeTerm(s) {
 }
 
 /**
+ * The PostgREST `or` filter for a people search: name and email, plus the ID number when the text
+ * is one (ADR-008). Null when there is nothing to search for.
+ * @param {string} search
+ * @returns {string | null}
+ */
+export function userSearchFilter(search) {
+  const term = likeTerm(search);
+  if (!term) return null;
+  const idNumber = parseIdNumber(term);
+  const text = `first_name.ilike.*${term}*,second_name.ilike.*${term}*,email.ilike.*${term}*`;
+  return idNumber ? `id_number.eq.${idNumber},${text}` : text;
+}
+
+/**
  * @param {UserQuery} q
  * @returns {Promise<{ rows: AdminUser[], hasMore: boolean }>}
  */
@@ -39,8 +54,8 @@ export async function fetchUsers(q) {
   const role = q.view === 'lecturers' ? 'LECTURER' : q.view === 'learners' ? 'LEARNER' : q.role;
   if (role) query = query.eq('role', role);
   if (q.status) query = query.eq('account_status', q.status);
-  const term = likeTerm(q.search);
-  if (term) query = query.or(`first_name.ilike.*${term}*,second_name.ilike.*${term}*,email.ilike.*${term}*`);
+  const filter = userSearchFilter(q.search);
+  if (filter) query = query.or(filter);
   query = q.sort === 'newest' ? query.order('created_at', { ascending: false }) : query.order('first_name').order('second_name');
   const from = q.page * PAGE_SIZE;
   const { data, error } = await query.range(from, from + PAGE_SIZE);

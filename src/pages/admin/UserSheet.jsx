@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch.jsx';
 import { UserAvatar } from '@/components/UserAvatar.jsx';
 import { useAvatarUrl } from '@/hooks/use-avatar-url.js';
 import { ROLE_LABEL, STATUS_LABEL, STATUS_TONE } from '@/lib/admin/users.js';
+import { formatIdNumber } from '@/lib/id-number.js';
 import { changeLecturer, fetchActiveLecturers, fetchOwnedActiveCourses } from '@/lib/courses/courses.js';
 import { callFunction } from '@/lib/functions.js';
 
@@ -87,6 +88,9 @@ export function UserSheet({ user, isSelf, onClose, onChanged }) {
               <UserAvatar firstName={user.first_name} secondName={user.second_name} imageUrl={imageUrl} size={56} />
               <div className="flex flex-col gap-1">
                 <p className="m-0 text-body text-ink">{ROLE_LABEL[user.role]}</p>
+                <p className="m-0 text-body-sm text-ink-secondary">
+                  ID number <span className="tabular-nums text-ink">{formatIdNumber(user.id_number)}</span>
+                </p>
                 <StatusChip tone={STATUS_TONE[user.account_status]}>{STATUS_LABEL[user.account_status]}</StatusChip>
               </div>
             </div>

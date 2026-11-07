@@ -21,6 +21,7 @@ import { useLoad } from '@/hooks/use-load.js';
 import { DESKTOP_QUERY, useMediaQuery } from '@/hooks/use-media-query.js';
 import { ENROLMENT_STATUS_LABEL, ENROLMENT_STATUS_TONE, fetchCourses } from '@/lib/courses/courses.js';
 import { enrolLearners, fetchEnrolments, restoreEnrolments, searchLearners, setEnrolmentStatus } from '@/lib/courses/enrolments.js';
+import { formatIdNumber } from '@/lib/id-number.js';
 
 // Enrolment management (D05, prototype `enr`): administrator only. Filter by course, status or
 // learner; change a status (COMPLETED marks a finished learner, read-only access) with Undo; Enrol
@@ -268,7 +269,7 @@ function EnrolSheet({ courses, initialCourse, onClose, onDone }) {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="enrol-search">Find learners</Label>
-            <Input id="enrol-search" type="search" inputMode="search" placeholder="Name or email" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input id="enrol-search" type="search" inputMode="search" placeholder="Name, email or ID number" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <LoadingRegion loading={learners.state === 'loading'} skeleton={<ListSkeleton rows={4} columns={2} />} onRetry={learners.reload}>
             <ul className="m-0 flex max-h-80 list-none flex-col divide-y divide-hairline overflow-y-auto rounded-md border border-hairline p-0">
@@ -279,7 +280,9 @@ function EnrolSheet({ courses, initialCourse, onClose, onDone }) {
                     <span className="truncate text-label text-ink">
                       {l.first_name} {l.second_name}
                     </span>
-                    <span className="truncate text-body-sm text-ink-secondary">{l.email}</span>
+                    <span className="truncate text-body-sm text-ink-secondary">
+                      {l.email} · ID <span className="tabular-nums">{formatIdNumber(l.id_number)}</span>
+                    </span>
                   </Label>
                 </li>
               ))}

@@ -19,6 +19,7 @@ import { useAvatarUrl } from '@/hooks/use-avatar-url.js';
 import { DESKTOP_QUERY, TABLET_UP_QUERY, useMediaQuery } from '@/hooks/use-media-query.js';
 import { fetchUsers, ROLE_LABEL, STATUS_LABEL, STATUS_TONE } from '@/lib/admin/users.js';
 import { callFunction } from '@/lib/functions.js';
+import { formatIdNumber } from '@/lib/id-number.js';
 import { AddPersonDialog } from './AddPersonDialog.jsx';
 import { ImportSheet } from './ImportSheet.jsx';
 import { UserSheet } from './UserSheet.jsx';
@@ -111,6 +112,12 @@ export default function UsersPage({ view }) {
       header: 'Name',
       card: /** @type {const} */ ('title'),
       cell: (/** @type {AdminUser} */ u) => <Person user={u} />,
+    },
+    {
+      key: 'idNumber',
+      header: 'ID number',
+      card: /** @type {const} */ ('detail'),
+      cell: (/** @type {AdminUser} */ u) => <span className="tabular-nums">{formatIdNumber(u.id_number)}</span>,
     },
     { key: 'role', header: 'Role', card: /** @type {const} */ ('secondary'), cell: (/** @type {AdminUser} */ u) => ROLE_LABEL[u.role] },
     {
@@ -255,7 +262,7 @@ function Filters({ view, search, onSearch, role, onRole, status, onStatus, sort,
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <div className="flex min-w-0 flex-1 flex-col gap-2 sm:min-w-64">
         <Label htmlFor="user-search">Search</Label>
-        <Input id="user-search" type="search" inputMode="search" placeholder="Name or email" value={search} onChange={(e) => onSearch(e.target.value)} />
+        <Input id="user-search" type="search" inputMode="search" placeholder="Name, email or ID number" value={search} onChange={(e) => onSearch(e.target.value)} />
       </div>
       {wide ? (
         fields

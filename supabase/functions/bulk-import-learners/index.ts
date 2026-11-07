@@ -5,6 +5,7 @@
 // Phase 5: an optional course code per row enrols the learner in that course (D05). A new address
 // is invited and enrolled; an existing learner is enrolled; anyone already in the course, an
 // unknown or archived course, or a staff address is reported as an error.
+// ADR-008: each new or enrolled learner's row carries the ID number the database gave them.
 import { z } from 'npm:zod@4.6.7';
 import { requireAdmin, serviceClient } from '../_shared/auth.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
@@ -19,7 +20,7 @@ const Body = z.object({
   commit: z.boolean().default(false),
 });
 
-type RowResult = { row: number; email: string; status: 'ready' | 'created' | 'enrolled' | 'error'; message?: string };
+type RowResult = { row: number; email: string; status: 'ready' | 'created' | 'enrolled' | 'error'; message?: string; idNumber?: number };
 type Course = { id: string; course_code: string; title: string; status: string };
 
 serve(async (req) => {
@@ -87,7 +88,7 @@ serve(async (req) => {
         results.push({ row, email, status: 'ready', message: `Existing learner, will be enrolled in ${course.course_code}` });
         continue;
       }
-      results.push(await enrol(admin, caller.id, course, existing.id, row, email, 'enrolled'));
+      results.push(await withIdNumber(admin, await enrol(admin, caller.id, course, existing.id, row, email, 'enrolled'), existing.id));
       continue;
     }
 
@@ -102,7 +103,8 @@ serve(async (req) => {
       results.push({ row, email, status: 'error', message: 'The invitation email could not be sent' });
       continue;
     }
-    results.push(course ? await enrol(admin, caller.id, course, userId, row, email, 'created') : { row, email, status: 'created' });
+    const done: RowResult = course ? await enrol(admin, caller.id, course, userId, row, email, 'created') : { row, email, status: 'created' };
+    results.push(await withIdNumber(admin, done, userId));
   }
 
   const summary = {
@@ -116,6 +118,13 @@ serve(async (req) => {
   if (parsed.data.commit) await audit(admin, caller.id, 'admin.learners_imported', 'profile', null, summary);
   return json(req, 200, { summary, results });
 });
+
+/** Adds the ID number the database gave the learner (ADR-008) to a row that succeeded. */
+async function withIdNumber(admin: ReturnType<typeof serviceClient>, result: RowResult, learnerId: string): Promise<RowResult> {
+  if (result.status === 'error') return result;
+  const { data } = await admin.from('profiles').select('id_number').eq('id', learnerId).maybeSingle();
+  return data?.id_number ? { ...result, idNumber: data.id_number as number } : result;
+}
 
 /** Enrols through the trusted function, so the D05 rules and the audit record apply. */
 async function enrol(
