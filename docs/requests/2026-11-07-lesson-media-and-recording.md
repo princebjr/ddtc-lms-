@@ -1,8 +1,9 @@
 # Owner request (2026-11-07): lesson media management and lecturer recording
 
-Status: **decisions taken, plan waiting for the owner's approval.** Received during Phase 6 (PR #10).
-To be recorded as ADR-007 in `docs/DECISIONS.md` when the plan is approved; it changes BUILD_PLAN
-D09, D17 and D25 for lesson media, and the Phase 6, 8 and 12 phase files.
+Status: **plan approved by the owner on 2026-11-07; recorded as ADR-007 in `docs/DECISIONS.md`.**
+Media management is built in Phase 6 (PR #10; evidence in `docs/acceptance/phase-06.md`). Lecturer
+recording is scheduled in the Phase 8 file. BUILD_PLAN D09 and D25 and the Phase 6, 8 and 12 files
+carry the change.
 
 ## What the owner asked for
 
