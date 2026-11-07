@@ -17,7 +17,7 @@ Extract of `docs/BUILD_PLAN.md` v1.7. If this file and BUILD_PLAN.md ever differ
 
 | Resource | Administrator | Lecturer | Learner |
 |---|---|---|---|
-| Profiles | Read all; change role and status only through Edge Functions | Read own; read learners of own courses (name, avatar) | Read and edit own permitted fields only |
+| Profiles | Read all; change role and status only through Edge Functions; nobody changes an ID number (ADR-008) | Read own; read learners of own courses (name, avatar and ID number, through `course_roster`) | Read and edit own permitted fields only (the ID number is read-only) |
 | Courses | All | Create if can_create_courses; read and edit only own (course_lecturers) | Read PUBLISHED courses they are enrolled in |
 | Enrolments | All | Read for own courses | Read own |
 | Lessons and audio | Read all | Create, edit, upload, download for own courses | Read published lessons; stream and download VALIDATED audio of enrolled courses |

@@ -261,6 +261,12 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - **Player:** `AudioPlayer` and `Waveform` (ADR-006); starting one player pauses any other on the page, and seeks stop 0.1 s short of the end (Firefox and Linux WebKit break when told to seek exactly to the end) with signed URLs from the user's own session (one hour for playback, five minutes for downloads, D19); `/dev/audio` shows every size and state in preview builds.
 - **Routes:** `/:role/courses/:courseId/lessons/:lessonId` (`new` for a new lesson) for lecturers and administrators; `/learner/courses/:courseId/lessons/:lessonId` for learners.
 
+### Account ID numbers as built (step 6.1, ADR-008)
+
+- **Column:** `profiles.id_number`, integer, unique, 100000 to 999999. A BEFORE INSERT trigger (`private.assign_id_number`) takes the next value of `private.id_number_seq` (1 to 900000, no cycle) and passes it through `private.id_number_for()`, a fixed one-to-one shuffle (multiply by 556231, which shares no factor with 900000, add an offset, wrap): every account gets a different number, neighbours land far apart, and the numbers say nothing about joining order or how many accounts exist. Beyond 900,000 accounts it refuses. Existing accounts were numbered in joining order by the migration (without touching `updated_at`).
+- **Never changes:** `private.keep_id_number` refuses any change for every role, the server included; clients have no update grant on the column; accounts are never deleted, so a number is never reused.
+- **Who sees it:** the person and administrators through the existing profile rules; the lecturers of a learner's courses through `course_roster` (which now returns `id_number`, still never email or phone). Admin searches (Users list, Enrol learners picker) match a typed six-digit number as well as names and email (`userSearchFilter`); the CSV import returns each new learner's number in its results and report.
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.
