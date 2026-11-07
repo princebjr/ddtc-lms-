@@ -5,7 +5,89 @@ export type Database = {
   
   "public": {
           Tables: {
-            "audit_logs": {
+            "assignment_versions": {
+                  Row: {
+                    "accepted_formats": (string)[],"allow_late": boolean,"assignment_id": string,"category_id": string,"change_reason": string | null,"changed_by": string,"content_type": Database["public"]['Enums']["assignment_content_type"],"created_at": string,"description": string,"due_at": string,"grading_criteria": string,"id": string,"instruction_audio_file_id": string | null,"max_marks": number,"text_instructions": string,"title": string,"version_number": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_formats": (string)[],"allow_late": boolean,"assignment_id": string,"category_id": string,"change_reason"?: string | null,"changed_by": string,"content_type": Database["public"]['Enums']["assignment_content_type"],"created_at"?: string,"description": string,"due_at": string,"grading_criteria": string,"id"?: string,"instruction_audio_file_id"?: string | null,"max_marks": number,"text_instructions": string,"title": string,"version_number": number
+                  }
+                  Update: {
+                    "accepted_formats"?: (string)[],"allow_late"?: boolean,"assignment_id"?: string,"category_id"?: string,"change_reason"?: string | null,"changed_by"?: string,"content_type"?: Database["public"]['Enums']["assignment_content_type"],"created_at"?: string,"description"?: string,"due_at"?: string,"grading_criteria"?: string,"id"?: string,"instruction_audio_file_id"?: string | null,"max_marks"?: number,"text_instructions"?: string,"title"?: string,"version_number"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assignment_versions_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignment_versions_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "grade_categories"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignment_versions_changed_by_fkey"
+      columns: ["changed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignment_versions_instruction_audio_file_id_fkey"
+      columns: ["instruction_audio_file_id"]
+isOneToOne: false
+      referencedRelation: "file_objects"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assignments": {
+                  Row: {
+                    "accepted_formats": (string)[],"allow_late": boolean,"archived_at": string | null,"category_id": string,"content_type": Database["public"]['Enums']["assignment_content_type"],"course_id": string,"created_at": string,"created_by": string,"description": string,"due_at": string,"grading_criteria": string,"id": string,"instruction_audio_file_id": string | null,"lesson_id": string | null,"max_marks": number,"publication_status": Database["public"]['Enums']["publication_status"],"published_at": string | null,"text_instructions": string,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_formats"?: (string)[],"allow_late"?: boolean,"archived_at"?: string | null,"category_id": string,"content_type": Database["public"]['Enums']["assignment_content_type"],"course_id": string,"created_at"?: string,"created_by": string,"description"?: string,"due_at": string,"grading_criteria"?: string,"id"?: string,"instruction_audio_file_id"?: string | null,"lesson_id"?: string | null,"max_marks": number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"text_instructions"?: string,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "accepted_formats"?: (string)[],"allow_late"?: boolean,"archived_at"?: string | null,"category_id"?: string,"content_type"?: Database["public"]['Enums']["assignment_content_type"],"course_id"?: string,"created_at"?: string,"created_by"?: string,"description"?: string,"due_at"?: string,"grading_criteria"?: string,"id"?: string,"instruction_audio_file_id"?: string | null,"lesson_id"?: string | null,"max_marks"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"text_instructions"?: string,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assignments_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "grade_categories"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignments_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "courses"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignments_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignments_instruction_audio_file_id_fkey"
+      columns: ["instruction_audio_file_id"]
+isOneToOne: false
+      referencedRelation: "file_objects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assignments_lesson_id_fkey"
+      columns: ["lesson_id"]
+isOneToOne: false
+      referencedRelation: "lessons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"audit_logs": {
                   Row: {
                     "action": string,"actor_id": string | null,"created_at": string,"entity_id": string | null,"entity_type": string,"id": string,"metadata": NonNullable<Json>
                   }
@@ -150,6 +232,26 @@ isOneToOne: false
       columns: ["uploaded_by"]
 isOneToOne: false
       referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"grade_categories": {
+                  Row: {
+                    "archived_at": string | null,"course_id": string,"created_at": string,"id": string,"name": string,"position": number,"updated_at": string,"weight": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"course_id": string,"created_at"?: string,"id"?: string,"name": string,"position": number,"updated_at"?: string,"weight": number
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"course_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"position"?: number,"updated_at"?: string,"weight"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "grade_categories_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "courses"
       referencedColumns: ["id"]
     }
                   ]
@@ -321,6 +423,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"submission_extensions": {
+                  Row: {
+                    "assignment_id": string,"created_at": string,"extended_due_at": string,"granted_by": string,"id": string,"learner_id": string,"reason": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"created_at"?: string,"extended_due_at": string,"granted_by": string,"id"?: string,"learner_id": string,"reason"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "assignment_id"?: string,"created_at"?: string,"extended_due_at"?: string,"granted_by"?: string,"id"?: string,"learner_id"?: string,"reason"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_extensions_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submission_extensions_granted_by_fkey"
+      columns: ["granted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submission_extensions_learner_id_fkey"
+      columns: ["learner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"system_settings": {
                   Row: {
                     "created_at": string,"description": string,"is_sensitive": boolean,"key": string,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
@@ -359,6 +493,23 @@ isOneToOne: false
 "am_i_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"assignment_audio_activate":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string }; Returns: Json
+                           },
+"assignment_media":
+{ Args: { "p_assignment": string }; Returns: {
+              "bucket_name": string,"duration_seconds": number,"file_object_id": string,"file_size": number,"mime_type": string,"safe_download_filename": string,"storage_path": string,"waveform_peaks": (number)[]
+            }[]
+                           },
+"assignment_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_course": string,"p_fields": Json,"p_reason": string }; Returns: string
+                           },
+"assignment_set_archived":
+{ Args: { "p_actor": string,"p_archived": boolean,"p_as_admin": boolean,"p_assignment": string }; Returns: Json
+                           },
+"assignment_set_publication":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_publish": boolean }; Returns: Json
+                           },
 "bootstrap_first_admin":
 { Args: { "p_user": string }; Returns: undefined
                            },
@@ -389,6 +540,9 @@ isOneToOne: false
 "course_transition":
 { Args: { "p_action": string,"p_actor": string,"p_as_admin": boolean,"p_course": string,"p_grant_direct"?: boolean,"p_reason"?: string }; Returns: Json
                            },
+"course_weight_total":
+{ Args: { "p_course": string }; Returns: number
+                           },
 "enrolment_add":
 { Args: { "p_actor": string,"p_course": string,"p_learners": (string)[] }; Returns: Json
                            },
@@ -399,6 +553,9 @@ isOneToOne: false
 { Args: { "p_limit"?: number }; Returns: {
               "bucket_name": string,"id": string,"reason": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string
             }[]
+                           },
+"grade_categories_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_categories": Json,"p_course": string }; Returns: Json
                            },
 "launch_readiness":
 { Args: Record<PropertyKey, never>; Returns: Json
@@ -443,7 +600,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","publication_status": "DRAFT"|"PUBLISHED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","publication_status": "DRAFT"|"PUBLISHED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -559,7 +716,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"publication_status": ["DRAFT", "PUBLISHED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"publication_status": ["DRAFT", "PUBLISHED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const

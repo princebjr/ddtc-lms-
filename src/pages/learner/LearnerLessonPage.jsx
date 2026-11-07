@@ -1,4 +1,3 @@
-import DOMPurify from 'dompurify';
 import { ArrowLeft, ArrowRight, CircleCheck, Download, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
@@ -13,18 +12,12 @@ import { useLoad } from '@/hooks/use-load.js';
 import { fileSize } from '@/lib/audio/format.js';
 import { fetchCourse, fetchMyEnrolment } from '@/lib/courses/courses.js';
 import { downloadMedia, fetchLesson, fetchLessonMedia, fetchLessons, fetchMyProgress, markLesson, playbackUrl } from '@/lib/lessons/lessons.js';
+import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
 
 // The learner's lesson page (Phase 6; RESPONSIVE.md 15.2 "Lesson page"): the lesson text first at
 // reading width, the full-width audio player, attachments, then Previous, Next and the completion
 // button within thumb reach. A COMPLETED enrolment (D05) or an ARCHIVED course (D07) is read-only:
 // the lesson can be read and played, but not marked.
-
-// Same allow-list as the server (supabase/functions/_shared/lesson-html.ts): cleaned once more here.
-const ALLOWED = {
-  ALLOWED_TAGS: ['p', 'br', 'h2', 'h3', 'h4', 'strong', 'b', 'em', 'i', 'u', 's', 'blockquote', 'ul', 'ol', 'li', 'a', 'code', 'pre', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'img'],
-  ALLOWED_ATTR: ['href', 'title', 'target', 'rel', 'src', 'alt', 'width', 'height', 'colspan', 'rowspan', 'start'],
-  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:)/i,
-};
 
 export default function LearnerLessonPage() {
   const { courseId = '', lessonId = '' } = useParams();
@@ -120,7 +113,7 @@ export default function LearnerLessonPage() {
 
           {d.lesson.content ? (
             // Cleaned on the server when saved and again here (defence in depth).
-            <div className="lesson-content" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(d.lesson.content, ALLOWED) }} />
+            <div className="lesson-content" dangerouslySetInnerHTML={{ __html: cleanForDisplay(d.lesson.content) }} />
           ) : null}
 
           {d.media.attachments.length ? (

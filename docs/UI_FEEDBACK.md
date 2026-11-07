@@ -67,6 +67,10 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer or administrator | Course cover removed, after confirming (ADR-007) | "Cover image removed" (S) | none |
 | Lecturer or administrator | A delete failed; the item stays (ADR-007) | "Could not delete: reason" (E) | Try again |
 | Lecturer | Assignment saved or published | "Assignment saved" or "Assignment published" (S) | none |
+| Lecturer or administrator | Assignment unpublished (Phase 7) | "Assignment unpublished" (S) | none |
+| Lecturer or administrator | Assignment archived, never deleted (Phase 7) | "Assignment archived" (S) | Undo |
+| Lecturer or administrator | Archived assignment restored (Phase 7) | "Assignment restored" (S) | none |
+| Lecturer or administrator | Grade categories saved (Phase 7) | "Categories saved" (S) | none |
 | Lecturer | Extension granted | "Extension granted" (S) | Undo |
 | Lecturer | Grade draft saved | "Grade saved as draft" (S) | none |
 | Lecturer | Grades released | "Grades released to N learners" (S) | none |
