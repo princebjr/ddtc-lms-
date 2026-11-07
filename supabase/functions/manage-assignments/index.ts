@@ -6,7 +6,10 @@
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
-import { cleanLessonHtml } from '../_shared/lesson-html.ts';
+
+// The HTML cleaner (sanitize-html) is heavy to start, so it is loaded only by the actions that clean
+// HTML; the others start quickly.
+const htmlCleaner = () => import('../_shared/lesson-html.ts');
 
 const Fields = z.object({
   title: z.string().trim().min(3, 'Enter a title of at least 3 characters').max(200, 'Use 200 characters or fewer'),
@@ -59,7 +62,7 @@ serve(async (req) => {
   switch (b.action) {
     case 'save': {
       const f = b.fields;
-      const text = cleanLessonHtml(f.textInstructions);
+      const text = (await htmlCleaner()).cleanLessonHtml(f.textInstructions);
       if (text.length > 200000) throw new HttpError(400, 'invalid', 'The instructions are too long');
       const { data, error } = await admin.rpc('assignment_save', {
         ...actor,
