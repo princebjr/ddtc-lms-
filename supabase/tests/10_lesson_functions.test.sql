@@ -1,8 +1,9 @@
 -- Phase 6: the trusted lesson functions behind manage-lessons and finalize-upload. Only the service
 -- role (Edge Functions) may call them; each re-checks the actor (an AAL2-verified administrator is
 -- passed as p_as_admin) and the course rights, and audits. D08 (ordered lessons, atomic reorder),
--- D09 (one ACTIVE audio, replacing keeps the old file as SUPERSEDED), D07 (archived = read-only),
--- D25 (nothing deleted).
+-- D09 as changed by ADR-007 (replacing an audio keeps the old file as SUPERSEDED in the same place),
+-- D07 (archived = read-only), D25 (no record is deleted). The 10-audio limit, rename, reorder and
+-- deleting are tested in 11_lesson_media.
 begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
@@ -31,17 +32,17 @@ insert into public.course_lecturers (course_id, lecturer_id, permission_level, a
 select has_function('public', 'lesson_save', array['uuid', 'boolean', 'uuid', 'uuid', 'text', 'text'], 'lesson_save exists');
 select has_function('public', 'lesson_set_publication', array['uuid', 'boolean', 'uuid', 'boolean'], 'lesson_set_publication exists');
 select has_function('public', 'lesson_reorder', array['uuid', 'boolean', 'uuid', 'uuid[]'], 'lesson_reorder exists');
-select has_function('public', 'lesson_audio_activate', array['uuid', 'boolean', 'uuid'], 'lesson_audio_activate exists');
+select has_function('public', 'lesson_audio_activate', array['uuid', 'boolean', 'uuid', 'uuid', 'text'], 'lesson_audio_activate exists');
 select has_function('public', 'lesson_attachment_add', array['uuid', 'boolean', 'uuid', 'text'], 'lesson_attachment_add exists');
-select has_function('public', 'lesson_attachment_remove', array['uuid', 'boolean', 'uuid'], 'lesson_attachment_remove exists');
+select has_function('public', 'lesson_attachment_delete', array['uuid', 'boolean', 'uuid'], 'lesson_attachment_delete exists');
 select is(
   (select count(*)::int from unnest(array[
      'public.lesson_save(uuid, boolean, uuid, uuid, text, text)',
      'public.lesson_set_publication(uuid, boolean, uuid, boolean)',
      'public.lesson_reorder(uuid, boolean, uuid, uuid[])',
-     'public.lesson_audio_activate(uuid, boolean, uuid)',
+     'public.lesson_audio_activate(uuid, boolean, uuid, uuid, text)',
      'public.lesson_attachment_add(uuid, boolean, uuid, text)',
-     'public.lesson_attachment_remove(uuid, boolean, uuid)']) f
+     'public.lesson_attachment_delete(uuid, boolean, uuid)']) f
     where has_function_privilege('authenticated', f, 'execute') or has_function_privilege('anon', f, 'execute')),
   0, 'no signed-in client or visitor can call the trusted lesson functions');
 select is(
@@ -49,9 +50,9 @@ select is(
      'public.lesson_save(uuid, boolean, uuid, uuid, text, text)',
      'public.lesson_set_publication(uuid, boolean, uuid, boolean)',
      'public.lesson_reorder(uuid, boolean, uuid, uuid[])',
-     'public.lesson_audio_activate(uuid, boolean, uuid)',
+     'public.lesson_audio_activate(uuid, boolean, uuid, uuid, text)',
      'public.lesson_attachment_add(uuid, boolean, uuid, text)',
-     'public.lesson_attachment_remove(uuid, boolean, uuid)']) f
+     'public.lesson_attachment_delete(uuid, boolean, uuid)']) f
     where has_function_privilege('service_role', f, 'execute')),
   6, 'the service role can call all six');
 
@@ -124,13 +125,14 @@ insert into public.file_objects (id, bucket_name, storage_path, original_filenam
   ('00000000-0000-4000-8000-0000000000a4', 'lesson-attachments', tests.uid('c1') || '/' || tests.uid('s1') || '/a4.pdf', 'notes.pdf', 'notes.pdf', tests.uid('t1'), 'VALIDATED', 'LESSON_ATTACHMENT', tests.uid('s1'), 'application/pdf', 1000, null, now()),
   ('00000000-0000-4000-8000-0000000000a5', 'lesson-audio', tests.uid('c1') || '/' || tests.uid('s1') || '/a5.mp3', 'five.mp3', 'five.mp3', tests.uid('t2'), 'VALIDATED', 'LESSON_AUDIO', tests.uid('s1'), 'audio/mpeg', 1000, 60, now());
 select tests.as_service();
-select is((public.lesson_audio_activate(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a1') ->> 'replaced')::boolean, false, 'the first audio becomes ACTIVE');
-select is((public.lesson_audio_activate(tests.uid('t3'), false, '00000000-0000-4000-8000-0000000000a2') ->> 'replaced')::boolean, true, 'a second audio replaces it');
-select throws_ok($$ select public.lesson_audio_activate(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a3') $$, '22023', NULL,
+select is((public.lesson_audio_activate(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a1', null, null) ->> 'replaced')::boolean, false, 'the first audio becomes ACTIVE');
+select is((public.lesson_audio_activate(tests.uid('t3'), false, '00000000-0000-4000-8000-0000000000a2',
+  (select id from public.lesson_audio_files where file_object_id = '00000000-0000-4000-8000-0000000000a1'), null) ->> 'replaced')::boolean, true, 'a co-lecturer replaces it');
+select throws_ok($$ select public.lesson_audio_activate(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a3', null, null) $$, '22023', NULL,
   'only a VALIDATED file can become the lesson audio');
-select throws_ok($$ select public.lesson_audio_activate(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a4') $$, '22023', NULL,
+select throws_ok($$ select public.lesson_audio_activate(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a4', null, null) $$, '22023', NULL,
   'an attachment cannot become the lesson audio');
-select throws_ok($$ select public.lesson_audio_activate(tests.uid('t2'), false, '00000000-0000-4000-8000-0000000000a5') $$, '42501', NULL,
+select throws_ok($$ select public.lesson_audio_activate(tests.uid('t2'), false, '00000000-0000-4000-8000-0000000000a5', null, null) $$, '42501', NULL,
   'a lecturer who does not teach the course cannot attach audio');
 select tests.reset();
 select results_eq($$ select file_object_id::text, lifecycle_status::text from public.lesson_audio_files where lesson_id = tests.uid('s1') order by file_object_id $$,
@@ -144,10 +146,10 @@ select tests.as_service();
 select set_config('t.x1', public.lesson_attachment_add(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a4', 'Lesson notes')::text, true);
 select throws_ok($$ select public.lesson_attachment_add(tests.uid('t1'), false, '00000000-0000-4000-8000-0000000000a2', 'Audio as attachment') $$, '22023', NULL,
   'an audio file cannot be added as an attachment');
-select lives_ok($$ select public.lesson_attachment_remove(tests.uid('t3'), false, tests.uid('x1')) $$, 'a co-lecturer removes an attachment');
+select lives_ok($$ select public.lesson_attachment_delete(tests.uid('t3'), false, tests.uid('x1')) $$, 'a co-lecturer deletes an attachment');
 select tests.reset();
-select isnt((select removed_at from public.lesson_attachments where id = tests.uid('x1')), null, 'removing keeps the row (removed_at set)');
-select is((select status::text from public.file_objects where id = '00000000-0000-4000-8000-0000000000a4'), 'VALIDATED', 'and keeps the file');
+select isnt((select removed_at from public.lesson_attachments where id = tests.uid('x1')), null, 'deleting keeps the record (removed_at set, ADR-007)');
+select is((select status::text from public.file_objects where id = '00000000-0000-4000-8000-0000000000a4'), 'VALIDATED', 'the file itself is left for the server to remove from Storage');
 
 -- ---------------------------------------------------------------- archived course is read-only (D07)
 update public.courses set status = 'ARCHIVED', archived_at = now() where id = tests.uid('c1');

@@ -3,12 +3,14 @@
 -- Tests required (phase file): an enrolled learner streams and downloads; an unenrolled learner, a
 -- draft lesson, a REJECTED or PENDING file and other lecturers are all denied at Storage level;
 -- archiving a course leaves audio intact. Plus D05/D07 read-only (no progress changes for a
--- COMPLETED enrolment or an ARCHIVED course) and D09 (one ACTIVE audio, history kept).
+-- COMPLETED enrolment or an ARCHIVED course) and D09 as changed by ADR-007 (audio files in use have
+-- distinct places, history kept; a deleted attachment's file is readable by nobody and is left
+-- for the cleanup job). Deleting and the 10-audio limit are tested in 11_lesson_media.
 begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(60);
+select plan(61);
 
 -- ---------------------------------------------------------------- people and courses
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
@@ -56,10 +58,10 @@ insert into public.file_objects (id, bucket_name, storage_path, original_filenam
   (tests.id('f4'), 'lesson-audio', tests.id('c1') || '/' || tests.id('l2') || '/f4.mp3', 'draft.mp3', 'draft.mp3', tests.uid('t1'), 'VALIDATED', 'LESSON_AUDIO', tests.id('l2'), 'audio/mpeg', 1000, 100, now(), null, null),
   (tests.id('f5'), 'lesson-attachments', tests.id('c1') || '/' || tests.id('l1') || '/f5.pdf', 'notes.pdf', 'notes.pdf', tests.uid('t1'), 'VALIDATED', 'LESSON_ATTACHMENT', tests.id('l1'), 'application/pdf', 1000, null, now(), null, null),
   (tests.id('f6'), 'lesson-attachments', tests.id('c1') || '/' || tests.id('l1') || '/f6.pdf', 'old-notes.pdf', 'old-notes.pdf', tests.uid('t1'), 'VALIDATED', 'LESSON_ATTACHMENT', tests.id('l1'), 'application/pdf', 1000, null, now(), null, null);
-insert into public.lesson_audio_files (lesson_id, file_object_id, uploaded_by, lifecycle_status) values
-  (tests.id('l1'), tests.id('f0'), tests.uid('t1'), 'SUPERSEDED'),
-  (tests.id('l1'), tests.id('f1'), tests.uid('t1'), 'ACTIVE'),
-  (tests.id('l2'), tests.id('f4'), tests.uid('t1'), 'ACTIVE');
+insert into public.lesson_audio_files (lesson_id, file_object_id, uploaded_by, lifecycle_status, title, position) values
+  (tests.id('l1'), tests.id('f0'), tests.uid('t1'), 'SUPERSEDED', 'Old welcome', null),
+  (tests.id('l1'), tests.id('f1'), tests.uid('t1'), 'ACTIVE', 'Welcome', 1),
+  (tests.id('l2'), tests.id('f4'), tests.uid('t1'), 'ACTIVE', 'Draft', 1);
 insert into public.lesson_attachments (id, lesson_id, file_object_id, uploaded_by, title, position, removed_at, removed_by) values
   (tests.id('x5'), tests.id('l1'), tests.id('f5'), tests.uid('t1'), 'Lesson notes', 1, null, null),
   (tests.id('x6'), tests.id('l1'), tests.id('f6'), tests.uid('t1'), 'Old notes', 2, now(), tests.uid('t1'));
@@ -67,9 +69,9 @@ insert into storage.objects (bucket_id, name, owner_id, metadata)
 select f.bucket_name, f.storage_path, tests.uid('t1')::text, '{"mimetype":"audio/mpeg","size":1000}'
   from public.file_objects f where f.id in (tests.id('f0'), tests.id('f1'), tests.id('f2'), tests.id('f3'), tests.id('f4'), tests.id('f5'), tests.id('f6'));
 
-/** Object names a role can read in a bucket, sorted. */
+/** Object names a role can read in a bucket, sorted (this test's courses only: other tests and local runs leave files too). */
 create function tests.readable(p_bucket text) returns text[] language sql stable as $$
-  select coalesce(array_agg(split_part(name, '/', 3) order by name), '{}') from storage.objects where bucket_id = p_bucket
+  select coalesce(array_agg(split_part(name, '/', 3) order by name), '{}') from storage.objects where bucket_id = p_bucket and name like '00000000-0000-4000-8000-%'
 $$;
 grant execute on function tests.readable(text) to anon, authenticated, service_role;
 
@@ -86,8 +88,8 @@ select is(
   0, 'every foreign key on the lesson tables is ON DELETE RESTRICT (D25)');
 select throws_ok($$ insert into public.lessons (course_id, title, position, created_by) values (tests.id('c1'), 'Clash', 1, tests.uid('t1')) $$,
   '23505', NULL, 'two lessons cannot share a position in a course (D08)');
-select throws_ok($$ insert into public.lesson_audio_files (lesson_id, file_object_id, uploaded_by) values (tests.id('l1'), tests.id('f2'), tests.uid('t1')) $$,
-  '23505', NULL, 'a lesson has exactly one ACTIVE audio file (D09)');
+select throws_ok($$ insert into public.lesson_audio_files (lesson_id, file_object_id, uploaded_by, title, position) values (tests.id('l1'), tests.id('f2'), tests.uid('t1'), 'Clash', 1) $$,
+  '23P01', NULL, 'two audio files in use cannot take the same place in a lesson (D09, ADR-007)');
 select throws_ok($$ update public.file_objects set waveform_peaks = array_fill(0.5::real, array[10]) where id = tests.id('f1') $$,
   '23514', NULL, 'waveform peaks are exactly 128 values');
 select throws_ok($$ update public.file_objects set waveform_peaks = array_fill(1.5::real, array[128]) where id = tests.id('f1') $$,
@@ -186,7 +188,7 @@ select tests.authenticate_as(tests.uid('l3'));
 select is(tests.readable('lesson-attachments'), '{}'::text[], 'an unenrolled learner reads no attachment');
 select tests.reset();
 select tests.authenticate_as(tests.uid('t1'));
-select is(tests.readable('lesson-attachments'), array['f5.pdf', 'f6.pdf'], 'the lecturer reads every attachment of their lessons');
+select is(tests.readable('lesson-attachments'), array['f5.pdf'], 'the lecturer reads the attachments of their lessons, but not a deleted one (ADR-007)');
 select tests.reset();
 
 -- ---------------------------------------------------------------- progress
@@ -221,8 +223,10 @@ select tests.authenticate_as(tests.uid('l1'));
 select is(tests.readable('lesson-audio'), array['f1.mp3'], 'an enrolled learner can still play the audio of an archived course (D07)');
 select throws_ok($$ select public.mark_lesson(tests.id('l1'), true) $$, '42501', NULL, 'but an ARCHIVED course is read-only: no progress changes (D07)');
 select tests.reset();
-select is((select count(*)::int from public.files_due_for_cleanup(500) f where f.id in (tests.id('f0'), tests.id('f1'), tests.id('f4'), tests.id('f5'), tests.id('f6'))), 0,
-  'the cleanup job never removes lesson audio or attachments, superseded or removed ones included');
+select is((select count(*)::int from public.files_due_for_cleanup(500) f where f.id in (tests.id('f0'), tests.id('f1'), tests.id('f4'), tests.id('f5'))), 0,
+  'the cleanup job never removes lesson audio or attachments in use, or audio history');
+select results_eq($$ select reason from public.files_due_for_cleanup(500) f where f.id = tests.id('f6') $$, $$ values ('deleted_lesson_attachment') $$,
+  'it removes only a deleted attachment''s file (ADR-007)');
 
 select * from finish();
 rollback;
