@@ -17,6 +17,7 @@
 - Administrator reports (enrolment, activity, completion, grade summaries) and audit log viewer with filters.
 - Settings screen exposing every `system_settings` value with validation and audit.
 - All dashboards, the notification centre, reports and the audit viewer follow Section 15 (cards, bottom sheets, no overflow).
+- D42 (ADR-010): reports filter by branch and group by branch (learner count and average grade per branch). D43 (ADR-011): Settings lets an administrator change `idle_timeout_minutes` (5 to 60) and `idle_warning_seconds`, audited.
 
 **Tests required**
 

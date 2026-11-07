@@ -19,6 +19,7 @@
 - Learner gradebook shows current and completed courses, released historical grades/feedback and progress summaries. Lesson completion remains separate from academic marks. Learners never see class-level individual results or exact ranks; class statistics are suppressed below `min_class_size`.
 - Responsive gradebook and charts per Section 15: a scrollable matrix with a sticky learner column on tablets and desktops, a per-learner card view on phones, charts that resize without overlapping labels, tap-to-show values, patterns as well as colours, and the text summary always visible.
 - `export-gradebook` CSV and XLSX with audit record.
+- D42 (ADR-010): the gradebook shows each learner's branch (a column on desktop, a chip under the name on phones) and so does learner progress; CSV and Excel exports of results and gradebooks include a Branch column, for authorised roles only.
 
 **Tests required**
 

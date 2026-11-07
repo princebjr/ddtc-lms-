@@ -269,6 +269,7 @@ Every component is built once under `src/components/ui/` on shadcn/ui with these
 | Button, destructive | `error` fill with white text (light) or dark text (dark), pill, always confirmed by a dialog |
 | Text input | `card` fill, 1px `control-border`, 12 px radius, 48 px high, 16 px text, visible label above, helper or error text below; focus: 2 px `link` ring with 2 px offset; error: 2 px `error` border plus message with icon |
 | Select, textarea, search | Same chrome as the text input; search has a leading Search icon and a clear button |
+| Branch picker (D42, ADR-010) | The Branch drop-down (Profile settings, the administrator's user panel) is the phone's own picker below 640 px (`NativeSelect`: field chrome, 48 px, 16 px text, chevron) and the shadcn Select from tablet width up; label above, placeholder "Select your branch" ("No branch" for administrators), a field-shaped skeleton while the list loads, and "The branches could not be loaded." with Retry. Branch filters on lists match the list's other filters. |
 | Checkbox, radio, switch | 24 px control, `control-border` outline, `primary` when on, 44 px hit area |
 | Card | `surface`, 1px `hairline`, 24 px radius, 16 to 24 px padding; interactive cards add a hover fill and a visible focus ring |
 | Inset list row | 56 px, leading icon or avatar, title, secondary line, trailing chevron or value |
@@ -276,6 +277,7 @@ Every component is built once under `src/components/ui/` on shadcn/ui with these
 | Navigation | Phone: floating pill with three destination icons and a permanent More button; icons only, the active item expands to show its name (see 12.4); More opens a bottom sheet. Tablet: collapsible side rail. Desktop: sidebar with the DDTC emblem, blue-tinted active item, theme switch at the bottom |
 | Page header | Large title on phones, title-1 on desktop, optional breadcrumb, actions on the right on desktop |
 | Chip and status badge | Pill, label style, status tint background, icon plus text, never colour alone |
+| Branch chip (D42, ADR-010) | Pill on `fill`, label style: the Lucide MapPin icon with the branch name (never the icon alone; screen readers hear "Branch:" first); "No branch" in `text-secondary` when unset. A column from 640 px; on phone cards it sits in the chip row under the name. Fits at 320 px (the name truncates). |
 | Avatar | `UserAvatar`: image, else initials, else generic icon; sizes 24, 32, 40, 56, 96; circle; initials in `text-primary` on `surface-soft` |
 | Dialog and bottom sheet | `surface`, 24 px radius, overlay shadow, scrim; sheets slide from the bottom on phones with a grab handle; focus trapped; Escape closes |
 | Table | Header `caption` on `surface-soft`, 48 px rows, hairline dividers, sticky header; becomes stacked cards on phones |

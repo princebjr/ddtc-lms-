@@ -15,6 +15,7 @@
 - ADR-007 (owner, 2026-11-07): lecturers also record lesson audio in the app with the same recorder: at most 30 minutes per recording, several recordings per lesson within the limit of 10 audio files; longer lessons are recorded with the phone's own recorder and uploaded.
 - Browser audio recording with MediaRecorder, preview before submit, format fallback for Safari, upload alternative if the microphone is denied or unsupported. Keep the screen awake while recording where Wake Lock is supported, warn that recording stops if the app is backgrounded, resume interrupted uploads after a network change, and keep text-answer drafts in local browser storage (cleared on submit and on sign-out).
 - Text, audio, PDF and Word submission; extension management for lecturers.
+- D42 (ADR-010): submission review lists show each learner's branch chip. D43 (ADR-011): a text answer or a recording in progress is kept as a draft (per user, 24 hours) and restored with "Draft restored"; a recording or an upload in progress counts as activity, so nobody is signed out during one.
 
 **Tests required**
 
