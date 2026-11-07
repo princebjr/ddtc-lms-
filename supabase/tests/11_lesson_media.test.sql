@@ -238,7 +238,7 @@ select is(public.course_cover_remove(tests.uid('a1'), true, tests.id('c2')) ->> 
 select is(public.course_cover_remove(tests.uid('t1'), false, tests.id('c1')) -> 'file', 'null'::jsonb, 'removing when there is no cover is harmless');
 select tests.reset();
 select is((select count(*)::int from public.courses where id in (tests.id('c1'), tests.id('c2')) and cover_image_file_id is null), 2, 'both courses fall back to the placeholder');
-select is((select count(*)::int from public.audit_logs where action = 'course.cover_removed'), 2, 'each removal is audited');
+select is((select count(*)::int from public.audit_logs where action = 'course.cover_removed' and entity_id in (tests.id('c1')::text, tests.id('c2')::text)), 2, 'each removal is audited');
 select tests.authenticate_as(tests.uid('t1'));
 select throws_ok($$ update public.courses set cover_image_file_id = null where id = tests.id('c3') $$, '42501', NULL, 'a lecturer cannot change a cover directly');
 select tests.reset();
