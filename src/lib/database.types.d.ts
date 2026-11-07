@@ -107,6 +107,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"branches": {
+                  Row: {
+                    "created_at": string,"id": string,"is_active": boolean,"name": string,"position": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"position": number
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"position"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"course_enrollments": {
                   Row: {
                     "course_id": string,"created_at": string,"enrolled_at": string,"enrolled_by": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"id": string,"learner_id": string,"status_changed_at": string | null,"status_changed_by": string | null,"updated_at": string
@@ -405,17 +419,23 @@ isOneToOne: true
                   ]
                 },"profiles": {
                   Row: {
-                    "account_status": Database["public"]['Enums']["account_status"],"can_create_courses": boolean,"can_publish_directly": boolean,"contact_number": string | null,"created_at": string,"email": string,"first_name": string,"id": string,"id_number": number,"profile_completed": boolean,"profile_image_file_id": string | null,"role": Database["public"]['Enums']["user_role"],"second_name": string,"updated_at": string
+                    "account_status": Database["public"]['Enums']["account_status"],"branch_id": string | null,"can_create_courses": boolean,"can_publish_directly": boolean,"contact_number": string | null,"created_at": string,"email": string,"first_name": string,"id": string,"id_number": number,"profile_completed": boolean,"profile_image_file_id": string | null,"role": Database["public"]['Enums']["user_role"],"second_name": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_status"?: Database["public"]['Enums']["account_status"],"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email": string,"first_name"?: string,"id": string,"id_number": number,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
+                    "account_status"?: Database["public"]['Enums']["account_status"],"branch_id"?: string | null,"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email": string,"first_name"?: string,"id": string,"id_number": number,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "account_status"?: Database["public"]['Enums']["account_status"],"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email"?: string,"first_name"?: string,"id"?: string,"id_number"?: number,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
+                    "account_status"?: Database["public"]['Enums']["account_status"],"branch_id"?: string | null,"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email"?: string,"first_name"?: string,"id"?: string,"id_number"?: number,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "profiles_branch_id_fkey"
+      columns: ["branch_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "profiles_profile_image_file_id_fkey"
       columns: ["profile_image_file_id"]
 isOneToOne: false
@@ -529,7 +549,7 @@ isOneToOne: false
                            },
 "course_roster":
 { Args: { "p_course": string }; Returns: {
-              "enrolled_at": string,"enrolment_id": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"first_name": string,"id_number": number,"learner_id": string,"profile_image_path": string,"second_name": string
+              "branch_name": string,"enrolled_at": string,"enrolment_id": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"first_name": string,"id_number": number,"learner_id": string,"profile_image_path": string,"second_name": string
             }[]
                            },
 "course_teachers":
