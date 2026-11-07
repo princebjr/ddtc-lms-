@@ -43,7 +43,10 @@ async function writeLesson(page, courseId, title) {
   await page.getByLabel('Lesson title').fill(title);
   const text = page.getByRole('textbox', { name: 'Lesson text' });
   await text.click();
-  await page.getByRole('button', { name: 'Bold', exact: true }).click();
+  const bold = page.getByRole('button', { name: 'Bold', exact: true });
+  await bold.click();
+  // Type only once bold is on (the toolbar reports it), so every letter is bold.
+  await expect(bold).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.type('Read Genesis 1 slowly.');
   await page.getByRole('button', { name: 'Save lesson' }).click();
   await expect(toast(page, 'Lesson saved')).toBeVisible();

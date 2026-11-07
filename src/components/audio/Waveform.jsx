@@ -65,8 +65,14 @@ export function Waveform({ peaks, state, currentSeconds, durationSeconds, onSeek
   /** @param {import('react').PointerEvent<HTMLDivElement>} e */
   const onPointerDown = (e) => {
     if (inactive) return;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
     setDrag(ratioAt(e.clientX));
+    // Keep receiving moves outside the bar while dragging. Best effort: some browsers refuse the
+    // capture for synthetic or already-released pointers, and that must not stop the drag.
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // the drag still works while the pointer stays over the waveform
+    }
   };
   /** @param {import('react').PointerEvent<HTMLDivElement>} e */
   const onPointerMove = (e) => {

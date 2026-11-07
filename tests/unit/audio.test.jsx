@@ -83,6 +83,21 @@ describe('Waveform', () => {
     expect(document.querySelector('[data-slot="time-bubble"]')).toBeNull();
   });
 
+  it('still drags when the browser refuses pointer capture (seen in Firefox and WebKit)', () => {
+    const onSeek = vi.fn();
+    render(<Waveform peaks={peaks} state="ready" currentSeconds={0} durationSeconds={600} onSeek={onSeek} />);
+    const slider = screen.getByRole('slider');
+    slider.getBoundingClientRect = () => /** @type {DOMRect} */ ({ left: 0, width: 600, top: 0, height: 56, right: 600, bottom: 56, x: 0, y: 0, toJSON: () => ({}) });
+    slider.setPointerCapture = () => {
+      throw new DOMException('Invalid pointer id', 'NotFoundError');
+    };
+    fireEvent.pointerDown(slider, { clientX: 60, pointerId: 0 });
+    fireEvent.pointerMove(slider, { clientX: 150, pointerId: 0 });
+    expect(document.querySelector('[data-slot="time-bubble"]')?.textContent).toBe('2:30');
+    fireEvent.pointerUp(slider, { clientX: 150, pointerId: 0 });
+    expect(onSeek).toHaveBeenCalledWith(150);
+  });
+
   it('colours the played part and marks it for assistive tests, never colour alone (playhead and time)', () => {
     const { container } = render(<Waveform peaks={peaks} state="ready" currentSeconds={300} durationSeconds={600} onSeek={() => {}} />);
     const bars = container.querySelectorAll('.wave-bar');
