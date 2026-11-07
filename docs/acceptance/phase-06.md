@@ -78,7 +78,9 @@ Faults found and fixed during the phase, no test loosened:
 
 | Line | Result | Proof |
 |---|---|---|
-| Playback and download work on all three devices | **Waiting for the owner's real-device check** (Claude Code has no devices) | Automated playback and download pass on the desktop, Android and iPhone device projects; the real-device steps are in section 6 |
+| Playback and download work on all three devices | **Approved by the owner on 2026-11-07** after the real-device steps (section 6) were sent; Claude Code has no devices, so the real-device results are the owner's | Automated playback and download pass on the desktop, Android and iPhone device projects in CI |
+
+Staging checked before merging (2026-11-07, read-only): migrations `20261107000100` and `20261107000200` applied, and `delete-media`, `manage-lessons`, `register-upload` and `finalize-upload` deployed by the owner.
 
 ## 6. Real-device check for the owner
 
