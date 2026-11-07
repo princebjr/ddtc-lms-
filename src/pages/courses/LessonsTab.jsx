@@ -99,7 +99,9 @@ export function LessonsTab({ role, courseId, archived, isLecturer }) {
                     </span>
                     <span className="mt-1 flex flex-wrap gap-2">
                       <StatusChip tone={l.publication_status === 'PUBLISHED' ? 'success' : 'neutral'}>{LESSON_STATUS_LABEL[l.publication_status]}</StatusChip>
-                      <StatusChip tone={l.has_audio ? 'info' : 'neutral'}>{l.has_audio ? 'Audio ready' : 'No audio'}</StatusChip>
+                      <StatusChip tone={l.audio_count ? 'info' : 'neutral'}>
+                        {l.audio_count === 0 ? 'No audio' : l.audio_count === 1 ? '1 audio file' : `${l.audio_count} audio files`}
+                      </StatusChip>
                     </span>
                   </button>
                   {archived ? null : (

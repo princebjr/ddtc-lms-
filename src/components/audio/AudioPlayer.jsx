@@ -28,6 +28,9 @@ const END_SHOWN_WITHIN = END_GUARD_SECONDS * 1.5;
 /** @param {number} seconds @param {number} end */
 const nearEnd = (seconds, end) => end > END_SHOWN_WITHIN && seconds >= end - END_SHOWN_WITHIN;
 
+/** Announced when a player starts, so every other player on the page pauses (one audio at a time). */
+const PLAY_EVENT = 'ddtc:audio-play';
+
 /**
  * @typedef {object} AudioPlayerProps
  * @property {string} title                 shown on the lock screen and announced
@@ -98,8 +101,18 @@ export function AudioPlayer({ title, subtitle, getUrl, durationSeconds = null, p
       ],
     ];
     for (const [name, fn] of handlers) el.addEventListener(name, fn);
+    // One audio at a time (a lesson can have up to 10, ADR-007): starting this player pauses the
+    // others. pause() on a paused element does nothing.
+    const announce = () => document.dispatchEvent(new CustomEvent(PLAY_EVENT, { detail: el }));
+    const onOtherPlay = (/** @type {Event} */ e) => {
+      if (/** @type {CustomEvent} */ (e).detail !== el) el.pause();
+    };
+    el.addEventListener('play', announce);
+    document.addEventListener(PLAY_EVENT, onOtherPlay);
     return () => {
       for (const [name, fn] of handlers) el.removeEventListener(name, fn);
+      el.removeEventListener('play', announce);
+      document.removeEventListener(PLAY_EVENT, onOtherPlay);
     };
   }, [src]);
 

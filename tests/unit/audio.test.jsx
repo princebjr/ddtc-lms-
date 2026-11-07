@@ -203,6 +203,27 @@ describe('AudioPlayer', () => {
     expect(play).toHaveBeenCalledTimes(1);
   });
 
+  it('plays one audio at a time: starting one player pauses another (a lesson can have up to 10, ADR-007)', async () => {
+    const { container } = render(
+      <>
+        <AudioPlayer {...props} title="Part 1" getUrl={async () => 'https://example.test/1.mp3'} />
+        <AudioPlayer {...props} title="Part 2" getUrl={async () => 'https://example.test/2.mp3'} />
+      </>,
+    );
+    await act(async () => {});
+    const [first, second] = /** @type {HTMLAudioElement[]} */ ([...container.querySelectorAll('audio')]);
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Play Part 1' })));
+    expect(screen.getByRole('button', { name: 'Pause Part 1' })).toBeInTheDocument();
+    pause.mockClear();
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Play Part 2' })));
+    act(() => {
+      second.dispatchEvent(new Event('play'));
+    });
+    expect(pause.mock.contexts).toContain(first);
+    expect(pause.mock.contexts).not.toContain(second);
+    expect(screen.getByRole('button', { name: 'Play Part 1' })).toBeInTheDocument();
+  });
+
   it('shows an error with Retry, and Retry asks for a fresh link', async () => {
     let calls = 0;
     const getUrl = vi.fn(async () => {

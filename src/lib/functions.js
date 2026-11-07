@@ -19,7 +19,7 @@ export class FunctionError extends Error {
 /**
  * @template T
  * @param {'set-user-role' | 'provision-lecturer' | 'provision-admin' | 'bulk-import-learners' | 'reset-admin-mfa' | 'register-upload' | 'finalize-upload'
- *   | 'create-course' | 'course-lifecycle' | 'course-lecturers' | 'manage-enrolments' | 'manage-lessons'} name
+ *   | 'create-course' | 'course-lifecycle' | 'course-lecturers' | 'manage-enrolments' | 'manage-lessons' | 'delete-media'} name
  * @param {Record<string, unknown>} body
  * @returns {Promise<T>}
  */

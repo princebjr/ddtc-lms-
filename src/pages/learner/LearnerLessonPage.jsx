@@ -88,24 +88,29 @@ export default function LearnerLessonPage() {
             </h1>
           </header>
 
-          {d.media.audio ? (
-            <AudioPlayer
-              title={d.lesson.title}
-              subtitle={d.course.title}
-              getUrl={() => playbackUrl(/** @type {import('@/lib/lessons/lessons.js').LessonMedia} */ (d.media.audio))}
-              durationSeconds={d.media.audio.duration_seconds}
-              peaks={d.media.audio.waveform_peaks}
-              fileSize={d.media.audio.file_size}
-              onDownload={async () => {
-                const audio = /** @type {import('@/lib/lessons/lessons.js').LessonMedia} */ (d.media.audio);
-                toast.show('learner.audio-download', { params: { size: fileSize(audio.file_size) || 'audio' } });
-                try {
-                  await downloadMedia(audio);
-                } catch {
-                  setMessage('The download did not start. Check your connection and try again.');
-                }
-              }}
-            />
+          {d.media.audios.length ? (
+            // One player per audio file, in the lecturer's order (ADR-007); starting one pauses the others.
+            <section aria-label="Lesson audio" className="flex flex-col gap-3">
+              {d.media.audios.map((audio) => (
+                <AudioPlayer
+                  key={audio.item_id}
+                  title={audio.title}
+                  subtitle={d.lesson?.title}
+                  getUrl={() => playbackUrl(audio)}
+                  durationSeconds={audio.duration_seconds}
+                  peaks={audio.waveform_peaks}
+                  fileSize={audio.file_size}
+                  onDownload={async () => {
+                    toast.show('learner.audio-download', { params: { size: fileSize(audio.file_size) || 'audio' } });
+                    try {
+                      await downloadMedia(audio);
+                    } catch {
+                      setMessage('The download did not start. Check your connection and try again.');
+                    }
+                  }}
+                />
+              ))}
+            </section>
           ) : null}
 
           {d.lesson.content ? (

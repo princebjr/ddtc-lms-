@@ -193,17 +193,23 @@ isOneToOne: false
                   ]
                 },"lesson_audio_files": {
                   Row: {
-                    "created_at": string,"file_object_id": string,"id": string,"lesson_id": string,"lifecycle_status": Database["public"]['Enums']["audio_lifecycle"],"superseded_at": string | null,"updated_at": string,"uploaded_by": string
+                    "created_at": string,"deleted_at": string | null,"deleted_by": string | null,"file_object_id": string,"id": string,"lesson_id": string,"lifecycle_status": Database["public"]['Enums']["audio_lifecycle"],"position": number | null,"superseded_at": string | null,"title": string,"updated_at": string,"uploaded_by": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"file_object_id": string,"id"?: string,"lesson_id": string,"lifecycle_status"?: Database["public"]['Enums']["audio_lifecycle"],"superseded_at"?: string | null,"updated_at"?: string,"uploaded_by": string
+                    "created_at"?: string,"deleted_at"?: string | null,"deleted_by"?: string | null,"file_object_id": string,"id"?: string,"lesson_id": string,"lifecycle_status"?: Database["public"]['Enums']["audio_lifecycle"],"position"?: number | null,"superseded_at"?: string | null,"title": string,"updated_at"?: string,"uploaded_by": string
                   }
                   Update: {
-                    "created_at"?: string,"file_object_id"?: string,"id"?: string,"lesson_id"?: string,"lifecycle_status"?: Database["public"]['Enums']["audio_lifecycle"],"superseded_at"?: string | null,"updated_at"?: string,"uploaded_by"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"deleted_by"?: string | null,"file_object_id"?: string,"id"?: string,"lesson_id"?: string,"lifecycle_status"?: Database["public"]['Enums']["audio_lifecycle"],"position"?: number | null,"superseded_at"?: string | null,"title"?: string,"updated_at"?: string,"uploaded_by"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "lesson_audio_files_deleted_by_fkey"
+      columns: ["deleted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "lesson_audio_files_file_object_id_fkey"
       columns: ["file_object_id"]
 isOneToOne: true
@@ -361,6 +367,9 @@ isOneToOne: false
               "course_id": string,"storage_path": string
             }[]
                            },
+"course_cover_remove":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string }; Returns: Json
+                           },
 "course_create":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_category"?: string,"p_code": string,"p_description"?: string,"p_objectives"?: string,"p_owner": string,"p_title": string }; Returns: string
                            },
@@ -397,11 +406,20 @@ isOneToOne: false
 "lesson_attachment_add":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string,"p_title": string }; Returns: string
                            },
-"lesson_attachment_remove":
-{ Args: { "p_actor": string,"p_as_admin": boolean,"p_attachment": string }; Returns: undefined
+"lesson_attachment_delete":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_attachment": string }; Returns: Json
                            },
 "lesson_audio_activate":
-{ Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string }; Returns: Json
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string,"p_replace"?: string,"p_title"?: string }; Returns: Json
+                           },
+"lesson_audio_delete":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_audio": string }; Returns: Json
+                           },
+"lesson_audio_rename":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_audio": string,"p_title": string }; Returns: undefined
+                           },
+"lesson_audio_reorder":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_audio": (string)[],"p_lesson": string }; Returns: undefined
                            },
 "lesson_media":
 { Args: { "p_lesson": string }; Returns: {
@@ -425,7 +443,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","publication_status": "DRAFT"|"PUBLISHED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","publication_status": "DRAFT"|"PUBLISHED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -541,7 +559,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"publication_status": ["DRAFT", "PUBLISHED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"publication_status": ["DRAFT", "PUBLISHED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const

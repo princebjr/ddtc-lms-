@@ -14,6 +14,7 @@ export const RESUMABLE_OVER = 25 * 1024 * 1024;
  * @property {File} file
  * @property {string} [courseId]
  * @property {string} [lessonId]
+ * @property {string} [replaceAudioId]  LESSON_AUDIO: the lesson audio this file replaces (ADR-007); sent to both steps
  * @property {Record<string, unknown>} [finalize]  extra fields for finalize-upload (peaks, title)
  * @property {Promise<Record<string, unknown>>} [finalizeLater]  fields that are still being prepared (peaks)
  * @property {(fraction: number) => void} [onProgress]
@@ -24,16 +25,17 @@ export const RESUMABLE_OVER = 25 * 1024 * 1024;
  * @param {UploadRequest} req
  * @returns {Promise<T>} finalize-upload's answer
  */
-export async function uploadFile({ resourceType, file, courseId, lessonId, finalize = {}, finalizeLater, onProgress }) {
+export async function uploadFile({ resourceType, file, courseId, lessonId, replaceAudioId, finalize = {}, finalizeLater, onProgress }) {
+  const replace = replaceAudioId ? { replaceAudioId } : {};
   const reg = /** @type {{ fileId: string, bucket: string, path: string, token: string, contentType: string | null }} */ (
-    await callFunction('register-upload', { resourceType, courseId, lessonId, filename: file.name, size: file.size })
+    await callFunction('register-upload', { resourceType, courseId, lessonId, filename: file.name, size: file.size, ...replace })
   );
   const contentType = reg.contentType ?? file.type;
   if (file.size > RESUMABLE_OVER) await resumable(reg, file, contentType, onProgress);
   else await single(reg, file, contentType, onProgress);
   onProgress?.(1);
   const later = finalizeLater ? await finalizeLater.catch(() => ({})) : {};
-  return /** @type {T} */ (await callFunction('finalize-upload', { fileId: reg.fileId, ...finalize, ...later }));
+  return /** @type {T} */ (await callFunction('finalize-upload', { fileId: reg.fileId, ...replace, ...finalize, ...later }));
 }
 
 /** One request with progress events (XMLHttpRequest reports upload progress; fetch does not). */

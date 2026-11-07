@@ -4,12 +4,13 @@ import { getSupabase } from '@/lib/supabase.js';
 
 // Lesson data (Phase 6). Reads go through RLS (lecturers and administrators see every lesson of
 // their courses; learners only published lessons of courses they are enrolled in). Saving,
-// publishing, reordering and removing attachments go through manage-lessons; files through the D18
-// pipeline (src/lib/uploads.js). Learners record progress with mark_lesson, which refuses
-// read-only enrolments and archived courses.
+// publishing, reordering lessons and renaming or reordering a lesson's audio go through
+// manage-lessons; files through the D18 pipeline (src/lib/uploads.js); deleting through delete-media
+// (src/lib/media.js, ADR-007). Learners record progress with mark_lesson, which refuses read-only
+// enrolments and archived courses.
 
 /** @typedef {'DRAFT' | 'PUBLISHED'} PublicationStatus */
-/** @typedef {{ id: string, title: string, position: number, publication_status: PublicationStatus, has_audio: boolean, updated_at: string }} LessonSummary */
+/** @typedef {{ id: string, title: string, position: number, publication_status: PublicationStatus, audio_count: number, updated_at: string }} LessonSummary */
 /** @typedef {{ id: string, course_id: string, title: string, content: string, position: number, publication_status: PublicationStatus, published_at: string | null, updated_at: string }} Lesson */
 /**
  * @typedef {object} LessonMedia
@@ -44,7 +45,7 @@ export async function fetchLessons(courseId, { withAudio = false } = {}) {
     position: l.position,
     publication_status: l.publication_status,
     updated_at: l.updated_at,
-    has_audio: (l.lesson_audio_files ?? []).some((/** @type {{ lifecycle_status: string }} */ a) => a.lifecycle_status === 'ACTIVE'),
+    audio_count: (l.lesson_audio_files ?? []).filter((/** @type {{ lifecycle_status: string }} */ a) => a.lifecycle_status === 'ACTIVE').length,
   }));
 }
 
@@ -59,23 +60,34 @@ export async function fetchLesson(id) {
   return /** @type {Lesson | null} */ (data);
 }
 
-/** The lesson's ACTIVE audio and its attachments (only for people who may see the lesson). @param {string} lessonId */
+/** Most audio files a lesson may have (ADR-007); the server enforces it. */
+export const MAX_LESSON_AUDIO = 10;
+
+/**
+ * The lesson's audio files in the lecturer's order and its attachments (only for people who may
+ * see the lesson). @param {string} lessonId
+ */
 export async function fetchLessonMedia(lessonId) {
   const { data, error } = await getSupabase().rpc('lesson_media', { p_lesson: lessonId });
   if (error) throw error;
   const rows = /** @type {LessonMedia[]} */ (data ?? []);
-  return { audio: rows.find((r) => r.kind === 'AUDIO') ?? null, attachments: rows.filter((r) => r.kind === 'ATTACHMENT') };
+  return { audios: rows.filter((r) => r.kind === 'AUDIO'), attachments: rows.filter((r) => r.kind === 'ATTACHMENT') };
 }
 
-/** Audio versions of a lesson for its lecturers (D09 history). @param {string} lessonId */
+/**
+ * @typedef {{ id: string, title: string, lifecycle_status: 'SUPERSEDED' | 'ARCHIVED' | 'DELETED', created_at: string, superseded_at: string | null, deleted_at: string | null }} AudioHistoryEntry
+ */
+
+/** Replaced and deleted audio of a lesson, newest first, for its lecturers (D09, ADR-007). @param {string} lessonId */
 export async function fetchAudioHistory(lessonId) {
   const { data, error } = await getSupabase()
     .from('lesson_audio_files')
-    .select('id, lifecycle_status, created_at, superseded_at')
+    .select('id, title, lifecycle_status, created_at, superseded_at, deleted_at')
     .eq('lesson_id', lessonId)
+    .neq('lifecycle_status', 'ACTIVE')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return /** @type {Array<{ id: string, lifecycle_status: 'ACTIVE' | 'SUPERSEDED' | 'ARCHIVED', created_at: string, superseded_at: string | null }>} */ (data ?? []);
+  return /** @type {AudioHistoryEntry[]} */ (data ?? []);
 }
 
 /** The signed-in learner's progress in a course: lesson id -> completed. @param {string} courseId */
@@ -110,9 +122,14 @@ export async function reorderLessons(courseId, lessonIds) {
   await callFunction('manage-lessons', { action: 'reorder', courseId, lessonIds });
 }
 
-/** @param {string} attachmentId */
-export async function removeAttachment(attachmentId) {
-  await callFunction('manage-lessons', { action: 'remove-attachment', attachmentId });
+/** @param {string} audioId @param {string} title */
+export async function renameAudio(audioId, title) {
+  await callFunction('manage-lessons', { action: 'rename-audio', audioId, title });
+}
+
+/** @param {string} lessonId @param {string[]} audioIds the new order, every audio in use once */
+export async function reorderAudio(lessonId, audioIds) {
+  await callFunction('manage-lessons', { action: 'reorder-audio', lessonId, audioIds });
 }
 
 /** @param {string} lessonId @param {boolean} completed */
