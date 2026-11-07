@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
+import { BranchChip } from '@/components/branches/BranchChip.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
 import { ConfirmDeleteDialog } from '@/components/feedback/ConfirmDeleteDialog.jsx';
 import { CourseWorkspaceSkeleton, ListSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
@@ -464,7 +465,7 @@ export function CoverCard({ course, canEdit, onChanged }) {
   );
 }
 
-/** Learners by name, photo and ID number only (course_roster, ADR-008). @param {{ course: Course, admin: boolean }} props */
+/** Learners by name, photo, ID number and branch only (course_roster, ADR-008, D42). @param {{ course: Course, admin: boolean }} props */
 function LearnersTab({ course, admin }) {
   const roster = useLoad(() => fetchRoster(course.id), [course.id]);
   /** @typedef {Awaited<ReturnType<typeof fetchRoster>>[number]} RosterRow */
@@ -482,6 +483,7 @@ function LearnersTab({ course, admin }) {
       card: /** @type {const} */ ('status'),
       cell: (/** @type {RosterRow} */ r) => <StatusChip tone={ENROLMENT_STATUS_TONE[r.enrolment_status]}>{ENROLMENT_STATUS_LABEL[r.enrolment_status]}</StatusChip>,
     },
+    { key: 'branch', header: 'Branch', card: /** @type {const} */ ('status'), cell: (/** @type {RosterRow} */ r) => <BranchChip name={r.branch_name} /> },
   ];
   return (
     <div className="flex flex-col gap-4">

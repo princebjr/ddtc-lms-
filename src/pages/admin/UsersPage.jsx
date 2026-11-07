@@ -1,6 +1,8 @@
 import { FileUp, ShieldPlus, SlidersHorizontal, UserPlus, UserRoundPlus } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
+import { BranchChip } from '@/components/branches/BranchChip.jsx';
+import { BranchFilter } from '@/components/branches/BranchFilter.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
 import { SpeedDial } from '@/components/feedback/Fab.jsx';
 import { ListSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
@@ -27,6 +29,8 @@ import { UserSheet } from './UserSheet.jsx';
 // Administrator user management (Phase 4; prototype `users` and `lect`): search, filters (a bottom
 // sheet on phones), ResponsiveTable (cards on phones), the user panel with every account action,
 // and Add learner, Provision lecturer and Import CSV (speed dial below 1024 px, header buttons above).
+// D42: learners show their branch (a column from 640 px, a chip under the name on phones), and the
+// Users and Learners lists filter by branch.
 
 /** @typedef {import('@/lib/admin/users.js').AdminUser} AdminUser */
 /** @typedef {import('@/lib/admin/users.js').UsersView} UsersView */
@@ -45,6 +49,7 @@ export default function UsersPage({ view }) {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState(/** @type {'' | 'ADMIN' | 'LECTURER' | 'LEARNER'} */ (''));
   const [status, setStatus] = useState(/** @type {'' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'} */ (''));
+  const [branch, setBranch] = useState('');
   const [sort, setSort] = useState(/** @type {'name' | 'newest'} */ ('name'));
   const [rows, setRows] = useState(/** @type {AdminUser[]} */ ([]));
   const [page, setPage] = useState(0);
@@ -61,14 +66,14 @@ export default function UsersPage({ view }) {
   }, [search]);
 
   // Each answer is tagged with the query it belongs to; a newer query shows as loading.
-  const queryKey = JSON.stringify([view, searchText, role, status, sort, reloadKey]);
+  const queryKey = JSON.stringify([view, searchText, role, status, branch, sort, reloadKey]);
   const [answered, setAnswered] = useState(/** @type {{ key: string, failed: boolean } | null} */ (null));
   const state = answered?.key !== queryKey ? 'loading' : answered.failed ? 'error' : 'ready';
 
   useEffect(() => {
     let cancelled = false;
-    const key = JSON.stringify([view, searchText, role, status, sort, reloadKey]);
-    fetchUsers({ view, search: searchText, role, status, sort, page: 0 })
+    const key = JSON.stringify([view, searchText, role, status, branch, sort, reloadKey]);
+    fetchUsers({ view, search: searchText, role, status, branch, sort, page: 0 })
       .then((r) => {
         if (cancelled) return;
         setRows(r.rows);
@@ -80,11 +85,11 @@ export default function UsersPage({ view }) {
     return () => {
       cancelled = true;
     };
-  }, [view, searchText, role, status, sort, reloadKey]);
+  }, [view, searchText, role, status, branch, sort, reloadKey]);
 
   const loadMore = async () => {
     try {
-      const r = await fetchUsers({ view, search: searchText, role, status, sort, page: page + 1 });
+      const r = await fetchUsers({ view, search: searchText, role, status, branch, sort, page: page + 1 });
       setRows((prev) => [...prev, ...r.rows]);
       setHasMore(r.hasMore);
       setPage(page + 1);
@@ -126,6 +131,17 @@ export default function UsersPage({ view }) {
       card: /** @type {const} */ ('status'),
       cell: (/** @type {AdminUser} */ u) => <StatusChip tone={STATUS_TONE[u.account_status]}>{STATUS_LABEL[u.account_status]}</StatusChip>,
     },
+    ...(view !== 'lecturers'
+      ? [
+          {
+            key: 'branch',
+            header: 'Branch',
+            card: /** @type {const} */ ('status'),
+            // Only learners have a branch (D42).
+            cell: (/** @type {AdminUser} */ u) => (u.role === 'LEARNER' ? <BranchChip name={u.branch?.name} /> : null),
+          },
+        ]
+      : []),
     ...(view === 'lecturers'
       ? [
           {
@@ -181,7 +197,19 @@ export default function UsersPage({ view }) {
           ) : null
         }
       />
-      <Filters view={view} search={search} onSearch={setSearch} role={role} onRole={setRole} status={status} onStatus={setStatus} sort={sort} onSort={setSort} />
+      <Filters
+        view={view}
+        search={search}
+        onSearch={setSearch}
+        role={role}
+        onRole={setRole}
+        status={status}
+        onStatus={setStatus}
+        branch={branch}
+        onBranch={setBranch}
+        sort={sort}
+        onSort={setSort}
+      />
       {state === 'error' ? (
         <ErrorState title="The list could not be loaded" onRetry={reload} />
       ) : (
@@ -191,7 +219,7 @@ export default function UsersPage({ view }) {
             columns={columns}
             rows={rows}
             getRowKey={(u) => u.id}
-            empty={<EmptyState title={searchText || role || status ? 'No one matches these filters' : 'No accounts yet'} />}
+            empty={<EmptyState title={searchText || role || status || branch ? 'No one matches these filters' : 'No accounts yet'} />}
           />
           {hasMore ? (
             <div className="flex justify-center pt-4">
@@ -241,12 +269,12 @@ function Person({ user }) {
 /**
  * Search inline; filters inline from 640 px, in a bottom sheet on phones (Phase 4 build list).
  * @param {{ view: UsersView, search: string, onSearch: (v: string) => void, role: string, onRole: (v: any) => void,
- *   status: string, onStatus: (v: any) => void, sort: string, onSort: (v: any) => void }} props
+ *   status: string, onStatus: (v: any) => void, branch: string, onBranch: (v: string) => void, sort: string, onSort: (v: any) => void }} props
  */
-function Filters({ view, search, onSearch, role, onRole, status, onStatus, sort, onSort }) {
+function Filters({ view, search, onSearch, role, onRole, status, onStatus, branch, onBranch, sort, onSort }) {
   const wide = useMediaQuery(TABLET_UP_QUERY);
   const [open, setOpen] = useState(false);
-  const active = Number(Boolean(role)) + Number(Boolean(status)) + Number(sort !== 'name');
+  const active = Number(Boolean(role)) + Number(Boolean(status)) + Number(Boolean(branch)) + Number(sort !== 'name');
 
   const fields = (
     <>
@@ -254,6 +282,7 @@ function Filters({ view, search, onSearch, role, onRole, status, onStatus, sort,
         <FilterSelect label="Role" value={role} onChange={onRole} options={[['', 'All roles'], ['LEARNER', 'Learners'], ['LECTURER', 'Lecturers'], ['ADMIN', 'Administrators']]} />
       ) : null}
       <FilterSelect label="Status" value={status} onChange={onStatus} options={[['', 'Any status'], ['ACTIVE', 'Active'], ['SUSPENDED', 'Suspended'], ['DEACTIVATED', 'Deactivated']]} />
+      {view !== 'lecturers' ? <BranchFilter id="filter-branch" value={branch} onChange={onBranch} /> : null}
       <FilterSelect label="Sort" value={sort} onChange={onSort} options={[['name', 'Name'], ['newest', 'Newest first']]} />
     </>
   );

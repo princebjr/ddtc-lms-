@@ -43,6 +43,7 @@ export const TOASTS = Object.freeze({
   'admin.csv-imported': { type: 'success', text: (p) => `Imported ${str(p, 'n')} learners, ${str(p, 'm')} errors`, action: 'View report', params: ['n', 'm'] },
   'admin.csv-imported-with-errors': { type: 'warning', text: (p) => `Imported ${str(p, 'n')} learners, ${str(p, 'm')} errors`, action: 'View report', params: ['n', 'm'] },
   'admin.permissions-updated': { type: 'success', text: fixed('Permissions updated') },
+  'admin.branch-updated': { type: 'success', text: fixed('Branch updated') },
   'admin.account-suspended': { type: 'success', text: fixed('Account suspended'), undo: true },
   'admin.account-reactivated': { type: 'success', text: fixed('Account reactivated'), undo: true },
   'admin.mfa-reset': { type: 'success', text: (p) => `MFA reset for ${str(p, 'name')}`, params: ['name'] },

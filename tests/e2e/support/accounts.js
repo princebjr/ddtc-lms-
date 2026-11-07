@@ -58,6 +58,19 @@ export async function getProfile(id) {
   return rows[0];
 }
 
+/**
+ * Gives a learner a branch through the trusted path (test set-up, D42). The database still checks
+ * that the branch is open and the account is a learner.
+ * @param {string} userId
+ * @param {string} branchName
+ * @returns {Promise<string>} the branch id
+ */
+export async function setBranch(userId, branchName) {
+  const [branch] = await admin(`/rest/v1/branches?name=eq.${encodeURIComponent(branchName)}&select=id`);
+  await admin(`/rest/v1/profiles?id=eq.${userId}`, { method: 'PATCH', body: JSON.stringify({ branch_id: branch.id }) });
+  return branch.id;
+}
+
 /** @param {string} email */
 export async function findUserByEmail(email) {
   const rows = await admin(`/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=id,role`);

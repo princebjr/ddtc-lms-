@@ -39,6 +39,7 @@ Type: S = success, I = info, W = warning, E = error.
 | Administrator | Administrator invited (ADR-003) | "Administrator invited" (S) | none |
 | Administrator | CSV import finished | "Imported N learners, M errors" (S or W) | View report |
 | Administrator | Role or course-creation permission changed | "Permissions updated" (S) | none |
+| Administrator | A learner's branch changed (D42) | "Branch updated" (S) | none |
 | Administrator | Account suspended or reactivated | "Account suspended" or "Account reactivated" (S) | Undo |
 | Administrator | Administrator MFA reset | "MFA reset for name" (S) | none |
 | Administrator | Course approved | "Course approved and published" (S) | none |

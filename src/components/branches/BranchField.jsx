@@ -17,6 +17,24 @@ import { branchChoices, branchLabel, fetchBranches } from '@/lib/branches.js';
 export const BRANCH_PLACEHOLDER = 'Select your branch';
 
 /**
+ * In place of a branch control when the list cannot be loaded: says so, with Retry.
+ * @param {{ onRetry: () => void }} props
+ */
+export function BranchesUnavailable({ onRetry }) {
+  return (
+    <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-hairline bg-card px-4 py-2">
+      <span className="flex min-w-0 items-center gap-2 text-body-sm text-ink-secondary">
+        <CircleX className="size-5 shrink-0 text-error" aria-hidden="true" />
+        The branches could not be loaded.
+      </span>
+      <Button variant="outline" onClick={onRetry}>
+        Retry
+      </Button>
+    </div>
+  );
+}
+
+/**
  * @param {{ value: string, onChange: (branchId: string) => void, currentId?: string | null, label?: string,
  *   hint?: string, placeholder?: string, error?: string, disabled?: boolean }} props
  *   `value` is the chosen branch id ('' for none); `currentId` is the saved one, kept as a choice even
@@ -36,17 +54,7 @@ export function BranchField({ value, onChange, currentId, label = 'Branch', hint
     <div className="flex min-w-0 flex-col gap-2" data-slot="branch-field">
       <Label htmlFor={state === 'ready' ? id : undefined}>{label}</Label>
       {state === 'loading' ? <Skeleton shape="field" data-testid="branch-skeleton" /> : null}
-      {state === 'error' ? (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-hairline bg-card px-4 py-2">
-          <span className="flex min-w-0 items-center gap-2 text-body-sm text-ink-secondary">
-            <CircleX className="size-5 shrink-0 text-error" aria-hidden="true" />
-            The branches could not be loaded.
-          </span>
-          <Button variant="outline" onClick={reload}>
-            Retry
-          </Button>
-        </div>
-      ) : null}
+      {state === 'error' ? <BranchesUnavailable onRetry={reload} /> : null}
       {state === 'ready' && tabletUp ? (
         <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
           <SelectTrigger {...fieldProps}>

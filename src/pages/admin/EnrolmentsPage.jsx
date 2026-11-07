@@ -2,6 +2,8 @@ import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
+import { BranchChip } from '@/components/branches/BranchChip.jsx';
+import { BranchFilter } from '@/components/branches/BranchFilter.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
 import { Fab } from '@/components/feedback/Fab.jsx';
 import { ListSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
@@ -23,8 +25,8 @@ import { ENROLMENT_STATUS_LABEL, ENROLMENT_STATUS_TONE, fetchCourses } from '@/l
 import { enrolLearners, fetchEnrolments, restoreEnrolments, searchLearners, setEnrolmentStatus } from '@/lib/courses/enrolments.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 
-// Enrolment management (D05, prototype `enr`): administrator only. Filter by course, status or
-// learner; change a status (COMPLETED marks a finished learner, read-only access) with Undo; Enrol
+// Enrolment management (D05, prototype `enr`): administrator only. Filter by course, status,
+// learner or the learner's branch (D42, shown as a chip); change a status (COMPLETED marks a finished learner, read-only access) with Undo; Enrol
 // learners (choose a course, pick learners) with Undo. CSV enrolment is in Users, Import CSV.
 
 /** @typedef {import('@/lib/courses/enrolments.js').EnrolmentRow} EnrolmentRow */
@@ -38,6 +40,7 @@ export default function EnrolmentsPage() {
   const [params, setParams] = useSearchParams();
   const courseId = params.get('course') ?? '';
   const [status, setStatus] = useState(/** @type {'' | EnrolmentStatus} */ (''));
+  const [branch, setBranch] = useState('');
   const [search, setSearch] = useState('');
   const [searchText, setSearchText] = useState('');
   const [enrolling, setEnrolling] = useState(false);
@@ -48,7 +51,7 @@ export default function EnrolmentsPage() {
   }, [search]);
 
   const courses = useLoad(() => fetchCourses({ limit: 500 }), []);
-  const list = useLoad(() => fetchEnrolments({ courseId, status, search: searchText }), [courseId, status, searchText]);
+  const list = useLoad(() => fetchEnrolments({ courseId, status, branch, search: searchText }), [courseId, status, branch, searchText]);
   const openCourses = (courses.data ?? []).filter((c) => c.status !== 'ARCHIVED');
 
   /** @param {EnrolmentRow} row @param {EnrolmentStatus} next */
@@ -76,6 +79,7 @@ export default function EnrolmentsPage() {
       card: /** @type {const} */ ('status'),
       cell: (/** @type {EnrolmentRow} */ r) => <StatusChip tone={ENROLMENT_STATUS_TONE[r.enrolment_status]}>{ENROLMENT_STATUS_LABEL[r.enrolment_status]}</StatusChip>,
     },
+    { key: 'branch', header: 'Branch', card: /** @type {const} */ ('status'), cell: (/** @type {EnrolmentRow} */ r) => <BranchChip name={r.learner.branch?.name} /> },
     { key: 'enrolled', header: 'Enrolled', card: /** @type {const} */ ('detail'), cell: (/** @type {EnrolmentRow} */ r) => dateFormat.format(new Date(r.enrolled_at)) },
     {
       key: 'change',
@@ -150,6 +154,7 @@ export default function EnrolmentsPage() {
             </SelectContent>
           </Select>
         </div>
+        <BranchFilter id="enrolment-branch" value={branch} onChange={setBranch} />
       </div>
 
       {list.state === 'error' ? (
@@ -161,7 +166,7 @@ export default function EnrolmentsPage() {
             columns={columns}
             rows={list.data ?? []}
             getRowKey={(r) => r.id}
-            empty={<EmptyState title={courseId || status || searchText ? 'No enrolments match these filters' : 'No enrolments yet'} />}
+            empty={<EmptyState title={courseId || status || branch || searchText ? 'No enrolments match these filters' : 'No enrolments yet'} />}
           />
         </LoadingRegion>
       )}

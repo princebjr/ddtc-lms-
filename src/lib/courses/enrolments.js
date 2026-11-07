@@ -1,4 +1,4 @@
-import { likeTerm, userSearchFilter } from '@/lib/admin/users.js';
+import { likeTerm, NO_BRANCH, userSearchFilter } from '@/lib/admin/users.js';
 import { callFunction } from '@/lib/functions.js';
 import { getSupabase } from '@/lib/supabase.js';
 
@@ -11,25 +11,30 @@ import { getSupabase } from '@/lib/supabase.js';
  * @property {string} id
  * @property {EnrolmentStatus} enrolment_status
  * @property {string} enrolled_at
- * @property {{ id: string, first_name: string, second_name: string, email: string, profile_image_file_id: string | null }} learner
+ * @property {{ id: string, first_name: string, second_name: string, email: string, profile_image_file_id: string | null, branch: { name: string } | null }} learner
  * @property {{ id: string, title: string, course_code: string, status: import('./courses.js').CourseStatus }} course
  */
 
 /**
- * @param {{ courseId?: string, status?: '' | EnrolmentStatus, search?: string, limit?: number }} q
+ * @param {{ courseId?: string, status?: '' | EnrolmentStatus, search?: string, branch?: string, limit?: number }} q
+ *   `branch`: '' any, NO_BRANCH for learners without one, or a branch id (D42)
  * @returns {Promise<EnrolmentRow[]>}
  */
-export async function fetchEnrolments({ courseId = '', status = '', search = '', limit = 200 } = {}) {
+export async function fetchEnrolments({ courseId = '', status = '', search = '', branch = '', limit = 200 } = {}) {
   const term = likeTerm(search);
+  // Filtering on the learner (search or branch) keeps only enrolments whose learner matches.
+  const inner = term || branch ? '!inner' : '';
   let query = getSupabase()
     .from('course_enrollments')
     .select(
       `id, enrolment_status, enrolled_at,
-       learner:profiles!course_enrollments_learner_id_fkey${term ? '!inner' : ''}(id, first_name, second_name, email, profile_image_file_id),
+       learner:profiles!course_enrollments_learner_id_fkey${inner}(id, first_name, second_name, email, profile_image_file_id, branch:branches(name)),
        course:courses!inner(id, title, course_code, status)`,
     );
   if (courseId) query = query.eq('course_id', courseId);
   if (status) query = query.eq('enrolment_status', status);
+  if (branch === NO_BRANCH) query = query.is('learner.branch_id', null);
+  else if (branch) query = query.eq('learner.branch_id', branch);
   if (term) query = query.or(`first_name.ilike.*${term}*,second_name.ilike.*${term}*,email.ilike.*${term}*`, { referencedTable: 'learner' });
   const { data, error } = await query.order('enrolled_at', { ascending: false }).limit(limit);
   if (error) throw error;
