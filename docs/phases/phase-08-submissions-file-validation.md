@@ -11,6 +11,7 @@
 - Migrations for `submissions`, `submission_versions`, `submission_files`.
 - `submit-assignment` with the rules in D10; `learner-submissions` bucket and policies. Implement resumable/failed-upload recovery, duplicate request idempotency, and safe retry handling.
 - `cleanup-files` job (pending-upload expiry after 24 hours, rejected objects, replaced images and covers) with alerts on failure.
+- ADR-007 (owner, 2026-11-07): lecturers also record lesson audio in the app with the same recorder: at most 30 minutes per recording, several recordings per lesson within the limit of 10 audio files; longer lessons are recorded with the phone's own recorder and uploaded.
 - Browser audio recording with MediaRecorder, preview before submit, format fallback for Safari, upload alternative if the microphone is denied or unsupported. Keep the screen awake while recording where Wake Lock is supported, warn that recording stops if the app is backgrounded, resume interrupted uploads after a network change, and keep text-answer drafts in local browser storage (cleared on submit and on sign-out).
 - Text, audio, PDF and Word submission; extension management for lecturers.
 

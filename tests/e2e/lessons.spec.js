@@ -6,12 +6,14 @@ import { createCourseFixture, enrolFixture } from './support/courses.js';
 import { requireSupabase } from './support/local-supabase.js';
 import { signIn } from './support/ui.js';
 
-// Phase 6 end to end: lessons and lesson audio (D08, D09, D18, ADR-006).
+// Phase 6 end to end: lessons and lesson audio (D08, D09, D18, ADR-006, ADR-007).
 // A lecturer writes a lesson with formatting, uploads audio (its waveform is prepared in the browser),
-// publishes and reorders; a renamed file is rejected with the reason; an enrolled learner opens the
-// lesson, seeks with the keyboard and by dragging, downloads with the size shown first and marks it
-// complete; a learner who is not enrolled cannot open it. Storage-level denials are proven in pgTAP
-// (09_lessons_access.test.sql).
+// replaces it, publishes and reorders; a renamed file is rejected with the reason; an enrolled
+// learner opens the lesson, seeks with the keyboard and by dragging, downloads with the size shown
+// first and marks it complete; a learner who is not enrolled cannot open it. ADR-007: a lecturer
+// adds several audio files, renames, reorders and deletes them, deletes an attachment and removes
+// the course cover, each after confirming; the learner sees only what remains and no delete
+// controls. Storage-level denials are proven in pgTAP (09_lessons_access, 11_lesson_media).
 
 const expect = baseExpect.configure({ timeout: 20_000 });
 test.describe.configure({ timeout: 150_000 });
@@ -65,17 +67,20 @@ test('a lecturer writes a lesson, uploads audio, publishes and reorders; a renam
   await expect(rejected.getByRole('button', { name: 'Try again' })).toBeVisible();
   await dismissToasts(page);
 
-  // Real audio: validated, its waveform stored, ready to play.
+  // Real audio: validated, its waveform stored, ready to play; it takes the file's name as its title.
   await page.locator('input[type="file"][accept^=".mp3"]').setInputFiles({ name: 'welcome.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav(30)) });
   await expect(toast(page, 'Audio ready')).toBeVisible();
-  await expect(page.getByRole('slider', { name: `${first} position` })).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'welcome position' })).toBeVisible();
   await dismissToasts(page);
 
-  // Replacing keeps the history.
-  await page.locator('input[type="file"][accept^=".mp3"]').setInputFiles({ name: 'welcome-v2.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(mp3({ frames: 100 })) });
+  // Replacing keeps its place and title, and the old file in the history.
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Replace welcome' }).click();
+  await (await chooser).setFiles({ name: 'welcome-v2.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(mp3({ frames: 100 })) });
   await expect(toast(page, 'Audio replaced')).toBeVisible();
-  await page.getByRole('button', { name: 'Audio history (2)' }).click();
-  await expect(page.getByText(/Version 1: replaced/)).toBeVisible();
+  await expect(page.getByRole('region', { name: /^Audio: / })).toHaveCount(1);
+  await page.getByRole('button', { name: 'Audio history (1)' }).click();
+  await expect(page.getByText(/· replaced/)).toBeVisible();
   await dismissToasts(page);
 
   await page.getByRole('button', { name: 'Publish', exact: true }).click();
@@ -120,11 +125,13 @@ test('an enrolled learner opens a lesson, seeks with the keyboard and by draggin
   await page.getByRole('link', { name: new RegExp(title) }).click();
   await expect(page).toHaveURL(new RegExp(`${lessonUrl}$`));
   await expect(page.getByText('Lesson 1 of 1')).toBeVisible();
+  // Check the settled screen: the player's controls stay dimmed until its link is ready, then fade in.
+  await expect(page.locator('[data-slot="audio-player"]')).toHaveAttribute('data-status', 'ready');
   await expectNoAxeViolations(page);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
 
   // The player: metadata only (no autoplay), then keyboard and drag seeking on the waveform.
-  const slider = page.getByRole('slider', { name: `${title} position` });
+  const slider = page.getByRole('slider', { name: 'creation position' });
   await expect(slider).toHaveAttribute('aria-valuemax', '30');
   await expect.poll(() => page.evaluate(() => /** @type {HTMLAudioElement} */ (document.querySelector('audio')).readyState)).toBeGreaterThanOrEqual(1);
   expect(await page.evaluate(() => /** @type {HTMLAudioElement} */ (document.querySelector('audio')).paused)).toBe(true);
@@ -166,4 +173,94 @@ test('an enrolled learner opens a lesson, seeks with the keyboard and by draggin
   await strangerPage.goto(lessonUrl);
   await expect(strangerPage.getByText('Lesson not found')).toBeVisible();
   await strangerPage.context().close();
+});
+
+test('ADR-007: a lecturer adds several audio files, renames, reorders and deletes one, deletes an attachment and removes the cover, each after confirming; the learner sees only what remains', async ({ page, browser }) => {
+  const lecturer = await createAccount({ role: 'LECTURER', first: 'Ama', second: `Boateng${unique()}` });
+  const learner = await createAccount({ first: 'Kwame', second: `Mensah${unique()}` });
+  const course = await createCourseFixture({ ownerId: lecturer.id, title: `Church History ${unique()}` });
+  await enrolFixture(course.id, learner.id, lecturer.id);
+  await signIn(page, lecturer.email, lecturer.password);
+  await expect(page).toHaveURL(/\/lecturer\/dashboard$/);
+
+  // The course cover: upload, then Remove after confirming; the placeholder comes back.
+  await page.goto(`/lecturer/courses/${course.id}`);
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp"]').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: png });
+  await expect(page.getByRole('img', { name: /^Cover of / })).toBeVisible();
+  await page.getByRole('button', { name: 'Remove cover image' }).click();
+  const coverDialog = page.getByRole('alertdialog', { name: 'Remove this cover image?' });
+  await expect(coverDialog).toContainText('This cannot be undone.');
+  await coverDialog.getByRole('button', { name: 'Remove' }).click();
+  await expect(toast(page, 'Cover image removed')).toBeVisible();
+  await expect(page.getByRole('img', { name: /^Cover of / })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remove cover image' })).toHaveCount(0);
+  await dismissToasts(page);
+
+  // Two audio files and an attachment.
+  const title = `The early church ${unique()}`;
+  await writeLesson(page, course.id, title);
+  const audioInput = page.locator('input[type="file"][accept^=".mp3"]');
+  await audioInput.setInputFiles({ name: 'part-1.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav(5)) });
+  await expect(toast(page, 'Audio ready')).toBeVisible();
+  await dismissToasts(page);
+  await audioInput.setInputFiles({ name: 'part-2.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav(5)) });
+  await expect(page.getByRole('region', { name: /^Audio: / })).toHaveCount(2);
+  await expect(page.getByText('2 of 10')).toBeVisible();
+  await dismissToasts(page);
+  await page.locator('input[type="file"][accept^=".pdf"]').setInputFiles({ name: 'notes.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf()) });
+  await expect(toast(page, 'Attachment added')).toBeVisible();
+  await dismissToasts(page);
+
+  // Rename and reorder.
+  await page.getByRole('button', { name: 'Rename part-2' }).click();
+  const rename = page.getByRole('dialog', { name: 'Rename audio' });
+  await rename.getByLabel('Audio title').fill('Closing prayer');
+  await rename.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('region', { name: 'Audio: Closing prayer' })).toBeVisible();
+  await page.getByRole('button', { name: 'Move Closing prayer up' }).click();
+  await expect(toast(page, 'Order saved')).toBeVisible();
+  await expect(page.getByRole('region', { name: /^Audio: / }).first()).toHaveAttribute('aria-label', 'Audio: Closing prayer');
+  await dismissToasts(page);
+
+  // Delete asks first: Cancel keeps it; Delete removes it once the server confirms.
+  await page.getByRole('button', { name: 'Delete part-1' }).click();
+  const audioDialog = page.getByRole('alertdialog', { name: 'Delete this audio?' });
+  await expect(audioDialog).toContainText('This cannot be undone.');
+  await expectNoAxeViolations(page);
+  await audioDialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('region', { name: 'Audio: part-1' })).toBeVisible();
+  await page.getByRole('button', { name: 'Delete part-1' }).click();
+  await audioDialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(toast(page, 'Audio deleted')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Audio: part-1' })).toHaveCount(0);
+  await expect(page.getByText('1 of 10')).toBeVisible();
+  await dismissToasts(page);
+
+  await page.getByRole('button', { name: 'Delete notes' }).click();
+  await page.getByRole('alertdialog', { name: 'Delete this attachment?' }).getByRole('button', { name: 'Delete' }).click();
+  await expect(toast(page, 'Attachment deleted')).toBeVisible();
+  await expect(page.getByText('No attachments.', { exact: false })).toBeVisible();
+  await dismissToasts(page);
+
+  // Gone for good after a reload; the history keeps the record.
+  await page.reload();
+  await expect(page.getByRole('region', { name: /^Audio: / })).toHaveCount(1);
+  await page.getByRole('button', { name: 'Audio history (1)' }).click();
+  await expect(page.getByText(/part-1 · deleted/)).toBeVisible();
+  expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+  await page.getByRole('button', { name: 'Publish', exact: true }).click();
+  await expect(toast(page, 'Lesson published')).toBeVisible();
+  const lessonUrl = new URL(page.url()).pathname.replace('/lecturer/', '/learner/');
+
+  // The learner sees the one remaining audio and no delete controls.
+  const learnerPage = await (await browser.newContext()).newPage();
+  await signIn(learnerPage, learner.email, learner.password);
+  await expect(learnerPage).toHaveURL(/\/learner\/dashboard$/);
+  await learnerPage.goto(lessonUrl);
+  await expect(learnerPage.getByRole('region', { name: /^Audio: / })).toHaveCount(1);
+  await expect(learnerPage.getByRole('region', { name: 'Audio: Closing prayer' })).toBeVisible();
+  await expect(learnerPage.getByRole('button', { name: /Delete|Remove|Rename|Replace/ })).toHaveCount(0);
+  await expect(learnerPage.getByText('notes')).toHaveCount(0);
+  await learnerPage.context().close();
 });

@@ -38,13 +38,15 @@ Extract of `docs/BUILD_PLAN.md` v1.7. If this file and BUILD_PLAN.md ever differ
 - `provision-lecturer`: administrator only; creates or promotes a lecturer and sends the invitation.
 - `bulk-import-learners`: administrator only; validates CSV, previews, creates accounts, enrols; returns an error report.
 - `create-course`: checks `can_create_courses`; creates the course, the OWNER row and the audit record in one transaction.
-- `register-upload` and `finalize-upload`: the validated upload pipeline in D18.
+- `register-upload` and `finalize-upload`: the validated upload pipeline in D18. For lesson audio, `register-upload` refuses an eleventh file before any upload unless it replaces one (ADR-007); the database checks again.
+- `delete-media` (ADR-007): administrators and the course's lecturers delete a lesson audio file (in use or history), a lesson attachment or a course cover. The trusted database function (`lesson_audio_delete`, `lesson_attachment_delete`, `course_cover_remove`; service role only) re-checks the actor and the course, refuses archived courses, takes the item out at once and keeps its record with who and when (audited); the function then removes the file from Storage and marks it DELETED, or DELETE_FAILED for `cleanup-files` to retry. No client role has a DELETE privilege on these tables or a DELETE policy on these buckets.
+- `manage-lessons`: saves (HTML cleaned against an allow-list), publishes and reorders lessons, and renames and reorders a lesson's audio files, through service-role-only database functions that re-check the actor and course.
 - `submit-assignment`: checks enrolment, publication, due date, extensions, version rules; creates the version and sets lateness from server time.
 - `release-grades`: releases one submission or a whole assignment; writes notifications and audit.
 - `export-gradebook`: checks the caller's rights over the course; returns CSV or XLSX; writes audit.
 - `retention-runner`: invoked by `pg_cron`; implements D20 exactly, dry-run first; writes `retention_runs` and audit.
 - `send-notification-email`: worker run every minute by `pg_cron`; sends due `notification_deliveries` through Resend, respecting preferences, using the retry schedule in D31.
 - `schedule-reminders`: run every 15 minutes by `pg_cron`; creates 24-hour due-date reminders with the deduplication key in D31.
-- `cleanup-files`: run hourly by `pg_cron`; removes expired PENDING uploads (older than 24 hours), REJECTED objects and replaced profile images and covers; retries DELETE_FAILED; records outcomes and audit; never touches lesson audio, instruction audio, attachments or VALIDATED submission files.
+- `cleanup-files`: run hourly by `pg_cron`; removes expired PENDING uploads (older than 24 hours), REJECTED objects, replaced or removed profile images and covers, and the files of lesson audio and attachments that were deleted (ADR-007); retries DELETE_FAILED; records outcomes and audit; never touches lesson audio or attachments in use, audio history, instruction audio or VALIDATED submission files.
 - `reset-admin-mfa`: administrator only; resets another administrator's MFA factor under D32.
 - Database function `calculate_course_grades` (SQL, read-only): the only place grade formulas exist (D30).
