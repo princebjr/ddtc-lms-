@@ -250,6 +250,16 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - **Covers:** private `course-covers` bucket, path `<course id>/<file id>.<ext>`, through `register-upload` and `finalize-upload`; replaced covers are removed and `cleanup-files` retries.
 - **Routes:** `/:role/courses/new`, `/:role/courses/:courseId/:tab?` (administrator and lecturer workspace), `/learner/courses/:courseId`.
 
+### Lessons and lesson audio as built (Phase 6)
+
+- **Tables:** `lessons` (ordered by a unique, deferrable position; DRAFT or PUBLISHED; content is HTML cleaned by `manage-lessons` and checked again by the table), `lesson_audio_files` (one ACTIVE per lesson; replacing marks the old one SUPERSEDED), `lesson_attachments` (removal sets `removed_at`), `lesson_progress` (one row per learner and lesson). `file_objects.waveform_peaks` holds 128 values from 0 to 1 (ADR-006).
+- **Access:** `private.can_manage_lesson` (AAL2 administrators and the course's active lecturers) and `private.can_see_lesson` (managers, and learners enrolled ACTIVE or COMPLETED once the lesson is PUBLISHED in a PUBLISHED or ARCHIVED course). `lesson_media()` returns the ACTIVE audio and the attachments with their paths, sizes, duration and peaks for whoever may see the lesson. `mark_lesson()` records progress only for an ACTIVE enrolment in a PUBLISHED course (D05, D07).
+- **Storage:** private `lesson-audio` (100 MB; `audio/mpeg`, `audio/mp4`, `audio/wav`) and `lesson-attachments` (25 MB; PDF, DOCX, PPTX), path `<course id>/<lesson id>/<file id>.<ext>`. Reads require a VALIDATED file and `private.can_read_lesson_object` (managers read every validated file of their lessons, history included; learners only the ACTIVE audio and attachments not removed). Nobody writes directly.
+- **Pipeline:** `register-upload` checks the course right and the lesson's course; the browser uploads (resumable tus over 25 MB) and computes the waveform peaks while it uploads; `finalize-upload` reads only the ranges it needs to find the real type and the duration (`_shared/audio.ts`, `_shared/documents.ts`), requires the name to match the content, checks D17 limits from `system_settings.file_limits`, stores the peaks, then calls `lesson_audio_activate` or `lesson_attachment_add`.
+- **Trusted functions:** `lesson_save`, `lesson_set_publication`, `lesson_reorder` (the whole course in one transaction), `lesson_audio_activate`, `lesson_attachment_add`, `lesson_attachment_remove`, behind `manage-lessons` and `finalize-upload`; archived courses are refused; everything is audited.
+- **Player:** `AudioPlayer` and `Waveform` (ADR-006) with signed URLs from the user's own session (one hour for playback, five minutes for downloads, D19); `/dev/audio` shows every size and state in preview builds.
+- **Routes:** `/:role/courses/:courseId/lessons/:lessonId` (`new` for a new lesson) for lecturers and administrators; `/learner/courses/:courseId/lessons/:lessonId` for learners.
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.
