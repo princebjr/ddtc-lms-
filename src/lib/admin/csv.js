@@ -82,11 +82,15 @@ function cell(v) {
 }
 
 /**
- * @param {Array<{ row: number, email: string, status: string, message?: string }>} results
+ * The import report; id_number is the ID given to each new or enrolled learner (ADR-008).
+ * @param {Array<{ row: number, email: string, status: string, message?: string, idNumber?: number | null }>} results
  * @returns {string}
  */
 export function reportCsv(results) {
-  const lines = ['row,email,result,message', ...results.map((r) => [String(r.row), r.email, r.status, r.message ?? ''].map(cell).join(','))];
+  const lines = [
+    'row,email,id_number,result,message',
+    ...results.map((r) => [String(r.row), r.email, r.idNumber ? String(r.idNumber) : '', r.status, r.message ?? ''].map(cell).join(',')),
+  ];
   return `${lines.join('\n')}\n`;
 }
 

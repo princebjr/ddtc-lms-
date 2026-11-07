@@ -8,7 +8,7 @@ All tables have `id uuid` primary keys (except where noted), `created_at`, and `
 
 | Table | Key columns and constraints |
 |---|---|
-| profiles | id (= auth.users.id, FK), first_name, second_name, email, contact_number, role, can_create_courses, account_status, profile_completed, profile_image_file_id. Role, status and can_create_courses are not user-editable. |
+| profiles | id (= auth.users.id, FK), id_number, first_name, second_name, email, contact_number, role, can_create_courses, account_status, profile_completed, profile_image_file_id. Role, status and can_create_courses are not user-editable. `id_number` (ADR-008): six digits, 100000 to 999999, unique; assigned by a trigger from `private.id_number_seq` through `private.id_number_for()` (a one-to-one shuffle); a second trigger refuses any change. |
 | system_settings | key (PK), value (jsonb), updated_by, updated_at. Holds all values marked default. |
 | courses | title, course_code (unique), description, learning_objectives, category, cover_image_file_id, created_by, status, missing_as_zero, archived_at. |
 | course_lecturers | course_id, lecturer_id, permission_level, assigned_by. Unique (course_id, lecturer_id). |

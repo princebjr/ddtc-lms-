@@ -8,11 +8,12 @@ import { Sheet, SheetContent } from '@/components/ui/sheet.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { downloadText, learnerRows, parseCsv, reportCsv, TEMPLATE } from '@/lib/admin/csv.js';
 import { callFunction } from '@/lib/functions.js';
+import { formatIdNumber } from '@/lib/id-number.js';
 
 // Bulk learner import (D05, Phase 4): choose a CSV, see a preview with a result for every row
 // (the server validates), then import. The error report downloads as CSV ("View report").
 
-/** @typedef {{ row: number, email: string, status: 'ready' | 'created' | 'enrolled' | 'error', message?: string }} RowResult */
+/** @typedef {{ row: number, email: string, status: 'ready' | 'created' | 'enrolled' | 'error', message?: string, idNumber?: number }} RowResult */
 
 const TONE = /** @type {const} */ ({ ready: 'info', created: 'success', enrolled: 'success', error: 'error' });
 const TEXT = { ready: 'Ready', created: 'Invited', enrolled: 'Enrolled', error: 'Error' };
@@ -115,6 +116,9 @@ export function ImportSheet({ onClose, onDone }) {
                 { key: 'row', header: 'Row', card: 'secondary', cell: (r) => `Row ${r.row}` },
                 { key: 'email', header: 'Email', card: 'title', cell: (r) => r.email || '(no email)' },
                 { key: 'status', header: 'Result', card: 'status', cell: (r) => <StatusChip tone={TONE[r.status]}>{TEXT[r.status]}</StatusChip> },
+                ...(committed
+                  ? [{ key: 'idNumber', header: 'ID number', card: /** @type {const} */ ('detail'), cell: (/** @type {RowResult} */ r) => <span className="tabular-nums">{formatIdNumber(r.idNumber)}</span> }]
+                  : []),
                 { key: 'message', header: 'Message', card: 'detail', cell: (r) => r.message ?? '' },
               ]}
             />

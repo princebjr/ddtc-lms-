@@ -130,8 +130,13 @@ describe('bulk-import-learners', () => {
   it('commit creates the valid learners and returns the error report, audited', async () => {
     const res = await call('bulk-import-learners', admin.token, { rows, commit: true });
     expect(res.body.summary).toMatchObject({ created: 1, errors: 4 });
-    const [created] = await serviceGet(`profiles?select=role&email=eq.import-a-${stamp}@ddtc.test`);
+    const [created] = await serviceGet(`profiles?select=role,id_number&email=eq.import-a-${stamp}@ddtc.test`);
     expect(created.role).toBe('LEARNER');
+    // ADR-008: the result names the ID number the database gave the new learner.
+    const row = res.body.results.find((/** @type {{ status: string }} */ r) => r.status === 'created');
+    expect(row.idNumber).toBe(created.id_number);
+    expect(String(row.idNumber)).toMatch(/^[1-9]\d{5}$/);
+    expect(res.body.results.filter((/** @type {{ status: string }} */ r) => r.status === 'error').every((/** @type {{ idNumber?: number }} */ r) => r.idNumber === undefined)).toBe(true);
     const audits = await serviceGet(`audit_logs?select=actor_id,metadata&action=eq.admin.learners_imported&actor_id=eq.${admin.userId}`);
     expect(audits.length).toBeGreaterThan(0);
   });

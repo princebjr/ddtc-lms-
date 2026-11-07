@@ -1,4 +1,4 @@
-import { likeTerm } from '@/lib/admin/users.js';
+import { likeTerm, userSearchFilter } from '@/lib/admin/users.js';
 import { callFunction } from '@/lib/functions.js';
 import { getSupabase } from '@/lib/supabase.js';
 
@@ -38,12 +38,12 @@ export async function fetchEnrolments({ courseId = '', status = '', search = '',
 
 /** Active learners matching a search, for the Enrol learners picker. @param {string} search */
 export async function searchLearners(search) {
-  const term = likeTerm(search);
-  let query = getSupabase().from('profiles').select('id, first_name, second_name, email').eq('role', 'LEARNER').eq('account_status', 'ACTIVE');
-  if (term) query = query.or(`first_name.ilike.*${term}*,second_name.ilike.*${term}*,email.ilike.*${term}*`);
+  const filter = userSearchFilter(search);
+  let query = getSupabase().from('profiles').select('id, id_number, first_name, second_name, email').eq('role', 'LEARNER').eq('account_status', 'ACTIVE');
+  if (filter) query = query.or(filter);
   const { data, error } = await query.order('first_name').limit(50);
   if (error) throw error;
-  return /** @type {Array<{ id: string, first_name: string, second_name: string, email: string }>} */ (data ?? []);
+  return /** @type {Array<{ id: string, id_number: number, first_name: string, second_name: string, email: string }>} */ (data ?? []);
 }
 
 /**

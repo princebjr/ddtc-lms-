@@ -1,4 +1,4 @@
-import { Upload } from 'lucide-react';
+import { Copy, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
@@ -7,18 +7,20 @@ import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { ThemeSwitch } from '@/components/layout/ThemeSwitch.jsx';
 import { Button } from '@/components/ui/button.jsx';
-import { Card, CardTitle } from '@/components/ui/card.jsx';
+import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
 import { UserAvatar } from '@/components/UserAvatar.jsx';
 import { useAvatarUrl } from '@/hooks/use-avatar-url.js';
 import { authErrorMessage } from '@/lib/auth/messages.js';
 import { PASSWORD_MIN, PHOTO_TYPES, photoProblem, profileSchema, resetPasswordSchema, validate } from '@/lib/auth/schemas.js';
 import { callFunction } from '@/lib/functions.js';
+import { formatIdNumber } from '@/lib/id-number.js';
 import { NAVIGATION } from '@/lib/navigation.js';
 import { getStorage } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // Profile settings (prototype `prof`; Phase 4): photo through the D18 pipeline, names and contact
-// number, theme, and password. Role, status and email are not editable here (D02, D03).
+// number, theme, and password. Role, status and email are not editable here (D02, D03); the ID
+// number is shown with Copy and never changes (ADR-008).
 
 const ROLE_KEY = /** @type {const} */ ({ ADMIN: 'admin', LECTURER: 'lecturer', LEARNER: 'learner' });
 
@@ -35,6 +37,7 @@ export default function ProfilePage() {
           <DetailsForm />
         </Card>
         <div className="flex flex-col gap-6">
+          <IdNumberCard idNumber={profile.id_number} />
           <Card className="flex flex-col gap-4">
             <CardTitle>Appearance</CardTitle>
             <ThemeSwitch />
@@ -43,6 +46,44 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The person's own ID number (ADR-008) with Copy. Copy confirms in place (no toast: UI_FEEDBACK
+ * lists none for it), and where the browser cannot copy, it says to select the number instead.
+ * @param {{ idNumber: number | null | undefined }} props
+ */
+export function IdNumberCard({ idNumber }) {
+  const [note, setNote] = useState('');
+  const text = formatIdNumber(idNumber);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNote('Copied');
+    } catch {
+      setNote('Copying is not available here. Select the number to copy it.');
+    }
+  };
+
+  return (
+    <Card as="section" className="flex flex-col gap-3" aria-labelledby="id-number-title">
+      <CardTitle id="id-number-title">ID number</CardTitle>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="select-all text-title-2 tracking-wide tabular-nums text-ink" data-testid="id-number">
+          {text}
+        </span>
+        <Button variant="outline" onClick={copy} aria-label="Copy ID number" disabled={!text}>
+          <Copy aria-hidden="true" />
+          Copy
+        </Button>
+      </div>
+      <span role="status" className="text-body-sm text-ink-secondary">
+        {note}
+      </span>
+      <CardDescription>Your DDTC ID number. It never changes; quote it when you contact the DDTC office.</CardDescription>
+    </Card>
   );
 }
 

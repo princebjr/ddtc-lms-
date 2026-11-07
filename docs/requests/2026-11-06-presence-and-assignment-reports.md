@@ -1,6 +1,6 @@
 # Owner request (2026-11-06): live presence and assignment performance reports
 
-Status: **recorded, not yet scheduled** (all questions answered; scheduling and ADRs still to do). Received during Phase 6. Nothing is built until the owner
+Status: **recorded; the six-digit ID numbers (question 6) are built (step 6.1, ADR-008)**; the reports (Phase 10) and presence (Phase 11) are not yet scheduled in detail. Received during Phase 6. Nothing is built until the owner
 answers the open questions below and approves where it goes (an ADR in `docs/DECISIONS.md` when it
 is scheduled, as for any change to the build plan).
 
@@ -18,7 +18,7 @@ is scheduled, as for any change to the build plan).
 3. ~~Privacy: may a person hide their presence?~~ **Answered by the owner on 2026-11-06: no. There is no "Appear offline" option.** (Recorded as an owner decision; no presence history is stored.)
 4. ~~What "active" means~~ **Answered by the owner on 2026-11-06: people on the app at that moment are online; people not on the app are offline. No other states.** (A person leaving or losing their connection drops off within about a minute: Realtime Presence heartbeat.)
 5. ~~Report contents~~ Given in section 1: name, student ID, assignment title, submission date, score, maximum, percentage, "Not Submitted" for learners without a submission, plus totals, class average, highest, lowest and submission statistics; CSV and XLSX, one export per assignment, with DDTC branding.
-6. ~~Student ID~~ **Answered by the owner on 2026-11-06: every account (administrators, lecturers and learners) has a unique ID number of exactly six digits.** Proposed design, to confirm when scheduled: assigned automatically when an account is created (existing accounts get one too), never reused or changed, not editable by the person, shown on their profile, in user management and in reports; numbers 100000 to 999999 so none starts with 0. Needs its own ADR (it changes `profiles`, D02).
+6. ~~Student ID~~ **Answered by the owner on 2026-11-06: every account (administrators, lecturers and learners) has a unique ID number of exactly six digits.** Proposed design, to confirm when scheduled: assigned automatically when an account is created (existing accounts get one too), never reused or changed, not editable by the person, shown on their profile, in user management and in reports; numbers 100000 to 999999 so none starts with 0. **Built as step 6.1 (ADR-008, 2026-11-07) as proposed; lecturers see the numbers of their own courses' learners.**
 7. ~~Visibility scope~~ **Answered by the owner on 2026-11-06: people who are online see the course-mates and lecturers who are online at that same moment.** Read as: a learner sees online learners and lecturers who share a course with them; a lecturer sees online learners of their courses and other lecturers (section 2). Administrators are never shown or counted.
 
 ## Notes from the codebase (for whoever implements it)

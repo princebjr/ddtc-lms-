@@ -35,7 +35,8 @@ describe('CSV parsing', () => {
       { row: 2, email: 'a@example.org', status: 'created' },
       { row: 3, email: '=HYPERLINK("x")', status: 'error', message: 'Email address is not valid' },
     ]);
-    expect(csv).toBe('row,email,result,message\n2,a@example.org,created,\n3,"\'=HYPERLINK(""x"")",error,Email address is not valid\n');
+    // ADR-008 added the id_number column (empty where no account was created).
+    expect(csv).toBe('row,email,id_number,result,message\n2,a@example.org,,created,\n3,"\'=HYPERLINK(""x"")",,error,Email address is not valid\n');
   });
 });
 

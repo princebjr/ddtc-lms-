@@ -40,6 +40,7 @@ import {
 } from '@/lib/courses/courses.js';
 import { courseSchema, returnReasonSchema } from '@/lib/courses/schemas.js';
 import { callFunction } from '@/lib/functions.js';
+import { formatIdNumber } from '@/lib/id-number.js';
 import { getStorage } from '@/lib/storage.js';
 import { TextArea } from './CourseEditorPage.jsx';
 import { LessonsTab } from './LessonsTab.jsx';
@@ -462,12 +463,18 @@ export function CoverCard({ course, canEdit, onChanged }) {
   );
 }
 
-/** Learners by name and photo only (course_roster). @param {{ course: Course, admin: boolean }} props */
+/** Learners by name, photo and ID number only (course_roster, ADR-008). @param {{ course: Course, admin: boolean }} props */
 function LearnersTab({ course, admin }) {
   const roster = useLoad(() => fetchRoster(course.id), [course.id]);
   /** @typedef {Awaited<ReturnType<typeof fetchRoster>>[number]} RosterRow */
   const columns = [
     { key: 'name', header: 'Learner', card: /** @type {const} */ ('title'), cell: (/** @type {RosterRow} */ r) => <RosterPerson row={r} /> },
+    {
+      key: 'idNumber',
+      header: 'ID number',
+      card: /** @type {const} */ ('secondary'),
+      cell: (/** @type {RosterRow} */ r) => <span className="tabular-nums">{formatIdNumber(r.id_number)}</span>,
+    },
     {
       key: 'status',
       header: 'Enrolment',

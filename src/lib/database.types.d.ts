@@ -303,14 +303,14 @@ isOneToOne: true
                   ]
                 },"profiles": {
                   Row: {
-                    "account_status": Database["public"]['Enums']["account_status"],"can_create_courses": boolean,"can_publish_directly": boolean,"contact_number": string | null,"created_at": string,"email": string,"first_name": string,"id": string,"profile_completed": boolean,"profile_image_file_id": string | null,"role": Database["public"]['Enums']["user_role"],"second_name": string,"updated_at": string
+                    "account_status": Database["public"]['Enums']["account_status"],"can_create_courses": boolean,"can_publish_directly": boolean,"contact_number": string | null,"created_at": string,"email": string,"first_name": string,"id": string,"id_number": number,"profile_completed": boolean,"profile_image_file_id": string | null,"role": Database["public"]['Enums']["user_role"],"second_name": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_status"?: Database["public"]['Enums']["account_status"],"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email": string,"first_name"?: string,"id": string,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
+                    "account_status"?: Database["public"]['Enums']["account_status"],"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email": string,"first_name"?: string,"id": string,"id_number": number,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "account_status"?: Database["public"]['Enums']["account_status"],"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email"?: string,"first_name"?: string,"id"?: string,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
+                    "account_status"?: Database["public"]['Enums']["account_status"],"can_create_courses"?: boolean,"can_publish_directly"?: boolean,"contact_number"?: string | null,"created_at"?: string,"email"?: string,"first_name"?: string,"id"?: string,"id_number"?: number,"profile_completed"?: boolean,"profile_image_file_id"?: string | null,"role"?: Database["public"]['Enums']["user_role"],"second_name"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -378,7 +378,7 @@ isOneToOne: false
                            },
 "course_roster":
 { Args: { "p_course": string }; Returns: {
-              "enrolled_at": string,"enrolment_id": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"first_name": string,"learner_id": string,"profile_image_path": string,"second_name": string
+              "enrolled_at": string,"enrolment_id": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"first_name": string,"id_number": number,"learner_id": string,"profile_image_path": string,"second_name": string
             }[]
                            },
 "course_teachers":
