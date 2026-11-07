@@ -111,6 +111,7 @@
   --duration-glow: 6s; /* one lap of the auth card edge glow */
   --duration-logo-fade: 800ms; /* DDTC emblem fade-in on the auth hero */
   --glow-width: 2px;
+  --logo-glow-width: 3px; /* the light's band over the DDTC emblem's circle on the auth hero (ADR-012) */
   /* Waveform geometry (ADR-006): 3 px bars, 2 px gaps, 2 px playhead with 8 px handles */
   --wave-bar: 3px;
   --wave-gap: 2px;

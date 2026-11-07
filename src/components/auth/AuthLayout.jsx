@@ -10,10 +10,26 @@ import { cn } from '@/lib/utils.js';
 // the brand block (gölarae logo, then "from gölarae") sits directly below the whole form, Google
 // button included (D39). The name and the tagline show at every width; the emblem fades in when
 // the page opens; Sign In and Sign Up cards carry a light that travels round their edge (owner
-// request 2026-11-05, DESIGN.md 9 and 21).
+// request 2026-11-05, DESIGN.md 9 and 21). Owner request 2026-11-07 (ADR-012): the administrator's
+// two-step verification card glows too, the same light travels round the circle of the emblem on
+// those three pages (never the favicon or the app's other logos), the name ends "(HOJ)", the
+// tagline is Revelation 2:10b in Twi (marked lang="tw" for screen readers, WCAG 3.1.2), and Sign In
+// and Sign Up end with a copyright line well below the brand block.
 
-export const INSTITUTION_NAME = 'DYNAMIC DISCIPLESHIP TRAINING CENTRE';
-export const TAGLINE = "Be faithful, even to the point of death, and I will give you life as your victor's crown - Revelation 2:10b.";
+export const INSTITUTION_NAME = 'DYNAMIC DISCIPLESHIP TRAINING CENTRE (HOJ)';
+export const TAGLINE = 'Di nokware kosi owu mu, na wobenya nkwa abotiri - Adiyisɛm 2:10b';
+export const COPYRIGHT_HOLDER = 'Dynamic Discipleship Training Centre (HOJ)';
+
+const yearInGhana = new Intl.DateTimeFormat('en-GB', { year: 'numeric', timeZone: 'Africa/Accra' });
+
+/**
+ * The copyright line on Sign In and Sign Up (owner request 2026-11-07, ADR-012), with this year in
+ * Ghana time.
+ * @param {Date} [now]
+ */
+export function copyrightLine(now = new Date()) {
+  return `© ${yearInGhana.format(now)} ${COPYRIGHT_HOLDER}. All rights reserved.`;
+}
 
 /** Card styles: the plain card merges into the right panel on desktop; the glowing card keeps its edge. */
 const CARD = 'flex flex-col gap-6 rounded-lg border border-hairline bg-card p-6 lg:border-0 lg:p-0';
@@ -23,12 +39,13 @@ const GLOW_CARD = 'flex flex-col gap-6 rounded-lg glow-edge p-6 lg:p-8';
  * @param {{ title: string, description?: import('react').ReactNode, children: import('react').ReactNode,
  *   footer?: import('react').ReactNode, brand?: boolean, glow?: boolean }} props
  *   brand: show the brand block (Sign In and Sign Up only)
- *   glow: the moving edge glow on the card (Sign In and Sign Up only)
+ *   glow: the moving glow on the card and round the emblem's circle (Sign In, Sign Up and two-step
+ *   verification only)
  */
 export function AuthLayout({ title, description, children, footer, brand = false, glow = false }) {
   return (
     <div className="grid min-h-dvh-screen grid-cols-1 bg-page pt-safe pr-safe pb-safe pl-safe lg:grid-cols-2">
-      <AuthHero />
+      <AuthHero glow={glow} />
       <main id="main" className="flex min-w-0 flex-col items-center justify-center px-4 pt-2 pb-10 lg:bg-card lg:px-16 lg:py-12">
         <div className="flex w-full max-w-sm flex-col gap-6">
           <section aria-labelledby="auth-title" data-glow={glow || undefined} className={glow ? GLOW_CARD : CARD}>
@@ -43,9 +60,19 @@ export function AuthLayout({ title, description, children, footer, brand = false
             {footer}
           </section>
           {brand ? <BrandBlock /> : null}
+          {brand ? <Copyright /> : null}
         </div>
       </main>
     </div>
+  );
+}
+
+/** The copyright line, well below the brand block (Sign In and Sign Up only). */
+function Copyright() {
+  return (
+    <p data-slot="copyright" className="m-0 mt-12 text-center text-caption text-balance text-ink-tertiary">
+      {copyrightLine()}
+    </p>
   );
 }
 
@@ -59,8 +86,8 @@ function GlowRing() {
 const HANDOVER_MS = 100;
 let skeletonHeroLeftAt = Number.NEGATIVE_INFINITY;
 
-/** @param {{ skeleton?: boolean }} props */
-function AuthHero({ skeleton = false }) {
+/** @param {{ skeleton?: boolean, glow?: boolean }} props */
+function AuthHero({ skeleton = false, glow = false }) {
   const [fade] = useState(() => skeleton || Date.now() - skeletonHeroLeftAt > HANDOVER_MS);
   useEffect(() => {
     if (!skeleton) return undefined;
@@ -68,12 +95,26 @@ function AuthHero({ skeleton = false }) {
       skeletonHeroLeftAt = Date.now();
     };
   }, [skeleton]);
+  const fadeIn = fade && 'animate-logo-fade-in';
+  const logo = <LogoMark logo="ddtc" size="hero-phone" className={cn('lg:size-30', fadeIn)} label="DDTC LMS logo" />;
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-4 pt-8 pb-2 text-center lg:gap-4 lg:bg-hero-soft lg:p-10">
-      <LogoMark logo="ddtc" size="hero-phone" className={cn('lg:size-30', fade && 'animate-logo-fade-in')} label="DDTC LMS logo" />
+      {glow ? (
+        <span data-slot="logo-glow" className="logo-glow">
+          {logo}
+          {/* The travelling light round the emblem's circle: decorative, fading in with the emblem. */}
+          <span aria-hidden="true" data-slot="logo-glow-ring" className={cn('logo-glow-ring', fadeIn)}>
+            <span className="logo-glow-arc" />
+          </span>
+        </span>
+      ) : (
+        logo
+      )}
       <div className="flex flex-col items-center gap-1 lg:gap-2">
-        <p className="m-0 text-label font-bold tracking-wide text-ink lg:text-title-3">{INSTITUTION_NAME}</p>
-        <p className="m-0 max-w-reading text-body-sm text-ink-secondary lg:text-body">{TAGLINE}</p>
+        <p className="m-0 text-label font-bold tracking-wide text-balance text-ink lg:text-title-3">{INSTITUTION_NAME}</p>
+        <p lang="tw" className="m-0 max-w-reading text-body-sm text-ink-secondary lg:text-body">
+          {TAGLINE}
+        </p>
       </div>
     </div>
   );
@@ -84,11 +125,12 @@ function AuthHero({ skeleton = false }) {
  * blocks while the session is checked. The brand line stays visible.
  * @param {{ fields?: number, brand?: boolean, glow?: boolean }} props
  *   glow: defaults to brand, since the skeleton with the brand block stands in for Sign In and Sign Up
+ *   (two-step verification passes it too)
  */
 export function AuthSkeleton({ fields = 2, brand = true, glow = brand }) {
   return (
     <div className="grid min-h-dvh-screen grid-cols-1 bg-page pt-safe pr-safe pb-safe pl-safe lg:grid-cols-2" aria-busy="true" data-slot="auth-skeleton">
-      <AuthHero skeleton />
+      <AuthHero skeleton glow={glow} />
       <div className="flex min-w-0 flex-col items-center justify-center px-4 pt-2 pb-10 lg:bg-card lg:px-16 lg:py-12">
         <div className="flex w-full max-w-sm flex-col gap-6">
           <div className={glow ? GLOW_CARD : CARD}>
@@ -109,6 +151,7 @@ export function AuthSkeleton({ fields = 2, brand = true, glow = brand }) {
             <Skeleton className="h-12 w-full rounded-full" />
           </div>
           {brand ? <BrandBlock /> : null}
+          {brand ? <Copyright /> : null}
         </div>
       </div>
     </div>
