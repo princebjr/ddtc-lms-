@@ -2,11 +2,12 @@
 // Phase 3 auth screens: brand block directly below the whole Sign In and Sign Up forms (Google
 // button included), exact brand text, field attributes for phones (RESPONSIVE.md 15), no role field
 // on Sign Up, clear blocked-account messages, and the in-app-browser handling of Google (D27 item 8).
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthSkeleton, copyrightLine, INSTITUTION_NAME, TAGLINE } from '@/components/auth/AuthLayout.jsx';
 import { AuthContextForTests } from '@/components/auth/AuthProvider.jsx';
+import { FormField } from '@/components/auth/FormField.jsx';
 import { IN_APP_GOOGLE_MESSAGE } from '@/components/auth/GoogleSection.jsx';
 import { BRAND_LINE } from '@/components/brand/BrandBlock.jsx';
 import { ToastProvider } from '@/components/feedback/ToastProvider.jsx';
@@ -309,5 +310,62 @@ describe('auth hero and card glow', () => {
     skeleton.unmount();
     const { container } = renderPage(<LoginPage />, '/login');
     expect(container.querySelector('[data-logo="ddtc"]')?.className).not.toContain('animate-logo-fade-in');
+  });
+});
+
+// The focused field is kept above the on-screen keyboard. Found by CI (courses.spec.js on iPhone SE):
+// the scroll used to run 300 ms after every focus, so a tap on Sign In at that moment landed where
+// the button had been. It now moves the page only when the field still has the focus and cannot be
+// seen (the keyboard covers it); a field in view never moves.
+describe('the focused field and the on-screen keyboard', () => {
+  const scrollIntoView = vi.fn();
+
+  /** @param {{ top: number, bottom: number }} box where the field is @param {{ offsetTop: number, height: number }} view what can be seen */
+  function focusedField(box, view) {
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: view });
+    render(
+      <>
+        <FormField label="Password" name="password" type="password" />
+        <button type="button">Sign In</button>
+      </>,
+    );
+    const input = screen.getByLabelText('Password');
+    input.getBoundingClientRect = () => /** @type {DOMRect} */ ({ top: box.top, bottom: box.bottom, left: 0, right: 300, width: 300, height: box.bottom - box.top, x: 0, y: box.top, toJSON: () => ({}) });
+    act(() => input.focus());
+    return input;
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    scrollIntoView.mockReset();
+    Element.prototype.scrollIntoView = scrollIntoView; // jsdom has none
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    // @ts-expect-error jsdom has none; removed again after each test
+    delete Element.prototype.scrollIntoView;
+    // @ts-expect-error jsdom has none; removed again after each test
+    delete window.visualViewport;
+  });
+
+  it('brings a field the keyboard covers to the middle once the keyboard has had time to open', () => {
+    focusedField({ top: 490, bottom: 538 }, { offsetTop: 0, height: 300 });
+    act(() => vi.advanceTimersByTime(299));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' });
+  });
+
+  it('leaves a field that can be seen where it is, so nothing moves under a finger about to tap', () => {
+    focusedField({ top: 490, bottom: 538 }, { offsetTop: 0, height: 568 });
+    act(() => vi.advanceTimersByTime(1000));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('does nothing once the focus has moved on', () => {
+    focusedField({ top: 490, bottom: 538 }, { offsetTop: 0, height: 300 });
+    act(() => screen.getByRole('button', { name: 'Sign In' }).focus());
+    act(() => vi.advanceTimersByTime(1000));
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });
