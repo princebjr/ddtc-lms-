@@ -97,6 +97,26 @@ function Editor({ saved, isNew = false }) {
   );
 }
 
+const EMPTY = { title: '' };
+
+/**
+ * A new item's editor, as in the lesson and assignment editors: Save clears the draft and the screen
+ * then moves to the saved item, so until it closes its values still differ from the empty saved ones.
+ */
+function NewItemEditor() {
+  const start = useDraftStart('lesson:c1:new', EMPTY, { isNew: true });
+  const [title, setTitle] = useState(start.title);
+  const clear = useDraftAutosave('lesson:c1:new', EMPTY, { title }, { isNew: true });
+  return (
+    <>
+      <input aria-label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <button type="button" onClick={clear}>
+        Save
+      </button>
+    </>
+  );
+}
+
 /** @param {import('react').ReactNode} ui */
 function signedIn(ui) {
   return render(<AuthContextForTests.Provider value={/** @type {any} */ ({ status: 'signed-in', profile: { id: 'u1', role: 'LECTURER' } })}>{ui}</AuthContextForTests.Provider>);
@@ -124,6 +144,33 @@ describe('editor drafts', () => {
     expect(loadDraft('u1', 'lesson:c1:l1')).toBeNull();
     expect(hasUnsavedWork()).toBe(false);
     view.unmount();
+  });
+
+  // Found by CI (lessons.spec.js): a lesson saved within half a second of the last key press got its
+  // draft back from the waiting write, so the next new lesson opened with the old text in it.
+  it("a save deletes the draft for good, even with the half-second write still waiting, until the next change", () => {
+    const view = signedIn(<NewItemEditor />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'The early church' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(loadDraft('u1', 'lesson:c1:new')).toBeNull();
+    expect(hasUnsavedWork()).toBe(false);
+    // A change after the save is unsaved work again, and kept.
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'The early church, part 2' } });
+    expect(hasUnsavedWork()).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(loadDraft('u1', 'lesson:c1:new')?.data).toEqual({ title: 'The early church, part 2' });
+    // Saved again, then the screen moves to the saved item: nothing is written on the way out.
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    view.unmount();
+    expect(loadDraft('u1', 'lesson:c1:new')).toBeNull();
+    signedIn(<NewItemEditor />);
+    expect(screen.getByLabelText('Title')).toHaveValue('');
+    expect(toast.show).not.toHaveBeenCalled();
   });
 
   it('write the draft when the screen closes before the timer (an idle sign-out)', () => {

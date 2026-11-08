@@ -42,7 +42,9 @@ export function useDraftStart(key, saved, { isNew = false } = {}) {
 /**
  * Keeps `current` as this screen's draft while it differs from `saved` (written half a second after
  * the last change, and when the screen closes), and deletes the draft once they match. Marks the
- * screen as having unsaved work for the idle warning. Returns `clear`, for after a successful save.
+ * screen as having unsaved work for the idle warning. Returns `clear`, for after a successful save:
+ * it deletes the draft, cancels a write still waiting, and counts the values as saved until they
+ * change (a new item's screen moves to the saved item without `saved` catching up first).
  * @template {Record<string, unknown>} T
  * @param {string} key
  * @param {T} saved
@@ -55,11 +57,14 @@ export function useDraftAutosave(key, saved, current, { isNew = false } = {}) {
   const userId = auth.profile?.id;
   const base = isNew ? null : fingerprint(saved);
   const currentJson = JSON.stringify(current);
-  const dirty = currentJson !== JSON.stringify(saved);
+  // The values at the last successful save, as `clear` saw them.
+  const [cleared, setCleared] = useState(/** @type {string | null} */ (null));
+  const dirty = currentJson !== JSON.stringify(saved) && currentJson !== cleared;
   useUnsavedWork(dirty);
 
-  // What to write if the screen closes before the timer fires.
+  // What to write if the screen closes before the timer fires, and the timer itself.
   const pending = useRef(/** @type {null | { userId: string, key: string, base: string | null, json: string }} */ (null));
+  const timer = useRef(/** @type {ReturnType<typeof setTimeout> | undefined} */ (undefined));
 
   useEffect(() => {
     if (!userId) return undefined;
@@ -69,11 +74,12 @@ export function useDraftAutosave(key, saved, current, { isNew = false } = {}) {
       return undefined;
     }
     pending.current = { userId, key, base, json: currentJson };
-    const timer = setTimeout(() => {
+    const id = setTimeout(() => {
       saveDraft(userId, key, base, JSON.parse(currentJson));
       pending.current = null;
     }, 500);
-    return () => clearTimeout(timer);
+    timer.current = id;
+    return () => clearTimeout(id);
   }, [userId, key, base, dirty, currentJson]);
 
   useEffect(
@@ -85,7 +91,9 @@ export function useDraftAutosave(key, saved, current, { isNew = false } = {}) {
   );
 
   return useCallback(() => {
+    clearTimeout(timer.current);
     pending.current = null;
     if (userId) clearDraft(userId, key);
-  }, [userId, key]);
+    setCleared(currentJson);
+  }, [userId, key, currentJson]);
 }
