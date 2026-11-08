@@ -2,25 +2,29 @@
 // Phase 3 auth screens: brand block directly below the whole Sign In and Sign Up forms (Google
 // button included), exact brand text, field attributes for phones (RESPONSIVE.md 15), no role field
 // on Sign Up, clear blocked-account messages, and the in-app-browser handling of Google (D27 item 8).
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthSkeleton, INSTITUTION_NAME, TAGLINE } from '@/components/auth/AuthLayout.jsx';
+import { AuthSkeleton, copyrightLine, INSTITUTION_NAME, TAGLINE } from '@/components/auth/AuthLayout.jsx';
 import { AuthContextForTests } from '@/components/auth/AuthProvider.jsx';
+import { FormField } from '@/components/auth/FormField.jsx';
 import { IN_APP_GOOGLE_MESSAGE } from '@/components/auth/GoogleSection.jsx';
 import { BRAND_LINE } from '@/components/brand/BrandBlock.jsx';
 import { ToastProvider } from '@/components/feedback/ToastProvider.jsx';
 import { ThemeProvider } from '@/components/theme/ThemeProvider.jsx';
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage.jsx';
-import LoginPage, { BLOCKED_MESSAGES, EXPIRED_MESSAGE } from '@/pages/auth/LoginPage.jsx';
+import LoginPage, { BLOCKED_MESSAGES, EXPIRED_MESSAGE, idleMessage } from '@/pages/auth/LoginPage.jsx';
 import MfaPage from '@/pages/auth/MfaPage.jsx';
 import SignUpPage from '@/pages/auth/SignUpPage.jsx';
 import VerifyEmailPage from '@/pages/auth/VerifyEmailPage.jsx';
 
+/** Two-step verification waits for its factors unless a test gives it some. */
+const mfa = vi.hoisted(() => ({ factors: /** @type {unknown} */ (null) }));
+
 vi.mock('@/lib/supabase.js', () => ({
   getSupabase: () => ({
     auth: {
-      mfa: { listFactors: () => new Promise(() => {}) },
+      mfa: { listFactors: () => (mfa.factors ? Promise.resolve({ data: mfa.factors, error: null }) : new Promise(() => {})) },
       signInWithOAuth: vi.fn(async () => ({ error: null })),
     },
   }),
@@ -118,6 +122,19 @@ describe('Sign In', () => {
     expect(screen.getByRole('alert').textContent).toBe(EXPIRED_MESSAGE);
   });
 
+  it('after an idle sign-out (D43) says why, as a status rather than an error, until the user signs in', () => {
+    expect(idleMessage(10)).toBe('You were signed out after 10 minutes of inactivity.');
+    const idle = renderPage(<LoginPage />, '/login?idle=10&next=%2Flearner%2Fdashboard');
+    const notice = screen.getByText('You were signed out after 10 minutes of inactivity.');
+    expect(notice).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.submit(/** @type {HTMLFormElement} */ (idle.container.querySelector('form')));
+    expect(screen.queryByText('You were signed out after 10 minutes of inactivity.')).toBeNull();
+    idle.unmount();
+    renderPage(<LoginPage />, '/login?idle=0');
+    expect(screen.queryByText(/signed out after/)).toBeNull();
+  });
+
   it('inside an in-app browser, Google explains how to open the page instead of failing', () => {
     vi.stubGlobal('navigator', { ...window.navigator, userAgent: 'Mozilla/5.0 (iPhone) AppleWebKit Instagram 300.0' });
     renderPage(<LoginPage />);
@@ -169,7 +186,9 @@ describe('other auth screens', () => {
 
 // Owner request 2026-11-05: the name in bold with the tagline beneath it at every width (phones
 // included, verification pages included), the DDTC emblem fades in, and only the Sign In and
-// Sign Up cards carry the moving edge glow.
+// Sign Up cards carry the moving edge glow. Owner request 2026-11-07 (ADR-012): the administrator's
+// two-step verification card glows too, the same light travels round the emblem's circle on those
+// three pages only, and the name ends "(HOJ)".
 describe('auth hero and card glow', () => {
   // The emblem skips its fade only when a skeleton left within the last 100 ms; move the clock on
   // so a skeleton from an earlier test does not count as a handover.
@@ -179,6 +198,36 @@ describe('auth hero and card glow', () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+    mfa.factors = null;
+  });
+
+  it('names the centre "DYNAMIC DISCIPLESHIP TRAINING CENTRE (HOJ)" with the tagline in Twi', () => {
+    expect(INSTITUTION_NAME).toBe('DYNAMIC DISCIPLESHIP TRAINING CENTRE (HOJ)');
+    expect(TAGLINE).toBe('Di nokware kosi owu mu, na wobenya nkwa abotiri - Adiyisɛm 2:10b');
+    renderPage(<LoginPage />, '/login');
+    expect(screen.getByText('DYNAMIC DISCIPLESHIP TRAINING CENTRE (HOJ)')).toBeInTheDocument();
+    // Screen readers are told the tagline is Twi (WCAG 3.1.2 language of parts).
+    expect(screen.getByText(TAGLINE)).toHaveAttribute('lang', 'tw');
+  });
+
+  it('ends Sign In and Sign Up with the copyright line, well below the brand block; other pages have none', () => {
+    expect(copyrightLine(new Date('2026-11-07T12:00:00Z'))).toBe('© 2026 Dynamic Discipleship Training Centre (HOJ). All rights reserved.');
+    // The year is Ghana's (GMT): just past midnight on New Year's Day it is already the new year.
+    expect(copyrightLine(new Date('2027-01-01T00:00:30Z'))).toBe('© 2027 Dynamic Discipleship Training Centre (HOJ). All rights reserved.');
+    for (const [ui, path] of /** @type {const} */ ([
+      [<LoginPage key="in" />, '/login'],
+      [<SignUpPage key="up" />, '/signup'],
+    ])) {
+      const { container, unmount } = renderPage(ui, path);
+      const brand = container.querySelector('[data-slot="brand-block"]');
+      const copyright = /** @type {HTMLElement} */ (brand?.nextElementSibling);
+      expect(copyright.getAttribute('data-slot')).toBe('copyright');
+      expect(copyright).toHaveTextContent(copyrightLine());
+      expect(copyright.className).toContain('mt-12');
+      unmount();
+    }
+    const { container } = renderPage(<ForgotPasswordPage />, '/forgot-password');
+    expect(container.querySelector('[data-slot="copyright"]')).toBeNull();
   });
 
   /** @param {HTMLElement} container */
@@ -204,22 +253,46 @@ describe('auth hero and card glow', () => {
     expect(logo.className).toContain('animate-logo-fade-in');
   });
 
-  it('Sign In and Sign Up cards glow; other auth cards do not', () => {
+  /**
+   * The card glows and the light travels round the emblem's circle; both lights are decorative and
+   * hidden from screen readers, and the emblem itself still reads as the DDTC LMS logo.
+   * @param {HTMLElement} container
+   */
+  function expectGlowing(container) {
+    const card = container.querySelector('section[aria-labelledby="auth-title"]');
+    expect(card?.className).toContain('glow-edge');
+    expect(card?.querySelector('[data-slot="glow-ring"]')?.getAttribute('aria-hidden')).toBe('true');
+    const logoRing = container.querySelector('[data-slot="logo-glow"] [data-slot="logo-glow-ring"]');
+    expect(logoRing?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByRole('img', { name: 'DDTC LMS logo' }).closest('[data-slot="logo-glow"]')).not.toBeNull();
+  }
+
+  it('Sign In, Sign Up and two-step verification glow (card and the emblem\'s circle); other auth pages do not', async () => {
     for (const [ui, path] of /** @type {const} */ ([
       [<LoginPage key="in" />, '/login'],
       [<SignUpPage key="up" />, '/signup'],
     ])) {
       const { container, unmount } = renderPage(ui, path);
-      const card = container.querySelector('section[aria-labelledby="auth-title"]');
-      expect(card?.className).toContain('glow-edge');
-      // The travelling light is a decorative ring inside the card, hidden from screen readers.
-      const ring = card?.querySelector('[data-slot="glow-ring"]');
-      expect(ring?.getAttribute('aria-hidden')).toBe('true');
+      expectGlowing(container);
       unmount();
     }
+    // The administrator's verification card (the code step).
+    mfa.factors = { totp: [{ id: 'f1', status: 'verified' }], all: [] };
+    const verify = renderPage(<MfaPage />, '/mfa');
+    await screen.findByRole('heading', { name: 'Two-step verification' });
+    expectGlowing(verify.container);
+    verify.unmount();
+
     const { container } = renderPage(<ForgotPasswordPage />, '/forgot-password');
     expect(container.querySelector('section[aria-labelledby="auth-title"]')?.className).not.toContain('glow-edge');
     expect(container.querySelector('[data-slot="glow-ring"]')).toBeNull();
+    expect(container.querySelector('[data-slot="logo-glow"]')).toBeNull();
+  });
+
+  it('two-step verification glows while it loads too, so nothing jumps when the card appears', () => {
+    const { container } = renderPage(<MfaPage />, '/mfa');
+    expect(container.querySelector('[data-slot="auth-skeleton"] .glow-edge')).not.toBeNull();
+    expect(container.querySelector('[data-slot="auth-skeleton"] [data-slot="logo-glow-ring"]')).not.toBeNull();
   });
 
   it('the session-check skeleton for Sign In and Sign Up has the same glowing card; step skeletons do not', () => {
@@ -228,6 +301,7 @@ describe('auth hero and card glow', () => {
     unmount();
     const step = render(<AuthSkeleton fields={1} brand={false} />);
     expect(step.container.querySelector('.glow-edge')).toBeNull();
+    expect(step.container.querySelector('[data-slot="logo-glow"]')).toBeNull();
   });
 
   it('the emblem does not fade a second time when the skeleton hands over to the page', () => {
@@ -236,5 +310,62 @@ describe('auth hero and card glow', () => {
     skeleton.unmount();
     const { container } = renderPage(<LoginPage />, '/login');
     expect(container.querySelector('[data-logo="ddtc"]')?.className).not.toContain('animate-logo-fade-in');
+  });
+});
+
+// The focused field is kept above the on-screen keyboard. Found by CI (courses.spec.js on iPhone SE):
+// the scroll used to run 300 ms after every focus, so a tap on Sign In at that moment landed where
+// the button had been. It now moves the page only when the field still has the focus and cannot be
+// seen (the keyboard covers it); a field in view never moves.
+describe('the focused field and the on-screen keyboard', () => {
+  const scrollIntoView = vi.fn();
+
+  /** @param {{ top: number, bottom: number }} box where the field is @param {{ offsetTop: number, height: number }} view what can be seen */
+  function focusedField(box, view) {
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: view });
+    render(
+      <>
+        <FormField label="Password" name="password" type="password" />
+        <button type="button">Sign In</button>
+      </>,
+    );
+    const input = screen.getByLabelText('Password');
+    input.getBoundingClientRect = () => /** @type {DOMRect} */ ({ top: box.top, bottom: box.bottom, left: 0, right: 300, width: 300, height: box.bottom - box.top, x: 0, y: box.top, toJSON: () => ({}) });
+    act(() => input.focus());
+    return input;
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    scrollIntoView.mockReset();
+    Element.prototype.scrollIntoView = scrollIntoView; // jsdom has none
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    // @ts-expect-error jsdom has none; removed again after each test
+    delete Element.prototype.scrollIntoView;
+    // @ts-expect-error jsdom has none; removed again after each test
+    delete window.visualViewport;
+  });
+
+  it('brings a field the keyboard covers to the middle once the keyboard has had time to open', () => {
+    focusedField({ top: 490, bottom: 538 }, { offsetTop: 0, height: 300 });
+    act(() => vi.advanceTimersByTime(299));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' });
+  });
+
+  it('leaves a field that can be seen where it is, so nothing moves under a finger about to tap', () => {
+    focusedField({ top: 490, bottom: 538 }, { offsetTop: 0, height: 568 });
+    act(() => vi.advanceTimersByTime(1000));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('does nothing once the focus has moved on', () => {
+    focusedField({ top: 490, bottom: 538 }, { offsetTop: 0, height: 300 });
+    act(() => screen.getByRole('button', { name: 'Sign In' }).focus());
+    act(() => vi.advanceTimersByTime(1000));
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

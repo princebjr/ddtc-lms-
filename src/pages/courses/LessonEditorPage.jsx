@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
+import { useDraftAutosave, useDraftStart } from '@/hooks/use-draft.js';
 import { useLoad } from '@/hooks/use-load.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
 import { fetchLesson, LESSON_STATUS_LABEL, saveLesson, setLessonPublished } from '@/lib/lessons/lessons.js';
@@ -18,7 +19,8 @@ import { AttachmentsCard, AudioCard } from './LessonMediaCards.jsx';
 // Lesson editor for the course's lecturers and administrators (Phase 6; D08, D09, D17, D18,
 // ADR-006, ADR-007): title and rich text (cleaned on the server), Save and Publish in a sticky action
 // bar (UI_FEEDBACK), then the lesson's audio files and attachments (LessonMediaCards.jsx). An archived
-// course is read-only.
+// course is read-only. Unsaved title and text are kept as a draft on this device and put back after
+// an idle sign-out (D43).
 
 const RichTextEditor = lazy(() => import('@/components/lessons/RichTextEditor.jsx'));
 
@@ -58,8 +60,12 @@ function Editor({ role, course, lesson, onPublishedChange }) {
   const navigate = useNavigate();
   const toast = useToast();
   const archived = course.status === 'ARCHIVED';
-  const [title, setTitle] = useState(lesson?.title ?? '');
-  const [content, setContent] = useState(lesson?.content ?? '');
+  const draftKey = `lesson:${course.id}:${lesson?.id ?? 'new'}`;
+  const [saved, setSaved] = useState(() => ({ title: lesson?.title ?? '', content: lesson?.content ?? '' }));
+  const start = useDraftStart(draftKey, saved, { isNew: !lesson });
+  const [title, setTitle] = useState(start.title);
+  const [content, setContent] = useState(start.content);
+  const clearDraft = useDraftAutosave(draftKey, saved, { title, content }, { isNew: !lesson });
   const [titleError, setTitleError] = useState(/** @type {string | null} */ (null));
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const [busy, setBusy] = useState(/** @type {null | 'save' | 'publish'} */ (null));
@@ -72,10 +78,16 @@ function Editor({ role, course, lesson, onPublishedChange }) {
     setTitleError(null);
     setBusy('save');
     try {
-      const res = await saveLesson({ courseId: course.id, lessonId: lesson?.id, title: title.trim(), content });
+      const trimmed = title.trim();
+      const res = await saveLesson({ courseId: course.id, lessonId: lesson?.id, title: trimmed, content });
+      clearDraft();
       toast.show('lecturer.lesson-saved');
       if (!lesson) navigate(`/${role}/courses/${course.id}/lessons/${res.lessonId}`, { replace: true });
-      else setContent(res.content);
+      else {
+        setTitle(trimmed);
+        setContent(res.content);
+        setSaved({ title: trimmed, content: res.content });
+      }
     } catch (error) {
       setMessage(/** @type {Error} */ (error).message);
     } finally {

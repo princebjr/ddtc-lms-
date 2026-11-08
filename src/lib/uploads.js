@@ -1,3 +1,4 @@
+import { holdAwake } from '@/lib/auth/activity.js';
 import { parsePublicEnv } from './env.js';
 import { callFunction, FunctionError } from './functions.js';
 
@@ -10,10 +11,11 @@ export const RESUMABLE_OVER = 25 * 1024 * 1024;
 
 /**
  * @typedef {object} UploadRequest
- * @property {'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT'} resourceType
+ * @property {'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO'} resourceType
  * @property {File} file
  * @property {string} [courseId]
  * @property {string} [lessonId]
+ * @property {string} [assignmentId]  ASSIGNMENT_INSTRUCTION_AUDIO: the assignment (Phase 7)
  * @property {string} [replaceAudioId]  LESSON_AUDIO: the lesson audio this file replaces (ADR-007); sent to both steps
  * @property {Record<string, unknown>} [finalize]  extra fields for finalize-upload (peaks, title)
  * @property {Promise<Record<string, unknown>>} [finalizeLater]  fields that are still being prepared (peaks)
@@ -25,10 +27,25 @@ export const RESUMABLE_OVER = 25 * 1024 * 1024;
  * @param {UploadRequest} req
  * @returns {Promise<T>} finalize-upload's answer
  */
-export async function uploadFile({ resourceType, file, courseId, lessonId, replaceAudioId, finalize = {}, finalizeLater, onProgress }) {
+export async function uploadFile(req) {
+  // An upload in progress counts as activity: nobody is signed out for idleness during one (D43).
+  const release = holdAwake();
+  try {
+    return await upload(req);
+  } finally {
+    release();
+  }
+}
+
+/**
+ * @template T
+ * @param {UploadRequest} req
+ * @returns {Promise<T>}
+ */
+async function upload({ resourceType, file, courseId, lessonId, assignmentId, replaceAudioId, finalize = {}, finalizeLater, onProgress }) {
   const replace = replaceAudioId ? { replaceAudioId } : {};
   const reg = /** @type {{ fileId: string, bucket: string, path: string, token: string, contentType: string | null }} */ (
-    await callFunction('register-upload', { resourceType, courseId, lessonId, filename: file.name, size: file.size, ...replace })
+    await callFunction('register-upload', { resourceType, courseId, lessonId, assignmentId, filename: file.name, size: file.size, ...replace })
   );
   const contentType = reg.contentType ?? file.type;
   if (file.size > RESUMABLE_OVER) await resumable(reg, file, contentType, onProgress);

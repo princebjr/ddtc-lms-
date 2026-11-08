@@ -6,7 +6,10 @@
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
-import { cleanLessonHtml } from '../_shared/lesson-html.ts';
+
+// The HTML cleaner (sanitize-html) is heavy to start, so it is loaded only by the actions that clean
+// HTML; the others start quickly.
+const htmlCleaner = () => import('../_shared/lesson-html.ts');
 
 const Body = z.discriminatedUnion('action', [
   z.object({
@@ -36,7 +39,7 @@ serve(async (req) => {
 
   switch (b.action) {
     case 'save': {
-      const content = cleanLessonHtml(b.content);
+      const content = (await htmlCleaner()).cleanLessonHtml(b.content);
       if (content.length > 200000) throw new HttpError(400, 'invalid', 'The lesson is too long');
       const { data, error } = await admin.rpc('lesson_save', {
         ...actor,

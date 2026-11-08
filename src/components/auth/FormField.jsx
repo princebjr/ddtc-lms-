@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils.js';
 
 // A labelled field with an inline error (UI_FEEDBACK.md: field errors are inline, never toasts).
 // Inputs are 16 px so iOS does not zoom (RESPONSIVE.md 15). The focused field scrolls into view
-// above the on-screen keyboard.
+// above the on-screen keyboard when the keyboard covers it.
 
 /**
  * @param {{ label: string, name: string, error?: string, hint?: string, labelAction?: import('react').ReactNode }
@@ -36,8 +36,18 @@ export function FormField({ label, name, error, hint, labelAction, className, ty
           className={isPassword ? 'pr-12' : undefined}
           onFocus={(event) => {
             const el = event.currentTarget;
-            // Keep the field above the on-screen keyboard once it opens.
-            setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+            // Keep the field above the on-screen keyboard once it opens: when the keyboard has had
+            // time to open, a field that still has the focus but cannot be seen goes to the middle.
+            // A field in view stays put, so nothing moves under a finger about to tap Sign In.
+            setTimeout(() => {
+              if (document.activeElement !== el) return;
+              const view = window.visualViewport;
+              const top = view ? view.offsetTop : 0;
+              const bottom = top + (view ? view.height : window.innerHeight);
+              const box = el.getBoundingClientRect();
+              if (box.top >= top && box.bottom <= bottom) return;
+              el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }, 300);
           }}
           {...inputProps}
         />

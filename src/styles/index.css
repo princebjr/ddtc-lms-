@@ -261,6 +261,54 @@
   }
 }
 
+/*
+ * The same travelling light round the circle of the DDTC emblem on the auth hero (owner request
+ * 2026-11-07, ADR-012: Sign In, Sign Up and two-step verification; never the favicon or the app's
+ * other logos). The emblem itself is untouched: `logo-glow-ring` is an aria-hidden circle laid over
+ * the emblem's circle (measured from the artwork: the stroke's centre line sits 6.5 % inside the
+ * square) with the card's soft static halo; inside it, `logo-glow-arc` keeps a thin band over the
+ * stroke and spins the same bright arc with a transform. Reduced motion: the light stays still.
+ * Forced colours: removed.
+ */
+@utility logo-glow {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+@utility logo-glow-ring {
+  position: absolute;
+  inset: calc(6.5% - var(--logo-glow-width) / 2);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 var(--glow-blur) calc(var(--logo-glow-width) * -1) color-mix(in srgb, var(--glow) calc(var(--glow-halo) * 100%), transparent);
+}
+@utility logo-glow-arc {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--logo-glow-width);
+  overflow: hidden;
+  -webkit-mask:
+    linear-gradient(black, black) content-box,
+    linear-gradient(black, black);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(black, black) content-box exclude,
+    linear-gradient(black, black);
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300%;
+    aspect-ratio: 1;
+    background: conic-gradient(transparent 0turn 0.6turn, var(--glow) 0.85turn, transparent 0.98turn);
+    transform: translate(-50%, -50%);
+    animation: glow-spin var(--duration-glow) linear infinite;
+    will-change: transform;
+  }
+}
+
 /* Audio waveform (ADR-006): bars and the playhead with its round handles */
 @utility wave-bars {
   display: flex;
@@ -480,7 +528,8 @@
       background-image: none;
     }
     /* !important: utilities sit in a later layer than base */
-    .glow-ring::before {
+    .glow-ring::before,
+    .logo-glow-arc::before {
       animation: none !important;
     }
   }
@@ -488,7 +537,8 @@
     .glow-edge {
       border-color: CanvasText !important;
     }
-    .glow-ring {
+    .glow-ring,
+    .logo-glow-ring {
       display: none !important;
     }
     .bg-pill,

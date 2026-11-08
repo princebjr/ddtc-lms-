@@ -3,7 +3,7 @@
 - Decision: ADR-008 in `docs/DECISIONS.md` (owner decision 2026-11-06, request file `docs/requests/2026-11-06-presence-and-assignment-reports.md`, question 6). Plan approved by the owner on 2026-11-07.
 - Branch and pull request: `phase-6-1-account-ids`; the pull request is linked from the branch.
 - Built on `main` after Phase 6 was merged and tagged (`phase-6-done`).
-- Reviewer (O2): Prince Boateng
+- Reviewer (O2): Prince Boateng. **Approved on 2026-11-07**; staging migration and `bulk-import-learners` deployed by the owner and checked before merging (PR #11, tag `phase-6-1-done`).
 - Evidence date: 2026-11-07
 
 ## 1. What was built

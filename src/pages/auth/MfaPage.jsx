@@ -80,10 +80,11 @@ export default function MfaPage() {
     }
   };
 
-  if (step.kind === 'loading') return <AuthSkeleton fields={1} brand={false} />;
+  // The verification card and the emblem's circle carry the moving glow (owner request 2026-11-07, ADR-012).
+  if (step.kind === 'loading') return <AuthSkeleton fields={1} brand={false} glow />;
   if (step.kind === 'error') {
     return (
-      <AuthLayout title="Two-step verification">
+      <AuthLayout title="Two-step verification" glow>
         <ErrorState title="We could not start two-step verification" onRetry={prepare} />
       </AuthLayout>
     );
@@ -92,6 +93,7 @@ export default function MfaPage() {
   const enrolling = step.kind === 'enrol';
   return (
     <AuthLayout
+      glow
       title={enrolling ? 'Set up two-step verification' : 'Two-step verification'}
       description={
         enrolling

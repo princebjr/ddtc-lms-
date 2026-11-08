@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { clearOnSignOut } from '@/lib/private-caches.js';
 import { signedUrl } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
 
@@ -7,6 +8,7 @@ import { getSupabase } from '@/lib/supabase.js';
 
 /** @type {Map<string, string | null>} file id -> storage path */
 const paths = new Map();
+clearOnSignOut(() => paths.clear());
 
 /** @param {string | null | undefined} fileId @returns {string | null} */
 export function useAvatarUrl(fileId) {

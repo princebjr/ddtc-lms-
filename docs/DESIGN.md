@@ -97,13 +97,14 @@ This is the official design reference for the DDTC LMS (version 3.0). It replace
 **Official DDTC LMS logo** (`assets/brand/logo-ddtc-white.png`, `logo-ddtc-navy.png`): a circular emblem showing a figure above a house. It is supplied as white line art on transparent; the navy copy is generated from it.
 **Logo of gölarae** (`assets/brand/logo-golarae.png`, `logo-golarae-white.png`): a stylised G with a sun and a wave, supplied as a stippled grey drawing on transparent; the white copy is a solid silhouette for dark surfaces.
 
-**One `LogoMark` component** renders any logo through its alpha channel as a CSS mask over a token colour: navy `#0F172A` on light surfaces and white on dark. Logos are never stretched, rotated, outlined, given effects, recoloured outside navy or white, or placed on busy images. Clear space around a logo is a quarter of its height. Minimum size 32 px for the DDTC emblem and 28 px for the gölarae logo.
+**One `LogoMark` component** renders any logo through its alpha channel as a CSS mask over a token colour: navy `#0F172A` on light surfaces and white on dark. Logos are never stretched, rotated, outlined, given effects, recoloured outside navy or white, or placed on busy images. The one owner-approved exception (ADR-012): on Sign In, Sign Up and two-step verification a light travels round the circle of the DDTC emblem (a separate decorative ring laid over the emblem's circle; the emblem itself is unchanged; never the favicon, the app icons or the in-app logos). Clear space around a logo is a quarter of its height. Minimum size 32 px for the DDTC emblem and 28 px for the gölarae logo.
 
 | Where | Treatment |
 |---|---|
-| Sign In and Sign Up hero | DDTC emblem 120 px (phone 72 px), navy on light, white on dark, fading in once (800 ms) when the page opens, with the name DYNAMIC DISCIPLESHIP TRAINING CENTRE in bold and directly beneath it, at every width, the tagline "Be faithful, even to the point of death, and I will give you life as your victor's crown - Revelation 2:10b." (owner, Phase 3; ADR-004) |
+| Auth hero (Sign In, Sign Up and every other account page) | DDTC emblem 120 px (phone 72 px), navy on light, white on dark, fading in once (800 ms) when the page opens, with the name DYNAMIC DISCIPLESHIP TRAINING CENTRE (HOJ) in bold (lines balanced) and directly beneath it, at every width, the tagline "Di nokware kosi owu mu, na wobenya nkwa abotiri - Adiyisɛm 2:10b" (Revelation 2:10b in Twi, marked `lang="tw"`). On Sign In, Sign Up and two-step verification a light travels round the emblem's circle (owner, Phase 3; ADR-004; ADR-012) |
 | Sidebar and top bar | DDTC emblem 28 to 32 px with "DDTC LMS" beside it on desktop; in the phone top bar the emblem with the short name **DDTC** in bold beside it (owner change 2026-11-06; the page title is not repeated there) |
 | **Brand block** | Directly below the whole Sign In and Sign Up form (including the Google button), centred: the gölarae logo (36 px tall), then directly beneath it the exact text `from gölarae` (13 px, weight 500, `text-secondary`), nothing between them. Never "powered by gölarae". |
+| **Copyright line** | Sign In and Sign Up only, well below the brand block (48 px more space than the gap above it), centred, caption size, `text-tertiary`: "© YEAR Dynamic Discipleship Training Centre (HOJ). All rights reserved." with this year in Ghana time (owner request 2026-11-07, ADR-012). |
 | App icon, PWA, apple-touch | White DDTC emblem on a `#0F172A` tile (`icon-192`, `icon-512`, `icon-maskable-512`, `apple-touch-icon-180`) |
 | Favicon | `favicon-32` and `favicon-48` are generated; the thin lines are hard to read at 32 px, so a simplified mark should replace them once supplied or approved |
 
@@ -217,7 +218,7 @@ Sizes in `rem`; sentence case; left-aligned except short headings and auth block
 - Durations: 120 ms for press and hover, 200 ms for fades and expands, 320 ms for sheets and drawers. Standard easing is `cubic-bezier(0.2, 0, 0, 1)`; sheets use `cubic-bezier(0.32, 0.72, 0, 1)`.
 - Allowed: route fade, sheet slide, toast slide and fade, FAB hide and show, speed-dial expand, accordion expand, button press scale to 0.98, skeleton shimmer.
 - Not allowed: parallax, looping decorative animation, autoplaying media, bouncing, animated gradients, long staggered entrances.
-- Owner-approved exceptions (ADR-004): the DDTC emblem on the auth hero fades in once over 800 ms; the Sign In and Sign Up cards carry a light that travels round their edge (`glow-edge` and `glow-ring`, 6 s per lap, `glow` token, soft static halo; only a transform animates, so nothing is repainted per frame). Under reduced motion the light stays still; in forced-colours mode the ring is removed.
+- Owner-approved exceptions (ADR-004, ADR-012): the DDTC emblem on the auth hero fades in once over 800 ms; the Sign In, Sign Up and two-step verification cards carry a light that travels round their edge (`glow-edge` and `glow-ring`, 6 s per lap, `glow` token, soft static halo; only a transform animates, so nothing is repainted per frame); on those three pages the same light travels round the emblem's circle (`logo-glow`, `logo-glow-ring` and `logo-glow-arc`, a 3 px band over the circle's stroke with the same halo). Under reduced motion the lights stay still; in forced-colours mode the rings are removed.
 - ADR-006: the recorder's pulsing red dot and scrolling live waveform are functional recording indicators and may loop while recording; under reduced motion the dot is still and the waveform updates without scrolling animation.
 - Reduced motion (`prefers-reduced-motion`): remove shimmer (static grey), replace slides and scales with a simple fade, and never auto-scroll.
 
@@ -268,6 +269,7 @@ Every component is built once under `src/components/ui/` on shadcn/ui with these
 | Button, destructive | `error` fill with white text (light) or dark text (dark), pill, always confirmed by a dialog |
 | Text input | `card` fill, 1px `control-border`, 12 px radius, 48 px high, 16 px text, visible label above, helper or error text below; focus: 2 px `link` ring with 2 px offset; error: 2 px `error` border plus message with icon |
 | Select, textarea, search | Same chrome as the text input; search has a leading Search icon and a clear button |
+| Branch picker (D42, ADR-010) | The Branch drop-down (Profile settings, the administrator's user panel) is the phone's own picker below 640 px (`NativeSelect`: field chrome, 48 px, 16 px text, chevron) and the shadcn Select from tablet width up; label above, placeholder "Select your branch" ("No branch" for administrators), a field-shaped skeleton while the list loads, and "The branches could not be loaded." with Retry. Branch filters on lists match the list's other filters. |
 | Checkbox, radio, switch | 24 px control, `control-border` outline, `primary` when on, 44 px hit area |
 | Card | `surface`, 1px `hairline`, 24 px radius, 16 to 24 px padding; interactive cards add a hover fill and a visible focus ring |
 | Inset list row | 56 px, leading icon or avatar, title, secondary line, trailing chevron or value |
@@ -275,6 +277,7 @@ Every component is built once under `src/components/ui/` on shadcn/ui with these
 | Navigation | Phone: floating pill with three destination icons and a permanent More button; icons only, the active item expands to show its name (see 12.4); More opens a bottom sheet. Tablet: collapsible side rail. Desktop: sidebar with the DDTC emblem, blue-tinted active item, theme switch at the bottom |
 | Page header | Large title on phones, title-1 on desktop, optional breadcrumb, actions on the right on desktop |
 | Chip and status badge | Pill, label style, status tint background, icon plus text, never colour alone |
+| Branch chip (D42, ADR-010) | Pill on `fill`, label style: the Lucide MapPin icon with the branch name (never the icon alone; screen readers hear "Branch:" first); "No branch" in `text-secondary` when unset. A column from 640 px; on phone cards it sits in the chip row under the name. Fits at 320 px (the name truncates). |
 | Avatar | `UserAvatar`: image, else initials, else generic icon; sizes 24, 32, 40, 56, 96; circle; initials in `text-primary` on `surface-soft` |
 | Dialog and bottom sheet | `surface`, 24 px radius, overlay shadow, scrim; sheets slide from the bottom on phones with a grab handle; focus trapped; Escape closes |
 | Table | Header `caption` on `surface-soft`, 48 px rows, hairline dividers, sticky header; becomes stacked cards on phones |
@@ -391,7 +394,7 @@ shadcn's `--accent` is a subtle hover fill, not the brand blue; the brand blue i
 
 **Do:** blue pill buttons for the main action; navy for headings and logo; tokens, Lucide icons and shared components everywhere; icon plus text for every status; test every screen in light and dark at 375, 768 and 1280 px; keep motion short.
 
-**Don't:** use gradients, glow (the Sign In and Sign Up card edge is the one exception, ADR-004), heavy shadows or glass over text; copy Mobbin screens, other brands' assets or Apple's colours and symbols; use `hairline` or `text-tertiary` as body text colour; use colour as the only signal; create one-off components or hard-coded values; use text under 12 px, inputs under 16 px or targets under 44 px; recolour or alter the logos; write "modules", "terms" or "powered by gölarae".
+**Don't:** use gradients, glow (the only exceptions are the travelling light on the Sign In, Sign Up and two-step verification cards and round the emblem's circle on those pages, ADR-004 and ADR-012), heavy shadows or glass over text; copy Mobbin screens, other brands' assets or Apple's colours and symbols; use `hairline` or `text-tertiary` as body text colour; use colour as the only signal; create one-off components or hard-coded values; use text under 12 px, inputs under 16 px or targets under 44 px; recolour or alter the logos; write "modules", "terms" or "powered by gölarae".
 
 ## 21. Sign In and Sign Up screens (layout)
 

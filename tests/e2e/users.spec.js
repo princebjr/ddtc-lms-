@@ -3,7 +3,7 @@ import { createAccount, emailLink, getProfile, SEED, SEED_PASSWORD } from './sup
 import { requireSupabase } from './support/local-supabase.js';
 import { signIn, signInNewAdmin } from './support/ui.js';
 
-// Phase 4 end to end: user management, profile photos and D32 session limits.
+// Phase 4 end to end: user management, profile photos and D32 absolute session limits.
 // Tests required: a non-administrator cannot change any role at the UI level; avatar upload rejects
 // wrong type and oversize and initials show when the image is missing; idle and absolute session
 // limits behave as D32 (time is fast-forwarded instead of waiting).
@@ -149,38 +149,20 @@ test('administrator: CSV import shows a preview with errors, then imports the va
   await expect(page.locator('[data-toast-id]').filter({ hasText: 'Imported 1 learners, 2 errors' })).toBeVisible();
 });
 
-// D32 with shortened test values (the phase file's wording): the end-to-end build reads shorter
-// limits from the browser so the real timers run in seconds. Production builds ignore this setting.
+// D32's absolute lifetimes with shortened test values (the phase file's wording): the end-to-end
+// build reads shorter limits from the browser so the real timers run in seconds. Production builds
+// ignore this setting. The idle limit (D43 replaced D32's idle values) is tested on Playwright's clock
+// in idle.spec.js: the warning dialog, Continue Session, the sign-out and its message, for each role.
 /**
  * @param {import('@playwright/test').Page} page
- * @param {{ idleMs: number, absoluteMs: number, warningMs: number }} limits
+ * @param {{ absoluteMs: number, warningMs: number }} limits
  */
 async function useShortLimits(page, limits) {
   await page.addInitScript((l) => window.localStorage.setItem('ddtc-test-session-limits', JSON.stringify({ ...l, checkMs: 500 })), limits);
 }
 
-test('session limits (D32): an idle session warns before the end, then signs the user out', async ({ page }) => {
-  await useShortLimits(page, { idleMs: 20_000, absoluteMs: 600_000, warningMs: 12_000 });
-  await signIn(page, SEED.learner, SEED_PASSWORD);
-  await expect(page).toHaveURL(/\/learner\/dashboard$/);
-  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' })).toBeVisible({ timeout: 20_000 });
-  await expect(page).toHaveURL(/\/login\?expired=1$/, { timeout: 30_000 });
-  await expect(page.getByRole('alert')).toHaveText('Your session ended. Sign in again to continue.');
-});
-
-test('session limits (D32): "Stay signed in" keeps an idle administrator session going', async ({ page }) => {
-  await useShortLimits(page, { idleMs: 25_000, absoluteMs: 600_000, warningMs: 15_000 });
-  await signInNewAdmin(page);
-  const warning = page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' });
-  await expect(warning).toBeVisible({ timeout: 25_000 });
-  await warning.getByRole('button', { name: 'Stay signed in' }).click();
-  // Without "Stay signed in" the session would have ended by now.
-  await page.waitForTimeout(12_000);
-  await expect(page).toHaveURL(/\/admin\/dashboard$/);
-});
-
-test('session limits (D32): the absolute limit ends a session even while the user is active', async ({ page }) => {
-  await useShortLimits(page, { idleMs: 600_000, absoluteMs: 15_000, warningMs: 5_000 });
+test('session limits (D32): the absolute limit warns, then ends a session even while the user is active', async ({ page }) => {
+  await useShortLimits(page, { absoluteMs: 15_000, warningMs: 5_000 });
   await signIn(page, SEED.lecturer, SEED_PASSWORD);
   await expect(page).toHaveURL(/\/lecturer\/dashboard$/);
   // Keep being active: activity cannot extend the absolute limit.
@@ -188,7 +170,9 @@ test('session limits (D32): the absolute limit ends a session even while the use
     await page.mouse.click(5, 5);
     await page.waitForTimeout(1_000);
   }
+  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Your session ends in 2 minutes' })).toBeVisible({ timeout: 20_000 });
   await expect(page).toHaveURL(/\/login\?expired=1$/, { timeout: 30_000 });
+  await expect(page.getByRole('alert')).toHaveText('Your session ended. Sign in again to continue.');
 });
 
 test('administrator: invites a second administrator, who accepts by email, chooses a password and must set up two-step verification (ADR-003)', async ({ page, browser }, testInfo) => {

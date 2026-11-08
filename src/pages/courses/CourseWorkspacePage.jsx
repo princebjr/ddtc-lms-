@@ -1,9 +1,10 @@
-import { BookOpen, ChartColumn, ClipboardCheck, ClipboardList, ImageUp, Trash2, UserMinus } from 'lucide-react';
+import { BookOpen, ChartColumn, ClipboardCheck, ImageUp, Trash2, UserMinus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
+import { BranchChip } from '@/components/branches/BranchChip.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
 import { ConfirmDeleteDialog } from '@/components/feedback/ConfirmDeleteDialog.jsx';
 import { CourseWorkspaceSkeleton, ListSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
@@ -43,6 +44,7 @@ import { callFunction } from '@/lib/functions.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 import { getStorage } from '@/lib/storage.js';
 import { TextArea } from './CourseEditorPage.jsx';
+import { AssignmentsTab } from './AssignmentsTab.jsx';
 import { LessonsTab } from './LessonsTab.jsx';
 
 // The course workspace for lecturers and administrators (prototype `lcw`): course title bar with the
@@ -64,7 +66,6 @@ const TABS = /** @type {const} */ ([
 ]);
 
 const LATER = {
-  assignments: { phase: 7, icon: ClipboardList, title: 'Assignments' },
   gradebook: { phase: 10, icon: ClipboardCheck, title: 'Gradebook' },
   analytics: { phase: 10, icon: ChartColumn, title: 'Analytics' },
 };
@@ -120,6 +121,7 @@ export default function CourseWorkspacePage({ role }) {
             <TabsContent value={current}>
               {current === 'overview' ? <OverviewTab course={c} canEdit={canEdit} onSaved={course.reload} /> : null}
               {current === 'lessons' ? <LessonsTab role={role} courseId={c.id} archived={archived} isLecturer={myPermission !== null} /> : null}
+              {current === 'assignments' ? <AssignmentsTab role={role} courseId={c.id} archived={archived} isLecturer={myPermission !== null} /> : null}
               {current === 'learners' ? <LearnersTab course={c} admin={admin} /> : null}
               {current === 'settings' ? <SettingsTab course={c} teachers={teachers} admin={admin} isOwner={isOwner} reload={course.reload} /> : null}
               {current in LATER ? <Later which={/** @type {keyof typeof LATER} */ (current)} /> : null}
@@ -463,7 +465,7 @@ export function CoverCard({ course, canEdit, onChanged }) {
   );
 }
 
-/** Learners by name, photo and ID number only (course_roster, ADR-008). @param {{ course: Course, admin: boolean }} props */
+/** Learners by name, photo, ID number and branch only (course_roster, ADR-008, D42). @param {{ course: Course, admin: boolean }} props */
 function LearnersTab({ course, admin }) {
   const roster = useLoad(() => fetchRoster(course.id), [course.id]);
   /** @typedef {Awaited<ReturnType<typeof fetchRoster>>[number]} RosterRow */
@@ -481,6 +483,7 @@ function LearnersTab({ course, admin }) {
       card: /** @type {const} */ ('status'),
       cell: (/** @type {RosterRow} */ r) => <StatusChip tone={ENROLMENT_STATUS_TONE[r.enrolment_status]}>{ENROLMENT_STATUS_LABEL[r.enrolment_status]}</StatusChip>,
     },
+    { key: 'branch', header: 'Branch', card: /** @type {const} */ ('status'), cell: (/** @type {RosterRow} */ r) => <BranchChip name={r.branch_name} /> },
   ];
   return (
     <div className="flex flex-col gap-4">

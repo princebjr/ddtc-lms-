@@ -1,7 +1,7 @@
 // File rules for the D18 upload pipeline. Phase 4 accepts profile images, Phase 5 course covers,
-// Phase 6 lesson audio and lesson attachments; later phases add the other resource types here. Limits come from system_settings.file_limits (D17).
+// Phase 6 lesson audio and lesson attachments, Phase 7 assignment instruction audio; later phases add the other resource types here. Limits come from system_settings.file_limits (D17).
 
-export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT';
+export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO';
 
 const IMAGE_TYPES = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
 
@@ -23,6 +23,12 @@ export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string;
   LESSON_AUDIO: {
     bucket: 'lesson-audio',
     limitKey: 'lesson_audio',
+    types: { 'audio/mpeg': ['mp3'], 'audio/mp4': ['m4a'], 'audio/wav': ['wav'] },
+  },
+  // Phase 7: the lecturer's instruction audio for an assignment (25 MB, 10 minutes, D17).
+  ASSIGNMENT_INSTRUCTION_AUDIO: {
+    bucket: 'assignment-instructions-audio',
+    limitKey: 'instruction_audio',
     types: { 'audio/mpeg': ['mp3'], 'audio/mp4': ['m4a'], 'audio/wav': ['wav'] },
   },
   LESSON_ATTACHMENT: {

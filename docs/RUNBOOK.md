@@ -64,7 +64,7 @@ Remove-Item Env:SUPABASE_SERVICE_ROLE_KEY
   (administrator with AAL2). An administrator cannot change their own role or status, so the last
   active administrator can never be removed by mistake.
 - Suspension and deactivation sign the person out everywhere at once (sessions deleted; an access
-  token already issued is refused by RLS and expires within an hour). Reactivation restores access.
+  token already issued is refused by RLS and expires within 10 minutes, D43). Reactivation restores access.
 - Promoting a learner to lecturer or administrator removes any Google sign-in from the account (D27).
 
 ### Scheduled jobs
@@ -81,3 +81,23 @@ select vault.create_secret('<service-role key>', 'service_role_key');
 Each run deletes expired PENDING uploads (24 h), REJECTED objects and replaced profile photos, retries
 DELETE_FAILED, and audits a summary (`files.cleanup`). It never touches lesson audio, instruction
 audio, attachments or submission files.
+
+## Written in Phase 7
+
+### Idle sign-out and the access-token lifetime (D43, ADR-011)
+
+- The app signs every role out after `idle_timeout_minutes` (default 10) without activity, warned
+  `idle_warning_seconds` (default 120) before. Administrators' sessions are also refused by the
+  database after the same idle time (`is_admin()`).
+- Access tokens must last 10 minutes in every environment. Local: `supabase/config.toml`
+  (`jwt_expiry = 600`). Staging and production, once per project, as the owner: Supabase dashboard,
+  Project Settings, JWT Keys (older dashboards: API, JWT Settings), set the access token expiry (JWT
+  expiry limit) to 600 seconds and save. Do not use `supabase config push` for this: it would also
+  push the local site URL and redirect addresses.
+- Check it: sign in on the deployed app, then in the browser's developer tools read the
+  `sb-...-auth-token` entry in Local Storage: `expires_in` is 600.
+- Changing the idle limit before the Settings screen (Phase 11): SQL editor, as the owner,
+  `update public.system_settings set value = '15' where key = 'idle_timeout_minutes';` (whole
+  minutes, 5 to 60; the warning `idle_warning_seconds` takes 30 to 180). The database refuses other
+  values and audits the change. Everyone's next page load uses the new value.
+

@@ -19,12 +19,27 @@ export const BLOCKED_MESSAGES = {
 };
 export const EXPIRED_MESSAGE = 'Your session ended. Sign in again to continue.';
 
+/**
+ * Why the user is here after an idle sign-out (D43): `?idle=<minutes>`.
+ * @param {number} minutes
+ */
+export function idleMessage(minutes) {
+  return `You were signed out after ${minutes} minutes of inactivity.`;
+}
+
+/** @param {URLSearchParams} search @returns {string | null} */
+function idleNotice(search) {
+  const idle = search.get('idle');
+  return idle && /^[1-9]\d?$/.test(idle) ? idleMessage(Number(idle)) : null;
+}
+
 export default function LoginPage() {
   const auth = useAuth();
   const [search] = useSearchParams();
   const location = useLocation();
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [message, setMessage] = useState(() => initialMessage(search, location.state));
+  const [notice, setNotice] = useState(() => idleNotice(search));
   const [pending, setPending] = useState(false);
 
   // A blocked account that has just signed in is signed out again with the reason.
@@ -41,6 +56,7 @@ export default function LoginPage() {
   const onSubmit = async (event) => {
     event.preventDefault();
     setMessage(null);
+    setNotice(null);
     const result = validate(signInSchema, formValues(event.currentTarget));
     if (!result.ok) {
       setErrors(result.errors);
@@ -76,6 +92,7 @@ export default function LoginPage() {
         </p>
       }
     >
+      <FormMessage tone="info">{notice}</FormMessage>
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4" aria-describedby={message ? 'login-message' : undefined}>
         <FormField label="Email address" name="email" type="email" inputMode="email" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="you@example.org" error={errors.email} />
         <FormField

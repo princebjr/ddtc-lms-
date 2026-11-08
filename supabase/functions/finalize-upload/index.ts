@@ -10,6 +10,9 @@
 //                      Waveform peaks from the uploader's browser are stored when they have the right
 //                      shape (ADR-006).
 //   LESSON_ATTACHMENT  (Phase 6) PDF, DOCX or PPTX by content, macros refused; added to the lesson.
+//   ASSIGNMENT_INSTRUCTION_AUDIO  (Phase 7) the same audio checks as lesson audio within 25 MB and
+//                      10 minutes (D17); becomes the assignment's instruction audio (a replaced
+//                      file is kept for the snapshots).
 // The file name's extension must match the real content.
 import { z } from 'npm:zod@4.6.7';
 import { AUDIO_EXTENSIONS, cleanPeaks, inspectAudio } from '../_shared/audio.ts';
@@ -47,7 +50,7 @@ serve(async (req) => {
   const rule = RESOURCES[type];
   if (!rule) throw new HttpError(400, 'invalid', 'Unsupported file');
   if (type === 'COURSE_COVER') await requireCourseEditor(admin, caller.id, caller.isAdmin, file.resource_id as string);
-  if (type === 'LESSON_AUDIO' || type === 'LESSON_ATTACHMENT') {
+  if (type === 'LESSON_AUDIO' || type === 'LESSON_ATTACHMENT' || type === 'ASSIGNMENT_INSTRUCTION_AUDIO') {
     await requireCourseEditor(admin, caller.id, caller.isAdmin, (file.storage_path as string).split('/')[0]);
   }
 
@@ -107,7 +110,7 @@ serve(async (req) => {
   if (reader.size === 0) await reject('The file is empty.');
   if (reader.size > maxBytes) await reject(`The file is larger than ${Math.round(maxBytes / 1048576)} MB.`);
 
-  if (type === 'LESSON_AUDIO') {
+  if (type === 'LESSON_AUDIO' || type === 'ASSIGNMENT_INSTRUCTION_AUDIO') {
     const facts = await inspectAudio(reader);
     if (!facts || !(facts.mime in rule.types)) await reject('The file is not an MP3, M4A or WAV audio file.');
     if (!AUDIO_EXTENSIONS[facts!.mime].includes(ext)) await reject('The file content does not match its name. Use the original audio file.');
@@ -118,13 +121,16 @@ serve(async (req) => {
       duration_seconds: Math.round(facts!.durationSeconds * 100) / 100,
       waveform_peaks: cleanPeaks(parsed.data.peaks),
     });
-    const { data, error } = await admin.rpc('lesson_audio_activate', {
-      p_actor: caller.id,
-      p_as_admin: caller.isAdmin,
-      p_file: file.id,
-      p_replace: parsed.data.replaceAudioId ?? null,
-      p_title: parsed.data.title || null,
-    });
+    const { data, error } =
+      type === 'LESSON_AUDIO'
+        ? await admin.rpc('lesson_audio_activate', {
+            p_actor: caller.id,
+            p_as_admin: caller.isAdmin,
+            p_file: file.id,
+            p_replace: parsed.data.replaceAudioId ?? null,
+            p_title: parsed.data.title || null,
+          })
+        : await admin.rpc('assignment_audio_activate', { p_actor: caller.id, p_as_admin: caller.isAdmin, p_file: file.id });
     if (error) await undo(admin, file, fromDbError(error));
     return json(req, 200, {
       fileId: file.id,

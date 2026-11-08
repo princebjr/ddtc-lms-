@@ -13,6 +13,7 @@
 - `release-grades` per submission and per assignment; notifications on release. Any score/feedback change after release records prior and new values, reason, actor and timestamp, and notifies the learner; results update automatically because grades are computed on read (D30).
 - Add a clear “Reopen grade” workflow with a required reason and immutable history; re-releasing updated grades follows D30.
 - Assignment results dashboard built from `course_enrollments` left-joined to submissions, with search, sort, filter, counts (enrolled, submitted, graded, ungraded, missing) and avatars. On phones the table becomes cards and the grading screen stacks the submission above the grading panel with a sticky Save and Release bar; on tablets and desktops it is two panes.
+- D42 (ADR-010): the grading header shows the learner's branch chip beside their name, photo and ID number; submission review and results lists show it too.
 
 **Tests required**
 

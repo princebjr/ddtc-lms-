@@ -1,15 +1,18 @@
 import { parseIdNumber } from '@/lib/id-number.js';
 import { getSupabase } from '@/lib/supabase.js';
 
-// Administrator user data. Reads go through RLS (an AAL2 administrator reads every profile);
-// every change goes through an Edge Function (src/lib/functions.js).
+// Administrator user data. Reads go through RLS (an AAL2 administrator reads every profile); every
+// change goes through an Edge Function (src/lib/functions.js), except a learner's branch (D42),
+// which an AAL2 administrator updates directly under RLS (the database allows nothing else).
 
 /** @typedef {import('@/lib/database.types').Database['public']['Tables']['profiles']['Row']} ProfileRow */
-/** @typedef {Pick<ProfileRow, 'id' | 'id_number' | 'first_name' | 'second_name' | 'email' | 'role' | 'account_status' | 'can_create_courses' | 'can_publish_directly' | 'profile_image_file_id' | 'created_at'>} AdminUser */
+/** @typedef {Pick<ProfileRow, 'id' | 'id_number' | 'first_name' | 'second_name' | 'email' | 'role' | 'account_status' | 'can_create_courses' | 'can_publish_directly' | 'profile_image_file_id' | 'created_at' | 'branch_id'> & { branch: { name: string } | null }} AdminUser */
 /** @typedef {'all' | 'lecturers' | 'learners'} UsersView */
 
 export const PAGE_SIZE = 50;
-const COLUMNS = 'id, id_number, first_name, second_name, email, role, account_status, can_create_courses, can_publish_directly, profile_image_file_id, created_at';
+/** The branch filter's value for learners without a branch (D42). */
+export const NO_BRANCH = 'none';
+const COLUMNS = 'id, id_number, first_name, second_name, email, role, account_status, can_create_courses, can_publish_directly, profile_image_file_id, created_at, branch_id, branch:branches(name)';
 
 export const ROLE_LABEL = /** @type {const} */ ({ ADMIN: 'Administrator', LECTURER: 'Lecturer', LEARNER: 'Learner' });
 export const STATUS_LABEL = /** @type {const} */ ({ ACTIVE: 'Active', SUSPENDED: 'Suspended', DEACTIVATED: 'Deactivated' });
@@ -22,6 +25,7 @@ export const STATUS_TONE = { ACTIVE: 'success', SUSPENDED: 'warning', DEACTIVATE
  * @property {string} search
  * @property {'' | 'ADMIN' | 'LECTURER' | 'LEARNER'} role
  * @property {'' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'} status
+ * @property {string} [branch]  '' any, NO_BRANCH for learners without one, or a branch id (D42)
  * @property {'name' | 'newest'} sort
  * @property {number} page   0-based
  */
@@ -54,6 +58,9 @@ export async function fetchUsers(q) {
   const role = q.view === 'lecturers' ? 'LECTURER' : q.view === 'learners' ? 'LEARNER' : q.role;
   if (role) query = query.eq('role', role);
   if (q.status) query = query.eq('account_status', q.status);
+  // Only learners have a branch, so "No branch" means learners without one.
+  if (q.branch === NO_BRANCH) query = query.eq('role', 'LEARNER').is('branch_id', null);
+  else if (q.branch) query = query.eq('branch_id', q.branch);
   const filter = userSearchFilter(q.search);
   if (filter) query = query.or(filter);
   query = q.sort === 'newest' ? query.order('created_at', { ascending: false }) : query.order('first_name').order('second_name');

@@ -9,6 +9,8 @@
 //                  has at most 10 audio files (ADR-007): an eleventh is refused here, before any
 //                  upload, unless it replaces one (replaceAudioId, an audio in use in the lesson).
 //                  The database checks both again when the file is attached.
+//   ASSIGNMENT_INSTRUCTION_AUDIO  (Phase 7) the same course rights, for an assignment of that
+//                  course that is not archived; path <course id>/<assignment id>/<file id>.<ext>.
 // The answer includes the content type the browser must send, chosen from the extension (the
 // buckets accept only those); finalize-upload checks the real bytes.
 import { z } from 'npm:zod@4.6.7';
@@ -18,9 +20,10 @@ import { contentTypeFor, extensionOf, MAX_LESSON_AUDIO, RESOURCES, safeName } fr
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const Body = z.object({
-  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT']),
+  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT', 'ASSIGNMENT_INSTRUCTION_AUDIO']),
   courseId: z.uuid().optional(),
   lessonId: z.uuid().optional(),
+  assignmentId: z.uuid().optional(),
   filename: z.string().min(1).max(255),
   size: z.number().int().positive(),
   replaceAudioId: z.uuid().optional(),
@@ -49,6 +52,15 @@ serve(async (req) => {
     if (!lesson || lesson.course_id !== b.courseId) throw new HttpError(404, 'not_found', 'Lesson not found');
     resourceId = b.lessonId;
     folder = `${b.courseId}/${b.lessonId}`;
+  }
+  if (b.resourceType === 'ASSIGNMENT_INSTRUCTION_AUDIO') {
+    if (!b.courseId || !b.assignmentId) throw new HttpError(400, 'invalid', 'Choose the assignment first');
+    await requireCourseEditor(admin, caller.id, caller.isAdmin, b.courseId);
+    const { data: assignment } = await admin.from('assignments').select('course_id, archived_at').eq('id', b.assignmentId).maybeSingle();
+    if (!assignment || assignment.course_id !== b.courseId) throw new HttpError(404, 'not_found', 'Assignment not found');
+    if (assignment.archived_at) throw new HttpError(409, 'archived', 'Restore the assignment first');
+    resourceId = b.assignmentId;
+    folder = `${b.courseId}/${b.assignmentId}`;
   }
   if (b.resourceType === 'LESSON_AUDIO') {
     if (b.replaceAudioId) {

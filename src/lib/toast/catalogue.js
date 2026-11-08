@@ -33,7 +33,8 @@ export const TOASTS = Object.freeze({
   'network.online': { type: 'success', text: fixed('Back online') },
   'notification.new': { type: 'info', text: (p) => str(p, 'title'), action: 'Open', params: ['title'] },
   'app.update-ready': { type: 'info', text: fixed('New version available'), action: 'Refresh', sticky: true },
-  'session.expiring': { type: 'warning', text: fixed('Your session ends in 2 minutes'), action: 'Stay signed in' },
+  'session.expiring': { type: 'warning', text: fixed('Your session ends in 2 minutes') },
+  'draft.restored': { type: 'info', text: fixed('Draft restored') },
   'request.failed': { type: 'error', text: fixed('Could not save. Try again'), action: 'Retry' },
 
   // Administrator
@@ -43,6 +44,7 @@ export const TOASTS = Object.freeze({
   'admin.csv-imported': { type: 'success', text: (p) => `Imported ${str(p, 'n')} learners, ${str(p, 'm')} errors`, action: 'View report', params: ['n', 'm'] },
   'admin.csv-imported-with-errors': { type: 'warning', text: (p) => `Imported ${str(p, 'n')} learners, ${str(p, 'm')} errors`, action: 'View report', params: ['n', 'm'] },
   'admin.permissions-updated': { type: 'success', text: fixed('Permissions updated') },
+  'admin.branch-updated': { type: 'success', text: fixed('Branch updated') },
   'admin.account-suspended': { type: 'success', text: fixed('Account suspended'), undo: true },
   'admin.account-reactivated': { type: 'success', text: fixed('Account reactivated'), undo: true },
   'admin.mfa-reset': { type: 'success', text: (p) => `MFA reset for ${str(p, 'name')}`, params: ['name'] },
@@ -79,6 +81,10 @@ export const TOASTS = Object.freeze({
   'lecturer.delete-failed': { type: 'error', text: (p) => `Could not delete: ${str(p, 'reason')}`, action: 'Try again', params: ['reason'] },
   'lecturer.assignment-saved': { type: 'success', text: fixed('Assignment saved') },
   'lecturer.assignment-published': { type: 'success', text: fixed('Assignment published') },
+  'lecturer.assignment-unpublished': { type: 'success', text: fixed('Assignment unpublished') },
+  'lecturer.assignment-archived': { type: 'success', text: fixed('Assignment archived'), undo: true },
+  'lecturer.assignment-restored': { type: 'success', text: fixed('Assignment restored') },
+  'lecturer.categories-saved': { type: 'success', text: fixed('Categories saved') },
   'lecturer.extension-granted': { type: 'success', text: fixed('Extension granted'), undo: true },
   'lecturer.grade-draft-saved': { type: 'success', text: fixed('Grade saved as draft') },
   'lecturer.grades-released': { type: 'success', text: (p) => `Grades released to ${str(p, 'n')} learners`, params: ['n'] },

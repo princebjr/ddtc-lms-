@@ -26,7 +26,8 @@ test('System (the default) follows the device colour scheme from the first frame
   await recordFirstFrame(page, null);
   await openRoute(page, '/');
   const deviceDark = testInfo.project.use.colorScheme === 'dark';
-  expect(await page.evaluate(() => /** @type {any} */ (window).__firstFrameDark)).toBe(deviceDark);
+  // WebKit can lay #main out before it paints the first frame: wait until the first frame is recorded.
+  await expect.poll(() => page.evaluate(() => /** @type {any} */ (window).__firstFrameDark)).toBe(deviceDark);
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', deviceDark ? '#0a1428' : '#f8fafc');
 });
 
@@ -34,7 +35,7 @@ for (const stored of ['light', 'dark']) {
   test(`a stored "${stored}" choice is applied before the first paint (no flash)`, async ({ page }) => {
     await recordFirstFrame(page, stored);
     await openRoute(page, '/dev/shell/learner/dashboard');
-    expect(await page.evaluate(() => /** @type {any} */ (window).__firstFrameDark)).toBe(stored === 'dark');
+    await expect.poll(() => page.evaluate(() => /** @type {any} */ (window).__firstFrameDark)).toBe(stored === 'dark');
     await expect(page.locator('html')).toHaveClass(stored === 'dark' ? /dark/ : /^(?!.*dark).*$/);
   });
 }

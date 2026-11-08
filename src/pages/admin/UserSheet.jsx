@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
+import { BranchField } from '@/components/branches/BranchField.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
@@ -14,12 +15,15 @@ import { ROLE_LABEL, STATUS_LABEL, STATUS_TONE } from '@/lib/admin/users.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 import { changeLecturer, fetchActiveLecturers, fetchOwnedActiveCourses } from '@/lib/courses/courses.js';
 import { callFunction } from '@/lib/functions.js';
+import { getSupabase } from '@/lib/supabase.js';
 
 // The user panel (prototype `det`): role, course creation, suspend or reactivate (Undo, UI_FEEDBACK),
 // deactivate and role changes (confirmation dialog), and administrator MFA reset. Every action is an
 // Edge Function call; the server re-checks and audits. An administrator cannot act on themself.
 // Phase 5: lecturers get Publish without approval (ADR-005); a lecturer who still owns courses that
 // are not archived hands each one to another lecturer before being deactivated or given another role.
+// D42: an administrator changes a learner's branch here (an AAL2 session; the database allows them
+// nothing else on the learner's profile and audits the change).
 
 /** @typedef {import('@/lib/admin/users.js').AdminUser} AdminUser */
 
@@ -94,6 +98,8 @@ export function UserSheet({ user, isSelf, onClose, onChanged }) {
                 <StatusChip tone={STATUS_TONE[user.account_status]}>{STATUS_LABEL[user.account_status]}</StatusChip>
               </div>
             </div>
+
+            {user.role === 'LEARNER' ? <BranchEditor user={user} onChanged={onChanged} /> : null}
 
             {isSelf ? (
               <p className="m-0 rounded-md bg-fill p-4 text-body-sm text-ink-secondary">This is your account. Another administrator must change your role or status.</p>
@@ -343,5 +349,55 @@ function HandoverDialog({ lecturerId, name, courses, onClose, onDone }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * A learner's branch, changed by an administrator (D42). Save branch is enabled once the choice
+ * differs from what is saved; the list keeps the learner's branch even if it has closed since.
+ * @param {{ user: AdminUser, onChanged: (u: Partial<AdminUser> & { id: string }) => void }} props
+ */
+function BranchEditor({ user, onChanged }) {
+  const toast = useToast();
+  const saved = user.branch_id ?? '';
+  const [value, setValue] = useState(saved);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const save = async () => {
+    setBusy(true);
+    setError('');
+    const { data, error: failure } = await getSupabase()
+      .from('profiles')
+      .update({ branch_id: value || null })
+      .eq('id', user.id)
+      .select('branch_id, branch:branches(name)')
+      .maybeSingle();
+    setBusy(false);
+    // 22023: the branch is no longer open. No row back: the change was not allowed (RLS).
+    if (failure?.code === '22023') return setError('Choose one of the branches');
+    if (failure || !data) return toast.show('request.failed', { onAction: save });
+    onChanged({ id: user.id, branch_id: data.branch_id, branch: data.branch });
+    toast.show('admin.branch-updated');
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <BranchField
+        value={value}
+        currentId={user.branch_id}
+        onChange={(id) => {
+          setValue(id);
+          setError('');
+        }}
+        placeholder="No branch"
+        error={error}
+      />
+      <div>
+        <Button variant="outline" onClick={save} disabled={value === saved} loading={busy} loadingLabel="Saving branch">
+          Save branch
+        </Button>
+      </div>
+    </div>
   );
 }
