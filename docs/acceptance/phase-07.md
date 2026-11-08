@@ -50,7 +50,7 @@ Run 42431819407 (the evidence commit `2723b07`) passed every job except end-to-e
 1. **A draft came back after a save (D43, this phase).** A lesson saved within half a second of the last key press got its draft written back by the autosave still waiting, so the next new lesson opened with the earlier lesson's bold text; the click on Bold then turned bold off (`lessons.spec.js`, desktop 1920, light). `clear()` now cancels the waiting write and counts the values as saved until they change (`drafts.test.jsx`; commit `f9860b6`).
 2. **A tap on Sign In missed on iPhone SE (since Phase 3).** The sign-in forms scrolled the focused field to the middle 300 ms after every focus; the tap came at that moment and landed where the button had been, so nothing was sent (`courses.spec.js`, iPhone SE, light; the trace has no sign-in request). The forms now move the page only when the focused field cannot be seen, as when the keyboard covers it, and only while it still has the focus (`auth-pages.test.jsx`; commit `e905d80`).
 
-The run on the final commit is linked on the pull request.
+Run 42434927299 on the fixes and the approval commit (`2a855b4`) passed every job: all eight end-to-end shards on every device project in light and dark, pgTAP, Lighthouse, the secret scans and the build. Locally after the fixes, `lessons.spec.js` (the test that found fault 1) passed on desktop 1920 with one worker; on desktop Chrome its first save waited on the local functions runtime past the 20-second limit (the cold-worker limit in section 8), and a wider local run with two workers lost most of its sign-ins to the local Auth server answering in up to 12 seconds. CI on clean runners is the reference for those runs. The run on the final commit is linked on the pull request.
 
 Tests written first and seen failing: pgTAP 15 (no branches table) and 16 (no idle settings or function), then the migrations made them pass. The unit test for a reload after the limit found a real fault (moving between pages was also counted on the first page load, which hid a reload after the limit); fixed before commit. Earlier tests were changed only where the owner's new rules replaced old ones: the Phase 4 idle tests (toast "Stay signed in", 30-minute administrator idle) gave way to the D43 tests above, the D32 absolute-limit test now also checks its warning and message, and the access matrix counts two more settings. Nothing was skipped or loosened.
 
@@ -86,6 +86,8 @@ Staging, after approval and before merging (as before, the owner runs these; the
 1. Apply the migrations: `npx supabase db push --linked` (adds `20261107000400` to `20261107000700`).
 2. Deploy the functions that changed: `npx supabase functions deploy manage-assignments manage-lessons register-upload finalize-upload`.
 3. Set the access-token lifetime to 600 seconds: Supabase dashboard, Project Settings, JWT Keys (older dashboards: API, JWT Settings), access token expiry (JWT expiry limit) 600, Save. Check it as in `docs/RUNBOOK.md`, "Idle sign-out and the access-token lifetime".
+
+Staging checked before merging (2026-11-08, read-only): migrations `20261107000400` to `20261107000700` applied, and `manage-assignments` (new), `manage-lessons`, `register-upload` and `finalize-upload` deployed by the owner (01:45 UTC). The 600-second access-token setting was done by the owner (owner-reported; Claude Code has no staging sign-in with which to read `expires_in`).
 
 Real-device check (an iPhone in Safari, an Android phone in Chrome, a desktop browser):
 
