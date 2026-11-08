@@ -34,7 +34,7 @@ Local results (Windows, local Supabase with access tokens of 600 s), 2026-11-07 
 | Suite | Result |
 |---|---|
 | Lint and type check | pass |
-| Unit and component (Vitest) | 29 files, 398 tests, pass (Phase 7 new: assignment logic 11, branches 12, branch filters 6, idle clock 28, drafts 10, and auth-page tests for ADR-012 and the idle message) |
+| Unit and component (Vitest) | 29 files, 398 tests, pass (Phase 7 new: assignment logic 11, branches 12, branch filters 6, idle clock 28, drafts 10, and auth-page tests for ADR-012 and the idle message). With the two CI fixes (below): 402 tests, passing whole in 3 of 5 local runs; in the other 2 one test timed out under local load with nothing changed between runs (the one captured: the Phase 4 file scan in `user-avatar.test.jsx`, 8.8 s against 5 s, with 29 test workers sharing the machine) |
 | Secret scan | pass (375 files, 0 findings) |
 | Dependency audit (high and above) | pass; production dependencies have no advisories (`npm audit --omit=dev`); 2 low and 9 moderate advisories in development tooling (deepmerge, glob) |
 | Build | pass |
@@ -43,7 +43,14 @@ Local results (Windows, local Supabase with access tokens of 600 s), 2026-11-07 
 | End-to-end, local | `idle.spec.js`: the learner and lecturer flows on desktop Chrome and iPhone SE, the administrator flow on desktop Chrome, desktop WebKit and iPhone SE. `branches.spec.js`: the learner flow on desktop Chrome, Firefox and WebKit, iPhone SE, iPad and the 320 px project; the administrator and lecturer flow on desktop Chrome, iPhone SE and iPad. `auth.spec.js` 16 of 16 on desktop Chrome; the D32 absolute-limit test on desktop Chrome and WebKit; the theme tests on desktop Chrome. Phase 7 core (`assignments.spec.js`): see CI |
 | Full end-to-end matrix and Lighthouse | CI on PR #12 (below) |
 
-CI: run 42402927830 (the Phase 7 core) and run 42406097378 (branch database and profile picker) were green on every job. Run 42413280717 (branch lists and the sign-in screens) failed one test in one shard: the first-frame theme check on iPhone SE (light) read its value before WebKit had painted the first frame; the check now waits for the first frame (commit `dbec657`). The run on the final commit is linked on the pull request.
+CI: run 42402927830 (the Phase 7 core) and run 42406097378 (branch database and profile picker) were green on every job. Run 42413280717 (branch lists and the sign-in screens) failed one test in one shard: the first-frame theme check on iPhone SE (light) read its value before WebKit had painted the first frame; the check now waits for the first frame (commit `dbec657`).
+
+Run 42431819407 (the evidence commit `2723b07`) passed every job except end-to-end shard 4 (321 passed, 2 failed). The traces showed two real faults, each fixed with a unit test written first and seen failing:
+
+1. **A draft came back after a save (D43, this phase).** A lesson saved within half a second of the last key press got its draft written back by the autosave still waiting, so the next new lesson opened with the earlier lesson's bold text; the click on Bold then turned bold off (`lessons.spec.js`, desktop 1920, light). `clear()` now cancels the waiting write and counts the values as saved until they change (`drafts.test.jsx`; commit `f9860b6`).
+2. **A tap on Sign In missed on iPhone SE (since Phase 3).** The sign-in forms scrolled the focused field to the middle 300 ms after every focus; the tap came at that moment and landed where the button had been, so nothing was sent (`courses.spec.js`, iPhone SE, light; the trace has no sign-in request). The forms now move the page only when the focused field cannot be seen, as when the keyboard covers it, and only while it still has the focus (`auth-pages.test.jsx`; commit `e905d80`).
+
+The run on the final commit is linked on the pull request.
 
 Tests written first and seen failing: pgTAP 15 (no branches table) and 16 (no idle settings or function), then the migrations made them pass. The unit test for a reload after the limit found a real fault (moving between pages was also counted on the first page load, which hid a reload after the limit); fixed before commit. Earlier tests were changed only where the owner's new rules replaced old ones: the Phase 4 idle tests (toast "Stay signed in", 30-minute administrator idle) gave way to the D43 tests above, the D32 absolute-limit test now also checks its warning and message, and the access matrix counts two more settings. Nothing was skipped or loosened.
 
@@ -59,7 +66,7 @@ Tests written first and seen failing: pgTAP 15 (no branches table) and 16 (no id
 | D42 screens: choose, save, reload; chips; filters; the administrator's change; the lecturer's view; keyboard, axe, 320 px | PASS | `tests/unit/branches.test.jsx`, `tests/unit/branch-filters.test.js`, `tests/e2e/branches.spec.js` |
 | D43: settings, bounds, who may read and change them; the administrators' server-side idle window | PASS | `16_idle_sign_out.test.sql` (25 checks) |
 | D43: warning at 8 minutes; Continue Session and Escape reset; sign-out at 10; every activity type resets; media and uploads keep the session; token refresh does not; settings apply; a slept phone and a reload after the limit sign out at once; two tabs share one clock; administrators record activity; unsaved work named; countdown and announcements | PASS | `tests/unit/idle.test.jsx` (fake timers, 28 tests) |
-| D43: drafts kept 24 hours per user and screen, restored over the same version only, deleted by a deliberate sign-out | PASS | `tests/unit/drafts.test.jsx` (10 tests) |
+| D43: drafts kept 24 hours per user and screen, restored over the same version only, deleted by a deliberate sign-out and by a save (even with the autosave still waiting) | PASS | `tests/unit/drafts.test.jsx` (11 tests) |
 | D43 per role on Playwright's clock: the dialog (focus, trap, Escape, axe), sign-out with the message, the way back to the page, Back reveals nothing, private pages closed, a lecturer's draft restored and deleted by a deliberate sign-out | PASS | `tests/e2e/idle.spec.js` |
 | ADR-012 | PASS | `tests/unit/auth-pages.test.jsx` (glow on the three pages only, name, tagline and its language, copyright) |
 
@@ -70,6 +77,7 @@ Tests written first and seen failing: pgTAP 15 (no branches table) and 16 (no id
 | Category weights must total 100 before any grade can be released | PASS | pgTAP 13 (`require_weights_total_100`) |
 | Branch rules proven for every role; branch screens pass end to end | PASS | pgTAP 15; `branches.spec.js` |
 | Idle sign-out works for every role with the warning, Continue Session and draft restore, and never signs out someone who is active | PASS | `idle.test.jsx`, `drafts.test.jsx`, `idle.spec.js`, pgTAP 16 |
+| Owner sign-off | **Approved by the owner on 2026-11-08** (PR #12), before the staging steps and the real-device check in section 6; the two faults CI found afterwards (section 3) were fixed before merging | PR #12 |
 
 ## 6. Owner steps
 

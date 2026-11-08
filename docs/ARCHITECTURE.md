@@ -142,7 +142,7 @@ Full columns and constraints are in BUILD_PLAN Section 5. Every table has Row Le
 
 | Group | Tables |
 |---|---|
-| People | `profiles` (role, status, names, avatar file), `notification_preferences` |
+| People | `profiles` (role, status, names, avatar file, six-digit ID number, a learner's branch), `branches`, `notification_preferences` |
 | Courses | `courses`, `course_lecturers`, `course_enrollments`, `grade_categories` |
 | Lessons | `lessons`, `lesson_audio_files`, `lesson_attachments`, `lesson_progress` |
 | Assessment | `assignments`, `assignment_versions`, `submission_extensions`, `submissions`, `submission_versions`, `submission_files`, `grade_change_history` |
@@ -150,7 +150,7 @@ Full columns and constraints are in BUILD_PLAN Section 5. Every table has Row Le
 | Communication | `notifications`, `notification_deliveries` |
 | Control | `system_settings`, `audit_logs`, `retention_holds`, `retention_runs` |
 
-Rules that matter: educational records are never hard-deleted (foreign keys restrict deletion; courses are archived and users deactivated); one active enrolment per learner and course; lesson order is unique per course; one active audio file per lesson; scores must be between 0 and the assignment maximum; the audit log and grade history cannot be edited.
+Rules that matter: educational records are never hard-deleted (foreign keys restrict deletion; courses are archived and users deactivated); one active enrolment per learner and course; lesson order is unique per course; up to 10 active audio files per lesson (ADR-007); category weights total 100 before grades are released; scores must be between 0 and the assignment maximum; the audit log and grade history cannot be edited.
 
 ## 9. How the main workflows run
 
@@ -163,7 +163,7 @@ Rules that matter: educational records are never hard-deleted (foreign keys rest
 2. Audio goes through the upload pipeline (Section 10) and becomes the lesson's active audio; replacing it keeps the old file as history.
 3. An enrolled learner opens the lesson, reads, streams the audio in the lesson page, downloads it for offline listening, and marks the lesson complete. Progress is shown per course.
 
-**Assignments.** A lecturer creates an assignment with title, description, due date, maximum marks, accepted formats, grading criteria and category. Instructions are text, audio or both (the database checks the right parts exist). It becomes visible to learners when published.
+**Assignments.** A lecturer creates an assignment with title, description, due date, maximum marks, accepted formats (text and audio always, PDF and Word optional, ADR-009), grading criteria and category. Instructions are text, audio or both (the database checks the right parts exist). It becomes visible to learners when published; every change to a published assignment is kept as a version with the reason, and assignments are archived, never deleted.
 
 **Submissions.**
 1. The learner chooses a response type: text, recorded audio (browser microphone, with preview), uploaded audio, PDF or Word.
@@ -267,6 +267,30 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - **Never changes:** `private.keep_id_number` refuses any change for every role, the server included; clients have no update grant on the column; accounts are never deleted, so a number is never reused.
 - **Who sees it:** the person and administrators through the existing profile rules; the lecturers of a learner's courses through `course_roster` (which now returns `id_number`, still never email or phone). Admin searches (Users list, Enrol learners picker) match a typed six-digit number as well as names and email (`userSearchFilter`); the CSV import returns each new learner's number in its results and report.
 
+### Assignments and instruction audio as built (Phase 7)
+
+- **Tables:** `grade_categories` (name unique per course among current categories, whole-number weight 0 to 100, position; every new course gets Assignments at 100 from the `courses_add_default_category` trigger; `course_weight_total()` gives the running total, and `private.require_weights_total_100()` refuses unless the current weights total exactly 100, D12, for Phase 9's release functions to call first), `assignments` (content type TEXT, AUDIO or TEXT_AND_AUDIO; due date and time, late answers allowed or not, maximum marks, grading criteria; instruction HTML cleaned by `manage-assignments` against the lesson allow-list and checked again by the table; `accepted_formats` always holds TEXT and AUDIO, PDF and Word optional, ADR-009; archived with `archived_at`, never deleted), `assignment_versions` (D29 snapshots, numbered per assignment, with who changed it and the reason), `submission_extensions` (one per assignment and learner; `private.effective_due_at()` gives the learner's extension or the due date, D13; granting is Phase 8).
+- **Database rules:** the CHECK `assignments_instructions_match_type` lets an assignment be PUBLISHED only with what its type needs (text with visible words, the audio, or both); a draft may wait for its audio, uploaded once the draft exists. `assignments_guard` keeps the category, the lesson and the instruction audio inside the assignment's course (the audio must be a VALIDATED instruction file of this assignment), and a course never changes.
+- **Access:** `private.can_manage_course` (AAL2 administrators and the course's active lecturers) and `private.can_see_assignment` (managers, and learners enrolled ACTIVE or COMPLETED once the assignment is PUBLISHED and not archived). Clients only read: categories for whoever may see the course, versions for managers, extensions for the learner they belong to and for managers. `assignment_media()` returns the current instruction audio for whoever may see the assignment.
+- **Storage:** private `assignment-instructions-audio` (25 MB and 10 minutes; `audio/mpeg`, `audio/mp4`, `audio/wav`), path `<course id>/<assignment id>/<file id>.<ext>`, on the same `register-upload` and `finalize-upload` checks as lesson audio. Reads require a VALIDATED file and `private.can_read_instruction_object` (managers read every instruction file of their assignments, replaced ones included; learners only the current audio of a published assignment). Nobody writes or deletes directly.
+- **Trusted functions:** `grade_categories_save`, `assignment_save`, `assignment_set_publication`, `assignment_set_archived` behind `manage-assignments` (actions save, publish, archive and save-categories; publish and archive also undo), and `assignment_audio_activate` behind `finalize-upload`. Each re-checks the actor and the course (archived courses are read-only), snapshots a published assignment on publish and on every change (`private.snapshot_assignment`, with the reason), audits deadline changes, and writes its audit record in the same transaction.
+- **Routes:** `/:role/courses/:courseId/assignments/:assignmentId` (`new` for a new one) for lecturers and administrators, with the course workspace's Assignments tab and its categories; `/learner/assignments` (To do and Past due, due dates in Ghana time with the learner's extension) and `/learner/courses/:courseId/assignments/:assignmentId`; `/admin/assignments` (oversight of every course).
+
+### Learner branches as built (D42, ADR-010)
+
+- **Table:** `branches` (name unique, position unique, `is_active`), seeded with DDTC's six branches in DDTC's order; every signed-in user reads it and no client changes it, so DDTC can add or close a branch without a release, and a branch is never deleted.
+- **Column:** `profiles.branch_id`, learners only, `ON DELETE RESTRICT`. The learner sets or changes their own through the column grant; an AAL2 administrator changes any learner's branch through `profiles_update_admin_branch`. `profiles_guard` allows anyone else to change the branch and nothing more, and refuses an unknown or closed branch ("Choose one of the branches") and a branch for staff. `audit_branch_change` records `profile.branch_changed` with who, from and to. `course_roster()` returns `branch_name`, so lecturers see their own learners' branches; learners never read another learner's.
+- **Screens:** `src/lib/branches.js` loads the names once per session (emptied on sign-out). `BranchField` is the phone's own picker below 640 px and the shadcn Select from tablet width up, with a skeleton and Retry; `BranchChip` (pin and name, or "No branch") and `BranchFilter` (any branch, one branch, or "No branch") on the administrator's Users, Learners and Enrolments; Save branch in the user panel; a Branch column on the course Learners tab. Grading, the gradebook, exports and reports add it in Phases 8 to 11.
+
+### Idle sign-out as built (D43, ADR-011)
+
+- **Database:** settings `idle_timeout_minutes` (10, whole minutes 5 to 60) and `idle_warning_seconds` (120, 30 to 180), held to those bounds by a CHECK; changed only by an AAL2 administrator and audited. `idle_settings()` gives both to every signed-in user (learners cannot read the settings table). `private.is_admin()` refuses an administrator session idle longer than `idle_timeout_minutes` (was 30 minutes under D32); `session_limits` keeps only D32's absolute lifetimes.
+- **Auth:** access tokens last 600 seconds (`supabase/config.toml`; the owner sets the same on each hosted project, `docs/RUNBOOK.md`), so a token taken from an idle session stops working within 10 minutes; every sign-out is a local sign-out that revokes that session's refresh token, and an app opened again after the limit signs out at once (see Clock).
+- **Clock:** `IdleSessionProvider`, mounted for every role, loads `idle_settings()` and runs `useIdleTimeout`. One clock for every tab, `ddtc:lastActivity` in local storage (the session and a timestamp, written at most every 5 seconds and shared through storage events), compared by timestamps every second while the page is visible and at once on visibilitychange, pageshow and focus, so a phone that slept or a reload after the limit signs out straight away. Activity is pointer, key, wheel, touch, focus, form input, scrolling and moving to another page; audio playing and uploads hold the session awake (`holdAwake`, recordings join in Phase 8); token refreshes and background requests never count. Administrators also call `record_activity` at most once a minute.
+- **Warning and sign-out:** `IdleWarningDialog` opens at the limit minus the warning (8 minutes): Continue Session (focused first; Escape does the same) and Sign out now, an announced countdown, unsaved work named. At the limit `signOut` goes to `/login?idle=N&next=<page>`; `clearPrivateCaches()` empties signed URLs, avatar paths and branch names on every sign-out; Sign In shows "You were signed out after N minutes of inactivity." and the next sign-in returns to the page.
+- **Drafts:** `src/lib/drafts.js` keeps unsaved editor work per user and screen (`ddtc:draft:<user>:<key>`) for 24 hours, restored only over the same saved version (`useDraftStart`, `useDraftAutosave`; the lesson and assignment editors now, answers in Phase 8) with the "Draft restored" toast; a deliberate sign-out deletes the user's drafts.
+- **Absolute lifetimes:** `SessionWatcher` keeps D32's limits: a warning toast without a button, then `/login?expired=1`.
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.
@@ -331,12 +355,15 @@ Type: S = success, I = info, W = warning, E = error.
 | Everyone | Connection restored | "Back online" (S) | none |
 | Everyone | New notification arrives | Notification title (I) | Open |
 | Everyone | New app version ready | "New version available" (I, stays) | Refresh |
-| Everyone | Session about to expire | "Your session ends in 2 minutes" (W) | Stay signed in |
+| Everyone | Session about to reach its absolute limit (D32; inactivity warns with a dialog instead, D43) | "Your session ends in 2 minutes" (W) | none |
+| Everyone | Unsaved work put back into an editor after an idle sign-out (D43) | "Draft restored" (I) | none |
 | Everyone | Any save or request fails | "Could not save. Try again" (E) | Retry |
 | Administrator | Learner added or invitation sent | "Learner added" (S) | none |
 | Administrator | Lecturer provisioned | "Lecturer invited" (S) | none |
+| Administrator | Administrator invited (ADR-003) | "Administrator invited" (S) | none |
 | Administrator | CSV import finished | "Imported N learners, M errors" (S or W) | View report |
 | Administrator | Role or course-creation permission changed | "Permissions updated" (S) | none |
+| Administrator | A learner's branch changed (D42) | "Branch updated" (S) | none |
 | Administrator | Account suspended or reactivated | "Account suspended" or "Account reactivated" (S) | Undo |
 | Administrator | Administrator MFA reset | "MFA reset for name" (S) | none |
 | Administrator | Course approved | "Course approved and published" (S) | none |
@@ -355,12 +382,20 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer | Co-lecturer added or removed | "Co-lecturer added" or "Co-lecturer removed" (S) | Undo |
 | Lecturer | Lesson saved | "Lesson saved" (S) | none |
 | Lecturer | Lesson published or unpublished | "Lesson published" or "Lesson unpublished" (S) | Undo |
-| Lecturer | Lessons reordered | "Order saved" (S) | Undo |
+| Lecturer | Lessons or a lesson's audio files reordered | "Order saved" (S) | Undo |
 | Lecturer | Lesson audio passes checks | "Audio ready" (S) | none |
 | Lecturer | Lesson audio rejected | "Audio rejected: reason" (E) | Try again |
 | Lecturer | Lesson audio replaced | "Audio replaced" (S) | none |
 | Lecturer | Attachment added | "Attachment added" (S) | none |
+| Lecturer or administrator | Lesson audio deleted, after confirming (ADR-007) | "Audio deleted" (S) | none |
+| Lecturer or administrator | Attachment deleted, after confirming (ADR-007) | "Attachment deleted" (S) | none |
+| Lecturer or administrator | Course cover removed, after confirming (ADR-007) | "Cover image removed" (S) | none |
+| Lecturer or administrator | A delete failed; the item stays (ADR-007) | "Could not delete: reason" (E) | Try again |
 | Lecturer | Assignment saved or published | "Assignment saved" or "Assignment published" (S) | none |
+| Lecturer or administrator | Assignment unpublished (Phase 7) | "Assignment unpublished" (S) | none |
+| Lecturer or administrator | Assignment archived, never deleted (Phase 7) | "Assignment archived" (S) | Undo |
+| Lecturer or administrator | Archived assignment restored (Phase 7) | "Assignment restored" (S) | none |
+| Lecturer or administrator | Grade categories saved (Phase 7) | "Categories saved" (S) | none |
 | Lecturer | Extension granted | "Extension granted" (S) | Undo |
 | Lecturer | Grade draft saved | "Grade saved as draft" (S) | none |
 | Lecturer | Grades released | "Grades released to N learners" (S) | none |
@@ -378,6 +413,10 @@ Type: S = success, I = info, W = warning, E = error.
 | Learner | Upload interrupted then resumed | "Upload resumed" (I) | none |
 | Learner | Grade released | "New grade available" (I) | View |
 
+### Idle sign-out (D43, ADR-011)
+
+Not a toast: a dialog, because it needs an answer. After `idle_timeout_minutes` minus `idle_warning_seconds` without activity (8 minutes by default) an alert dialog opens: title "Your session ends in 2 minutes", the time the user has been away, a countdown (screen readers hear it at whole minutes and at 30 and 10 seconds), "You have unsaved changes. If you are signed out, they are kept on this device as a draft for 24 hours." when a screen has unsaved work, and the buttons **Continue Session** (focused first; Escape does the same) and **Sign out now**. A tap outside does nothing. At the limit the user is signed out and Sign In shows the status message "You were signed out after 10 minutes of inactivity." (the configured number of minutes); the next sign-in returns to the same page.
+
 ### Floating action buttons
 
 - One floating action button (FAB) per screen at most, only for the main "create" action of that screen, only on phones and tablets (below 1024 px). On desktop the same action is a normal button in the page header.
@@ -388,7 +427,7 @@ Type: S = success, I = info, W = warning, E = error.
 
 | Screen | FAB | Visible to |
 |---|---|---|
-| Administrator, Users | Speed dial: Add learner, Provision lecturer, Import CSV | Administrator |
+| Administrator, Users | Speed dial: Add learner, Provision lecturer, Invite administrator (ADR-003), Import CSV | Administrator |
 | Administrator, Courses | New course | Administrator |
 | Administrator, Enrolments | Enrol learners | Administrator |
 | Lecturer, My Courses | New course | Lecturer with `can_create_courses` |
@@ -435,7 +474,7 @@ Type: S = success, I = info, W = warning, E = error.
 
 - Three environments: development, staging, production, each with its own Supabase project. Real learner data is never used in development or staging.
 - Every change goes through a pull request; CI runs lint, type checks, unit tests, database rule tests, Playwright and Lighthouse before it can merge.
-- Database changes are numbered migrations only; nothing is changed by hand in the dashboard.
+- Database changes are numbered migrations only; nothing is changed by hand in the dashboard. The exception is hosted Auth settings that migrations cannot reach, such as the 600-second access-token lifetime (D43): the owner sets them on each hosted project and checks them as in `docs/RUNBOOK.md`; `supabase/config.toml` holds the same values for local runs and CI.
 - Production: HTTPS, custom email domain, secrets in server settings, Sentry monitoring, uptime alerts.
 - Backups: daily database backup and daily file backup, kept 30 days; recovery targets 24 hours of data loss at most and 8 hours to restore; a restore drill is run before launch and every quarter.
 
@@ -469,6 +508,7 @@ Domain and sender email; logo and brand colours; first administrator email; prod
 
 - Official DDTC LMS logo: the circle emblem (`assets/brand/logo-ddtc-*.png`). It appears above the Sign In and Sign Up forms and in the sidebar, rendered navy on light surfaces and white on dark.
 - Logo of gölarae: `assets/brand/logo-golarae*.png`, centred directly below the form with the text "from gölarae" directly beneath it.
+- Auth screens (ADR-012): the shared hero shows the emblem, the name DYNAMIC DISCIPLESHIP TRAINING CENTRE (HOJ) and the tagline "Di nokware kosi owu mu, na wobenya nkwa abotiri - Adiyisɛm 2:10b" (Twi, marked `lang="tw"`). On Sign In, Sign Up and two-step verification a light travels round the emblem's circle (`logo-glow`, a decorative ring over the emblem; never the favicon, app icons or in-app logos) and the administrator's verification card carries the same edge light; both stand still under reduced motion and disappear in forced-colours mode. Sign In and Sign Up end with "© YEAR Dynamic Discipleship Training Centre (HOJ). All rights reserved." well below "from gölarae" (the year in Ghana time).
 - Palette: primary #2563EB, navy #0F172A, slate #64748B, surface #F1F5F9, success #0F766E, warning #D97706, error #DC2626, with a separately defined dark theme. Font: Inter on all devices. Icons: Lucide. Themes: Light, Dark, System (stored in the browser).
 - The visual reference is the clickable prototype in `docs/prototype/`. Full rules are in `docs/DESIGN.md`.
 
