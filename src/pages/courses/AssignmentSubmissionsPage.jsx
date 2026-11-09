@@ -203,7 +203,7 @@ export default function AssignmentSubmissionsPage({ role }) {
           <span className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
             {r.submission_id ? (
               <Button asChild variant={toGrade && !archived ? 'primary' : 'outline'}>
-                <Link to={`/${role}/courses/${courseId}/assignments/${assignmentId}/submissions/${r.learner_id}`} aria-label={`View answer from ${name}`}>
+                <Link to={`/${role}/courses/${courseId}/assignments/${assignmentId}/submissions/${r.learner_id}`} aria-label={`${toGrade && !archived ? 'Grade' : 'View'} answer from ${name}`}>
                   {toGrade && !archived ? <PenLine aria-hidden="true" /> : <Eye aria-hidden="true" />}
                   {toGrade && !archived ? 'Grade' : 'View answer'}
                 </Link>
@@ -236,15 +236,14 @@ export default function AssignmentSubmissionsPage({ role }) {
             title={`Submissions: ${a.title}`}
             description={`Due ${formatDue(a.due_at)} (Ghana time). Out of ${Number(a.max_marks)} marks.`}
             className="pb-0"
-            actions={
-              !archived && drafts > 0 ? (
-                <Button type="button" onClick={() => setReleasing(true)}>
-                  <Send aria-hidden="true" />
-                  Release grades ({drafts})
-                </Button>
-              ) : null
-            }
           />
+          {/* In the page, not the header: header actions show only on wide screens, and Release must be reachable on every device. */}
+          {!archived && drafts > 0 ? (
+            <Button type="button" className="self-start" onClick={() => setReleasing(true)}>
+              <Send aria-hidden="true" />
+              Release grades ({drafts})
+            </Button>
+          ) : null}
           {d.counts ? <ResultCounts counts={d.counts} /> : null}
           {d.counts && d.counts.withdrawn_submitted ? (
             <p className="m-0 text-body-sm text-ink-secondary">

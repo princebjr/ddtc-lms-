@@ -182,7 +182,8 @@ test('after the due date a first answer is refused unless late answers are allow
   await lecturerPage.goto(`/lecturer/courses/${course.id}/assignments/${closed.id}/submissions`);
   await expect(lecturerPage.getByRole('heading', { name: 'Submissions: Prayer journal' })).toBeVisible();
   await expect(lecturerPage.locator('[data-slot="branch-chip"]').filter({ visible: true }).filter({ hasText: 'Kumasi' })).toHaveCount(1);
-  await expect(lecturerPage.getByText('Not submitted').filter({ visible: true })).toHaveCount(1);
+  // Past the due date with nothing sent: Missing (Phase 9, owner decision 5; "Not submitted" in Phase 8).
+  await expect(lecturerPage.locator('[data-slot="status-chip"]').filter({ hasText: /^Missing$/ }).filter({ visible: true })).toHaveCount(1);
   await expectNoAxeViolations(lecturerPage);
   await lecturerPage
     .getByRole('button', { name: `Extension for Esi Owusu${tag}` })
@@ -205,7 +206,8 @@ test('after the due date a first answer is refused unless late answers are allow
   // The lecturer opens the answer.
   await lecturerPage.reload();
   await lecturerPage
-    .getByRole('link', { name: `View answer from Esi Owusu${tag}` })
+    // An answer waiting to be graded opens with Grade (Phase 9; the name matches the visible label).
+    .getByRole('link', { name: `Grade answer from Esi Owusu${tag}` })
     .filter({ visible: true })
     .click();
   await expect(lecturerPage.getByRole('heading', { name: `Esi Owusu${tag}` })).toBeVisible();

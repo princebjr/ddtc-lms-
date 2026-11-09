@@ -50,9 +50,10 @@ export function GradingPanel({ assignmentId, learnerId, learnerName, review, rea
   const trimmed = feedback.trim();
   const savedScore = isSet(grade?.score) ? Number(grade.score) : null;
   const typed = score.trim() === '' ? null : Number(score);
-  // Whether the form differs from what is saved, and from what the learner sees (labels only).
+  // Whether the form differs from what is saved. Once a grade has been released, saving a change needs
+  // a reason (the server's rule exactly); a change already saved is released without asking again.
   const dirty = typed !== savedScore || trimmed !== (grade?.feedback ?? '');
-  const changesRelease = released && (typed !== Number(grade?.released_score) || trimmed !== (grade?.released_feedback ?? ''));
+  const needsReason = released && dirty;
   const state = gradeState({
     status: review.status,
     score: savedScore,
@@ -84,13 +85,13 @@ export function GradingPanel({ assignmentId, learnerId, learnerName, review, rea
   const saveIfNeeded = async () => {
     const value = validScore();
     if (!isSet(value)) return false;
-    if (changesRelease && !reason.trim()) {
+    if (!dirty && review.status === 'GRADED') return true;
+    if (needsReason && !reason.trim()) {
       setReasonError('Give a reason for changing a released grade');
       return false;
     }
     setReasonError(null);
-    if (!dirty && review.status === 'GRADED') return true;
-    await saveGrade({ assignmentId, learnerId, score: value, feedback: trimmed, reason: changesRelease ? reason.trim() : undefined });
+    await saveGrade({ assignmentId, learnerId, score: value, feedback: trimmed, reason: needsReason ? reason.trim() : undefined });
     return true;
   };
 
@@ -208,7 +209,7 @@ export function GradingPanel({ assignmentId, learnerId, learnerName, review, rea
             {[...feedback].length.toLocaleString('en-GB')} of {MAX_FEEDBACK.toLocaleString('en-GB')} characters
           </span>
         </div>
-        {changesRelease ? (
+        {needsReason ? (
           <div className="flex flex-col gap-2">
             <Label htmlFor="grade-reason">Reason for the change</Label>
             <Textarea
@@ -238,6 +239,7 @@ export function GradingPanel({ assignmentId, learnerId, learnerName, review, rea
           <p className="m-0 text-body-sm text-ink-secondary">This course is archived, so grades can no longer change.</p>
         ) : (
           <div
+            data-slot="grading-actions"
             className={cn(
               'z-20 flex flex-col gap-2 rounded-lg border border-hairline bg-pill p-3 blur-material sm:flex-row sm:justify-end',
               'max-md:sticky max-md:bottom-above-nav',

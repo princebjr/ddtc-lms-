@@ -142,6 +142,16 @@ describe('the grading panel', () => {
     await waitFor(() => expect(api.saveGrade).toHaveBeenCalledWith(expect.objectContaining({ score: 17, reason: 'Marked the second part again' })));
   });
 
+  it('a change already saved with its reason is released without asking for the reason again', async () => {
+    // Found end to end: the form showed 17 against a released 16 and asked again, so nothing was released.
+    renderPanel(review({ ...released, score: 17, percentage: 85, grade_release_status: 'DRAFT', changed_since_release: true }));
+    expect(screen.queryByLabelText('Reason for the change')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Release grade' }));
+    await waitFor(() => expect(api.releaseGrades).toHaveBeenCalledWith({ assignmentId: 'a1', learnerId: 'l1' }));
+    expect(api.saveGrade).not.toHaveBeenCalled();
+    expect(screen.queryByText('Give a reason for changing a released grade')).toBeNull();
+  });
+
   it('Release grade saves what was typed, then releases it to the learner', async () => {
     renderPanel(review());
     fireEvent.change(screen.getByLabelText('Marks'), { target: { value: '18' } });
