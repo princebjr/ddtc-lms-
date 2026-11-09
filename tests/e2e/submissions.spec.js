@@ -114,7 +114,9 @@ test('a learner writes, records and uploads one answer; a renamed file is refuse
     .setInputFiles({ name: 'sermon.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(concat('%PDF-1.7\n', new Uint8Array(4000))) });
   await expect(files.locator('[data-slot="upload-row"][data-status="rejected"]').filter({ hasText: 'sermon.mp3' })).toBeVisible();
   await expect(toast(page, 'File not accepted: ')).toBeVisible();
-  // On a small phone the row can sit under the sticky Submit bar: bring it to the middle first, as a person would.
+  // On a small phone the open toasts ("Recording saved", "File not accepted") and the sticky Submit bar
+  // can cover the row: close the toasts and bring the row to the middle first, as a person would.
+  await dismissToasts(page);
   const remove = page.getByRole('button', { name: 'Remove sermon.mp3' });
   await remove.evaluate((el) => el.scrollIntoView({ block: 'center' }));
   await remove.click();
