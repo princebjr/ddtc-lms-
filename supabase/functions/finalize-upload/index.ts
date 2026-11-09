@@ -13,13 +13,19 @@
 //   ASSIGNMENT_INSTRUCTION_AUDIO  (Phase 7) the same audio checks as lesson audio within 25 MB and
 //                      10 minutes (D17); becomes the assignment's instruction audio (a replaced
 //                      file is kept for the snapshots).
+//   SUBMISSION_FILE    (Phase 8) a learner's answer file: audio (MP3, M4A, WAV, WebM or Ogg, also
+//                      browser recordings) within 25 MB and 10 minutes, or PDF or Word (.docx,
+//                      macros refused) within 10 MB (D17). It then waits for the learner's next
+//                      version; submit-assignment adds it when they send their answer.
 // The file name's extension must match the real content.
 import { z } from 'npm:zod@4.6.7';
 import { AUDIO_EXTENSIONS, cleanPeaks, inspectAudio } from '../_shared/audio.ts';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { requireCourseEditor } from '../_shared/courses.ts';
 import { DOCUMENT_EXTENSIONS, inspectDocument } from '../_shared/documents.ts';
-import { extensionOf, RESOURCES, sha256, sniffImage, type ResourceType } from '../_shared/files.ts';
+import { extensionOf, RESOURCES, sha256, sniffImage, submissionLimitKey, submissionRoleFor, type ResourceType } from '../_shared/files.ts';
+
+const PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { removeStoredFile } from '../_shared/remove-file.ts';
 import { storageReader } from '../_shared/storage-reader.ts';
@@ -110,9 +116,35 @@ serve(async (req) => {
   if (reader.size === 0) await reject('The file is empty.');
   if (reader.size > maxBytes) await reject(`The file is larger than ${Math.round(maxBytes / 1048576)} MB.`);
 
+  if (type === 'SUBMISSION_FILE') {
+    const role = submissionRoleFor(ext);
+    if (role === 'AUDIO') {
+      const facts = await inspectAudio(reader);
+      if (!facts || !(facts.mime in rule.types)) await reject('The file is not an audio file we can play (MP3, M4A, WAV, WebM or Ogg).');
+      if (!AUDIO_EXTENSIONS[facts!.mime].includes(ext)) await reject('The file content does not match its name. Use the original audio file.');
+      if (maxSeconds && facts!.durationSeconds > maxSeconds) await reject(`The audio is longer than ${Math.round(maxSeconds / 60)} minutes.`);
+      await validate({
+        detected_mime_type: facts!.mime,
+        file_size: reader.size,
+        duration_seconds: Math.round(facts!.durationSeconds * 100) / 100,
+        waveform_peaks: cleanPeaks(parsed.data.peaks),
+      });
+      return json(req, 200, { fileId: file.id, status: 'VALIDATED', role, mimeType: facts!.mime, size: reader.size, durationSeconds: facts!.durationSeconds });
+    }
+    const documentLimit = Number(setting?.value?.[submissionLimitKey('PDF')]?.max_bytes ?? 0);
+    if (!documentLimit || reader.size > documentLimit) await reject(`The file is larger than ${Math.round(documentLimit / 1048576)} MB.`);
+    const mime = await inspectDocument(reader);
+    if (!mime || mime === PPTX || !role) await reject('The file is not a PDF or Word (.docx) file, or it contains macros.');
+    if (!DOCUMENT_EXTENSIONS[mime!].includes(ext)) await reject('The file content does not match its name.');
+    await validate({ detected_mime_type: mime, file_size: reader.size });
+    return json(req, 200, { fileId: file.id, status: 'VALIDATED', role, mimeType: mime, size: reader.size });
+  }
+
   if (type === 'LESSON_AUDIO' || type === 'ASSIGNMENT_INSTRUCTION_AUDIO') {
     const facts = await inspectAudio(reader);
-    if (!facts || !(facts.mime in rule.types)) await reject('The file is not an MP3, M4A or WAV audio file.');
+    if (!facts || !(facts.mime in rule.types)) {
+      await reject(type === 'LESSON_AUDIO' ? 'The file is not an audio file we can play (MP3, M4A, WAV, WebM or Ogg).' : 'The file is not an MP3, M4A or WAV audio file.');
+    }
     if (!AUDIO_EXTENSIONS[facts!.mime].includes(ext)) await reject('The file content does not match its name. Use the original audio file.');
     if (maxSeconds && facts!.durationSeconds > maxSeconds) await reject(`The audio is longer than ${Math.round(maxSeconds / 60)} minutes.`);
     await validate({

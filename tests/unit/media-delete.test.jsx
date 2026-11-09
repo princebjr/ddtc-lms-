@@ -9,6 +9,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { toast as sonner } from 'sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthContextForTests } from '@/components/auth/AuthProvider.jsx';
 import { ToastProvider } from '@/components/feedback/ToastProvider.jsx';
 
 const api = vi.hoisted(() => ({
@@ -21,7 +22,14 @@ vi.mock('@/lib/lessons/lessons.js', async (importOriginal) => ({
   .../** @type {object} */ (await importOriginal()),
   fetchLessonMedia: vi.fn(async () => structuredClone(api.media)),
   fetchAudioHistory: vi.fn(async () => structuredClone(api.history)),
-  fetchLesson: vi.fn(async () => ({ id: 'lesson-1', course_id: 'course-1', title: 'Welcome and overview', content: '<p>Welcome</p>', position: 1, publication_status: 'PUBLISHED' })),
+  fetchLesson: vi.fn(async () => ({
+    id: 'lesson-1',
+    course_id: 'course-1',
+    title: 'Welcome and overview',
+    content: '<p>Welcome</p>',
+    position: 1,
+    publication_status: 'PUBLISHED',
+  })),
   fetchLessons: vi.fn(async () => [{ id: 'lesson-1', title: 'Welcome and overview', position: 1, publication_status: 'PUBLISHED', audio_count: 2 }]),
   fetchMyProgress: vi.fn(async () => ({})),
   playbackUrl: vi.fn(async () => 'https://example.test/audio.mp3'),
@@ -40,17 +48,44 @@ const { default: LearnerLessonPage } = await import('@/pages/learner/LearnerLess
 
 /** @param {string} id @param {string} title @param {number} position */
 const audio = (id, title, position) => ({
-  kind: 'AUDIO', item_id: id, file_object_id: `f-${id}`, title, bucket_name: 'lesson-audio', storage_path: `c/l/${id}.mp3`,
-  safe_download_filename: `${id}.mp3`, mime_type: 'audio/mpeg', file_size: 1_000_000, duration_seconds: 60,
-  waveform_peaks: Array.from({ length: 128 }, () => 0.5), sort_order: position,
+  kind: 'AUDIO',
+  item_id: id,
+  file_object_id: `f-${id}`,
+  title,
+  bucket_name: 'lesson-audio',
+  storage_path: `c/l/${id}.mp3`,
+  safe_download_filename: `${id}.mp3`,
+  mime_type: 'audio/mpeg',
+  file_size: 1_000_000,
+  duration_seconds: 60,
+  waveform_peaks: Array.from({ length: 128 }, () => 0.5),
+  sort_order: position,
 });
 const attachment = (/** @type {string} */ id, /** @type {string} */ title) => ({
-  kind: 'ATTACHMENT', item_id: id, file_object_id: `f-${id}`, title, bucket_name: 'lesson-attachments', storage_path: `c/l/${id}.pdf`,
-  safe_download_filename: `${id}.pdf`, mime_type: 'application/pdf', file_size: 20_000, duration_seconds: null, waveform_peaks: null, sort_order: 1,
+  kind: 'ATTACHMENT',
+  item_id: id,
+  file_object_id: `f-${id}`,
+  title,
+  bucket_name: 'lesson-attachments',
+  storage_path: `c/l/${id}.pdf`,
+  safe_download_filename: `${id}.pdf`,
+  mime_type: 'application/pdf',
+  file_size: 20_000,
+  duration_seconds: null,
+  waveform_peaks: null,
+  sort_order: 1,
 });
 
+// The audio card reads the signed-in lecturer since Phase 8 (its recordings are kept as drafts per user).
+const lecturer = /** @type {any} */ ({ status: 'signed-in', profile: { id: 'lecturer-1', role: 'LECTURER' } });
+
 /** @param {import('react').ReactNode} ui */
-const withToasts = (ui) => render(<ToastProvider>{ui}</ToastProvider>);
+const withToasts = (ui) =>
+  render(
+    <AuthContextForTests.Provider value={lecturer}>
+      <ToastProvider>{ui}</ToastProvider>
+    </AuthContextForTests.Provider>,
+  );
 
 beforeEach(() => {
   api.media = { audios: [audio('a1', 'Part 1', 1), audio('a2', 'Part 2', 2)], attachments: [attachment('x1', 'Lesson notes')] };

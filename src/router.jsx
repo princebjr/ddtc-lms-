@@ -16,7 +16,8 @@ import RouteErrorPage from '@/pages/RouteErrorPage.jsx';
  */
 const page = (load) => async () => ({ Component: (await load()).default });
 
-/** @param {'AdminNewCourse' | 'AdminCourse' | 'LecturerNewCourse' | 'LecturerCourse' | 'LearnerCourse' | 'AdminLesson' | 'LecturerLesson' | 'LearnerLesson' | 'AdminAssignment' | 'LecturerAssignment' | 'LearnerAssignment'} name */
+/** @param {'AdminNewCourse' | 'AdminCourse' | 'LecturerNewCourse' | 'LecturerCourse' | 'LearnerCourse' | 'AdminLesson' | 'LecturerLesson' | 'LearnerLesson' | 'AdminAssignment' | 'LecturerAssignment' | 'LearnerAssignment'
+ *   | 'AdminSubmissions' | 'LecturerSubmissions' | 'AdminSubmission' | 'LecturerSubmission'} name */
 const coursePage = (name) => async () => ({ Component: (await import('@/pages/courses/CourseRoutes.jsx'))[name] });
 
 /** @param {'AdminPage' | 'LecturerPage' | 'LearnerPage'} name */
@@ -52,6 +53,8 @@ const roleRoutes = [
     children: [
       { path: 'courses/new', lazy: coursePage('AdminNewCourse') },
       { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('AdminLesson') },
+      { path: 'courses/:courseId/assignments/:assignmentId/submissions/:learnerId', lazy: coursePage('AdminSubmission') },
+      { path: 'courses/:courseId/assignments/:assignmentId/submissions', lazy: coursePage('AdminSubmissions') },
       { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('AdminAssignment') },
       { path: 'courses/:courseId/:tab?', lazy: coursePage('AdminCourse') },
       { path: ':slug?', lazy: rolePage('AdminPage') },
@@ -63,6 +66,8 @@ const roleRoutes = [
     children: [
       { path: 'courses/new', lazy: coursePage('LecturerNewCourse') },
       { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LecturerLesson') },
+      { path: 'courses/:courseId/assignments/:assignmentId/submissions/:learnerId', lazy: coursePage('LecturerSubmission') },
+      { path: 'courses/:courseId/assignments/:assignmentId/submissions', lazy: coursePage('LecturerSubmissions') },
       { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LecturerAssignment') },
       { path: 'courses/:courseId/:tab?', lazy: coursePage('LecturerCourse') },
       { path: ':slug?', lazy: rolePage('LecturerPage') },
@@ -100,13 +105,7 @@ export const routes = [
     errorElement: <RouteErrorPage />,
     // Neutral shell while the first route chunk loads: page colour only, so nothing flashes.
     hydrateFallbackElement: <div className="min-h-dvh-screen bg-page" aria-busy="true" />,
-    children: [
-      ...authRoutes,
-      ...roleRoutes,
-      ...publicRoutes,
-      ...devRoutes,
-      { path: '*', lazy: page(() => import('@/pages/NotFoundPage.jsx')) },
-    ],
+    children: [...authRoutes, ...roleRoutes, ...publicRoutes, ...devRoutes, { path: '*', lazy: page(() => import('@/pages/NotFoundPage.jsx')) }],
   },
 ];
 

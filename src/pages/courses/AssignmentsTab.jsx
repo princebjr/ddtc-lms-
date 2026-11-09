@@ -29,7 +29,9 @@ import { formatDue } from '@/lib/assignments/due.js';
 /** @param {Row} a */
 function statusOf(a) {
   if (a.archived_at) return /** @type {const} */ ({ label: 'Archived', tone: 'neutral' });
-  return a.publication_status === 'PUBLISHED' ? /** @type {const} */ ({ label: 'Published', tone: 'success' }) : /** @type {const} */ ({ label: 'Draft', tone: 'neutral' });
+  return a.publication_status === 'PUBLISHED'
+    ? /** @type {const} */ ({ label: 'Published', tone: 'success' })
+    : /** @type {const} */ ({ label: 'Draft', tone: 'neutral' });
 }
 
 /** @param {{ role: 'admin' | 'lecturer', courseId: string, archived: boolean, isLecturer: boolean }} props */
@@ -57,7 +59,12 @@ export function AssignmentsTab({ role, courseId, archived, isLecturer }) {
       ),
     },
     { key: 'type', header: 'Instructions', card: /** @type {const} */ ('secondary'), cell: (/** @type {Row} */ a) => CONTENT_TYPE_LABEL[a.content_type] },
-    { key: 'due', header: 'Due (Ghana time)', card: /** @type {const} */ ('detail'), cell: (/** @type {Row} */ a) => <span className="tabular-nums">{formatDue(a.due_at)}</span> },
+    {
+      key: 'due',
+      header: 'Due (Ghana time)',
+      card: /** @type {const} */ ('detail'),
+      cell: (/** @type {Row} */ a) => <span className="tabular-nums">{formatDue(a.due_at)}</span>,
+    },
     {
       key: 'status',
       header: 'Status',
@@ -67,13 +74,34 @@ export function AssignmentsTab({ role, courseId, archived, isLecturer }) {
         return <StatusChip tone={s.tone}>{s.label}</StatusChip>;
       },
     },
+    // Phase 8: who has submitted, with extensions (published assignments only take answers).
+    {
+      key: 'submissions',
+      header: 'Submissions',
+      card: /** @type {const} */ ('detail'),
+      align: /** @type {const} */ ('end'),
+      cell: (/** @type {Row} */ a) =>
+        a.publication_status === 'PUBLISHED' ? (
+          <Link
+            to={`${base}/${a.id}/submissions`}
+            className="inline-flex min-h-11 items-center text-label text-link hover:underline focus-visible:focus-ring"
+            aria-label={`Submissions for ${a.title}`}
+          >
+            Submissions
+          </Link>
+        ) : (
+          '—'
+        ),
+    },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="m-0 text-body-sm text-ink-secondary">
-          {archived ? 'This course is archived; its assignments are read-only.' : 'Learners see published assignments. Every assignment accepts text and audio answers.'}
+          {archived
+            ? 'This course is archived; its assignments are read-only.'
+            : 'Learners see published assignments. Every assignment accepts text and audio answers.'}
         </p>
         {showButton ? (
           <Button onClick={() => navigate(`${base}/new`)}>
@@ -91,7 +119,13 @@ export function AssignmentsTab({ role, courseId, archived, isLecturer }) {
             columns={columns}
             rows={list.data ?? []}
             getRowKey={(a) => a.id}
-            empty={<EmptyState icon={ClipboardList} title="No assignments yet" description={archived ? undefined : 'Create the first assignment. It stays a draft until you publish it.'} />}
+            empty={
+              <EmptyState
+                icon={ClipboardList}
+                title="No assignments yet"
+                description={archived ? undefined : 'Create the first assignment. It stays a draft until you publish it.'}
+              />
+            }
           />
         </LoadingRegion>
       )}
@@ -156,7 +190,9 @@ function CategoriesCard({ courseId, archived }) {
  * @param {{ courseId: string, initial: import('@/lib/assignments/assignments.js').Category[], onClose: () => void, onSaved: () => void }} props
  */
 function CategoriesDialog({ courseId, initial, onClose, onSaved }) {
-  const [rows, setRows] = useState(() => initial.map((c) => /** @type {{ id?: string, name: string, weight: string }} */ ({ id: c.id, name: c.name, weight: String(c.weight) })));
+  const [rows, setRows] = useState(() =>
+    initial.map((c) => /** @type {{ id?: string, name: string, weight: string }} */ ({ id: c.id, name: c.name, weight: String(c.weight) })),
+  );
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const [saving, setSaving] = useState(false);
   const total = weightTotal(rows);
@@ -170,7 +206,10 @@ function CategoriesDialog({ courseId, initial, onClose, onSaved }) {
     setSaving(true);
     setMessage(null);
     try {
-      await saveCategories(courseId, rows.map((r) => ({ ...(r.id ? { id: r.id } : {}), name: r.name.trim(), weight: Number(r.weight) })));
+      await saveCategories(
+        courseId,
+        rows.map((r) => ({ ...(r.id ? { id: r.id } : {}), name: r.name.trim(), weight: Number(r.weight) })),
+      );
       onSaved();
     } catch (error) {
       setMessage(/** @type {Error} */ (error).message);
@@ -195,9 +234,23 @@ function CategoriesDialog({ courseId, initial, onClose, onSaved }) {
               </div>
               <div className="flex w-24 shrink-0 flex-col gap-1">
                 <Label htmlFor={`category-weight-${i}`}>Weight %</Label>
-                <Input id={`category-weight-${i}`} value={row.weight} onChange={(e) => update(i, { weight: e.target.value })} inputMode="numeric" autoComplete="off" maxLength={3} />
+                <Input
+                  id={`category-weight-${i}`}
+                  value={row.weight}
+                  onChange={(e) => update(i, { weight: e.target.value })}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={3}
+                />
               </div>
-              <Button variant="ghost" size="icon" className="text-error" onClick={() => setRows((r) => r.filter((_, j) => j !== i))} disabled={rows.length === 1} aria-label={`Remove ${row.name || `category ${i + 1}`}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-error"
+                onClick={() => setRows((r) => r.filter((_, j) => j !== i))}
+                disabled={rows.length === 1}
+                aria-label={`Remove ${row.name || `category ${i + 1}`}`}
+              >
                 <Trash2 aria-hidden="true" />
               </Button>
             </li>

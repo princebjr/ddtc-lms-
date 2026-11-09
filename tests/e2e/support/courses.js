@@ -9,7 +9,13 @@ async function rest(path, init = {}) {
   const s = requireSupabase();
   const res = await fetch(`${s.url}/rest/v1/${path}`, {
     ...init,
-    headers: { apikey: s.serviceKey, Authorization: `Bearer ${s.serviceKey}`, 'Content-Type': 'application/json', Prefer: 'return=representation', ...init.headers },
+    headers: {
+      apikey: s.serviceKey,
+      Authorization: `Bearer ${s.serviceKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+      ...init.headers,
+    },
   });
   if (!res.ok) throw new Error(`${init.method ?? 'GET'} ${path} failed: ${res.status} ${await res.text()}`);
   return res.status === 204 ? null : res.json();
@@ -53,6 +59,19 @@ export async function enrolFixture(courseId, learnerId, byId, status = 'ACTIVE')
     method: 'POST',
     body: JSON.stringify({ course_id: courseId, learner_id: learnerId, enrolled_by: byId, enrolment_status: status }),
   });
+}
+
+/**
+ * A draft lesson at the end of the course (Phase 8 lesson recorder tests).
+ * @param {{ courseId: string, ownerId: string, title: string, position?: number }} options
+ * @returns {Promise<{ id: string }>}
+ */
+export async function createLessonFixture({ courseId, ownerId, title, position = 1 }) {
+  const [lesson] = await rest('lessons', {
+    method: 'POST',
+    body: JSON.stringify({ course_id: courseId, title, content: '<p>Genesis 1</p>', position, publication_status: 'DRAFT', created_by: ownerId }),
+  });
+  return { id: lesson.id };
 }
 
 /** @param {string} courseId */

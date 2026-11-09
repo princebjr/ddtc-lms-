@@ -99,10 +99,31 @@ export function purgeExpiredDrafts(now = Date.now()) {
   }
 }
 
+/** Other draft stores (recordings kept in IndexedDB, Phase 8) delete a user's drafts with these. */
+const stopHooks = /** @type {Set<(userId: string) => void>} */ (new Set());
+
+/** @param {(userId: string) => void} fn @returns {() => void} */
+export function onStopDrafts(fn) {
+  stopHooks.add(fn);
+  return () => stopHooks.delete(fn);
+}
+
+/** Whether drafts are stopped for this user (a deliberate sign-out happened). @param {string} userId */
+export function draftsStopped(userId) {
+  return stopped === userId;
+}
+
 /** A deliberate sign-out: deletes the user's drafts and saves no more for them until the next sign-in. @param {string} userId */
 export function stopDrafts(userId) {
   stopped = userId;
   clearUserDrafts(userId);
+  for (const fn of stopHooks) {
+    try {
+      fn(userId);
+    } catch {
+      // One store failing must not keep the others' drafts.
+    }
+  }
 }
 
 /** A sign-in: drafts are saved again. */

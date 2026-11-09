@@ -54,7 +54,7 @@ Tracker (tick after sign-off):
 - [x] Phase 6: Lessons and lesson audio (`phase-6-done`)
 - [x] Step 6.1: Six-digit ID numbers, ADR-008 (`phase-6-1-done`)
 - [x] Phase 7: Assignments and instruction audio (`phase-7-done`)
-- [ ] Phase 8: Submissions and file validation (`phase-8-done`)
+- [x] Phase 8: Submissions and file validation (`phase-8-done`)
 - [ ] Phase 9: Grading, feedback and history (`phase-9-done`)
 - [ ] Phase 10: Gradebook, distribution charts and exports (`phase-10-done`)
 - [ ] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)

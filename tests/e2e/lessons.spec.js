@@ -62,7 +62,8 @@ test('a lecturer writes a lesson, uploads audio, publishes and reorders; a renam
   // A renamed PDF is refused, with the reason and Try again.
   await dismissToasts(page);
   await page.locator('input[type="file"][accept^=".mp3"]').setInputFiles({ name: 'sermon.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(pdf()) });
-  const rejected = toast(page, 'Audio rejected: The file is not an MP3, M4A or WAV audio file');
+  // Phase 8 (owner decision 5): lesson audio also takes WebM and Ogg recordings.
+  const rejected = toast(page, 'Audio rejected: The file is not an audio file we can play (MP3, M4A, WAV, WebM or Ogg)');
   await expect(rejected).toBeVisible();
   await expect(rejected.getByRole('button', { name: 'Try again' })).toBeVisible();
   await dismissToasts(page);

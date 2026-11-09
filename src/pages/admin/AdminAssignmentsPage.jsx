@@ -21,7 +21,13 @@ export default function AdminAssignmentsPage() {
   const list = useLoad(fetchAllAssignments, []);
   const [search, setSearch] = useState('');
   const query = search.trim().toLowerCase();
-  const rows = (list.data ?? []).filter((a) => !query || a.title.toLowerCase().includes(query) || (a.course?.title ?? '').toLowerCase().includes(query) || (a.course?.course_code ?? '').toLowerCase().includes(query));
+  const rows = (list.data ?? []).filter(
+    (a) =>
+      !query ||
+      a.title.toLowerCase().includes(query) ||
+      (a.course?.title ?? '').toLowerCase().includes(query) ||
+      (a.course?.course_code ?? '').toLowerCase().includes(query),
+  );
 
   const columns = [
     {
@@ -39,13 +45,43 @@ export default function AdminAssignmentsPage() {
         </span>
       ),
     },
-    { key: 'due', header: 'Due (Ghana time)', card: /** @type {const} */ ('detail'), cell: (/** @type {Row} */ a) => <span className="tabular-nums">{formatDue(a.due_at)}</span> },
+    {
+      key: 'due',
+      header: 'Due (Ghana time)',
+      card: /** @type {const} */ ('detail'),
+      cell: (/** @type {Row} */ a) => <span className="tabular-nums">{formatDue(a.due_at)}</span>,
+    },
     {
       key: 'status',
       header: 'Status',
       card: /** @type {const} */ ('status'),
       cell: (/** @type {Row} */ a) =>
-        a.archived_at ? <StatusChip tone="neutral">Archived</StatusChip> : a.publication_status === 'PUBLISHED' ? <StatusChip tone="success">Published</StatusChip> : <StatusChip tone="neutral">Draft</StatusChip>,
+        a.archived_at ? (
+          <StatusChip tone="neutral">Archived</StatusChip>
+        ) : a.publication_status === 'PUBLISHED' ? (
+          <StatusChip tone="success">Published</StatusChip>
+        ) : (
+          <StatusChip tone="neutral">Draft</StatusChip>
+        ),
+    },
+    // Phase 8: the learners' answers (administrators read every course's).
+    {
+      key: 'submissions',
+      header: 'Submissions',
+      card: /** @type {const} */ ('detail'),
+      align: /** @type {const} */ ('end'),
+      cell: (/** @type {Row} */ a) =>
+        a.publication_status === 'PUBLISHED' || a.archived_at ? (
+          <Link
+            to={`/admin/courses/${a.course_id}/assignments/${a.id}/submissions`}
+            className="inline-flex min-h-11 items-center text-label text-link hover:underline focus-visible:focus-ring"
+            aria-label={`Submissions for ${a.title}`}
+          >
+            Submissions
+          </Link>
+        ) : (
+          '—'
+        ),
     },
   ];
 
@@ -54,7 +90,14 @@ export default function AdminAssignmentsPage() {
       <PageHeader title="Assignment oversight" description="All assignments." />
       <div className="flex max-w-md flex-col gap-2">
         <Label htmlFor="assignment-search">Search</Label>
-        <Input id="assignment-search" type="search" inputMode="search" placeholder="Assignment or course" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input
+          id="assignment-search"
+          type="search"
+          inputMode="search"
+          placeholder="Assignment or course"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
       {list.state === 'error' ? (
         <ErrorState title="The assignments could not be loaded" onRetry={list.reload} />

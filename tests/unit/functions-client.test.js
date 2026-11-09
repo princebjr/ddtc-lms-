@@ -47,4 +47,19 @@ describe('callFunction', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 200 })));
     await expect(callFunction('finalize-upload', { fileId: 'x' })).resolves.toEqual({ ok: true });
   });
+
+  // Found in Phase 8: under load the Supabase gateway answered for a function with its own text
+  // ("Worker failed to respond due to a resource limit (please check logs)"), and the extension
+  // dialog showed it word for word. Only our functions' messages (lowercase codes) reach the screen.
+  it.each([
+    [546, { code: 'WORKER_LIMIT', message: 'Worker failed to respond due to a resource limit (please check logs)' }],
+    [503, { code: 'BOOT_ERROR', message: 'Function failed to start (please check logs)' }],
+    [502, { message: 'An invalid response was received from the upstream server' }],
+    [500, 'Internal Server Error'],
+  ])('shows a plain message when the platform, not our function, answers %i', async (status, body) => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(typeof body === 'string' ? body : JSON.stringify(body), { status })));
+    const err = await callFunction('manage-assignments', { action: 'extension-set' }).catch((e) => e);
+    expect(err).toBeInstanceOf(FunctionError);
+    expect(err).toMatchObject({ status, code: 'server_error', message: 'Something went wrong. Try again.' });
+  });
 });

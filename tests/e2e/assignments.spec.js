@@ -79,7 +79,7 @@ test('a lecturer sets the category weights, writes a text-and-audio assignment, 
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
 
   await page.goto(`/lecturer/courses/${course.id}/assignments`);
-  await expect(page.getByRole('link', { name: 'Reflection on Genesis 1' }).filter({ visible: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Reflection on Genesis 1', exact: true }).filter({ visible: true })).toBeVisible();
   await expectNoAxeViolations(page);
 });
 
@@ -108,9 +108,10 @@ test('an enrolled learner sees what is due, opens an assignment and its audio, a
   await expect(page.getByRole('heading', { name: title, level: 1 })).toBeVisible();
   await expect(page.getByText('Read Genesis 1 and reflect.')).toBeVisible();
   await expect(page.getByRole('slider', { name: `Instructions: ${title} position` })).toHaveAttribute('aria-valuemax', '8');
-  await expect(page.getByText('Write a text answer')).toBeVisible();
-  await expect(page.getByText('Record or upload an audio answer')).toBeVisible();
-  await expect(page.getByText('Upload a PDF file')).toBeVisible();
+  // Phase 8 replaced the list of ways to answer with the answer form itself (ADR-009).
+  await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Record' })).toBeVisible();
+  await expect(page.getByText('Text or audio; PDF files too')).toBeVisible();
   await expect(page.locator('[data-slot="audio-player"]')).toHaveAttribute('data-status', 'ready');
   await expectNoAxeViolations(page);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
@@ -129,6 +130,6 @@ test('an enrolled learner sees what is due, opens an assignment and its audio, a
   await signInNewAdmin(adminPage, { first: 'Grace', second: `Admin${unique()}` });
   await adminPage.goto('/admin/assignments');
   await adminPage.getByLabel('Search').fill(title);
-  await expect(adminPage.getByRole('link', { name: title }).filter({ visible: true })).toBeVisible();
+  await expect(adminPage.getByRole('link', { name: title, exact: true }).filter({ visible: true })).toBeVisible();
   await adminPage.context().close();
 });

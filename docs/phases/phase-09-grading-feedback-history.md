@@ -14,6 +14,7 @@
 - Add a clear “Reopen grade” workflow with a required reason and immutable history; re-releasing updated grades follows D30.
 - Assignment results dashboard built from `course_enrollments` left-joined to submissions, with search, sort, filter, counts (enrolled, submitted, graded, ungraded, missing) and avatars. On phones the table becomes cards and the grading screen stacks the submission above the grading panel with a sticky Save and Release bar; on tablets and desktops it is two panes.
 - D42 (ADR-010): the grading header shows the learner's branch chip beside their name, photo and ID number; submission review and results lists show it too.
+- Built in Phase 8 to start from: the submission list per assignment (`assignment_submissions()`: every learner, branch, status, latest version, lateness, effective due date, Extension) and the read-only answer view (`submission_review()`: every version with text, recordings and documents) at `/:role/courses/:courseId/assignments/:assignmentId/submissions[/:learnerId]`; the grading panel and the results counts join them here. The grading columns of `submissions` (score, feedback, graded_by, graded_at) exist but no client can read or write them yet: open them here (learners only after release, D16). A REOPENED answer may be sent again before the effective due date (ADR-013).
 
 **Tests required**
 

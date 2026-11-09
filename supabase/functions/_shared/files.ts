@@ -1,9 +1,34 @@
 // File rules for the D18 upload pipeline. Phase 4 accepts profile images, Phase 5 course covers,
-// Phase 6 lesson audio and lesson attachments, Phase 7 assignment instruction audio; later phases add the other resource types here. Limits come from system_settings.file_limits (D17).
+// Phase 6 lesson audio and lesson attachments, Phase 7 assignment instruction audio, Phase 8
+// learners' answer files (and in-app recordings of lesson audio). Limits come from
+// system_settings.file_limits (D17).
 
-export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO';
+export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO' | 'SUBMISSION_FILE';
 
 const IMAGE_TYPES = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
+/** Uploaded audio of any kind (D17); browsers record WebM, Ogg or MP4 (Phase 8). */
+const RECORDING_TYPES = {
+  'audio/mpeg': ['mp3'],
+  'audio/mp4': ['m4a', 'mp4'],
+  'audio/wav': ['wav'],
+  'audio/webm': ['webm', 'weba'],
+  'audio/ogg': ['ogg', 'oga', 'opus'],
+};
+const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const SUBMISSION_DOCUMENT_TYPES = { 'application/pdf': ['pdf'], [DOCX]: ['docx'] };
+
+export type SubmissionRole = 'AUDIO' | 'PDF' | 'DOCX';
+
+/** The kind of answer file a name stands for (from its extension), or null. */
+export function submissionRoleFor(ext: string): SubmissionRole | null {
+  if (Object.values(RECORDING_TYPES).flat().includes(ext)) return 'AUDIO';
+  if (ext === 'pdf') return 'PDF';
+  if (ext === 'docx') return 'DOCX';
+  return null;
+}
+
+/** The limit key for an answer file: audio 25 MB and 10 minutes, PDF and Word 10 MB (D17). */
+export const submissionLimitKey = (role: SubmissionRole) => (role === 'AUDIO' ? 'submission_audio' : 'submission_document');
 
 /** Audio files a lesson may have at once (ADR-007, owner decision 2026-11-07); the database enforces it too. */
 export const MAX_LESSON_AUDIO = 10;
@@ -20,10 +45,18 @@ export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string;
     limitKey: 'course_cover',
     types: IMAGE_TYPES,
   },
+  // Phase 8 (owner decision 5): in-app recordings arrive as WebM or Ogg (Chrome, Android, Firefox)
+  // or MP4 (Safari); the limits stay 100 MB and 90 minutes.
   LESSON_AUDIO: {
     bucket: 'lesson-audio',
     limitKey: 'lesson_audio',
-    types: { 'audio/mpeg': ['mp3'], 'audio/mp4': ['m4a'], 'audio/wav': ['wav'] },
+    types: RECORDING_TYPES,
+  },
+  // Phase 8: a learner's answer file, waiting for their next version until they submit (D10).
+  SUBMISSION_FILE: {
+    bucket: 'learner-submissions',
+    limitKey: 'submission_audio',
+    types: { ...RECORDING_TYPES, ...SUBMISSION_DOCUMENT_TYPES },
   },
   // Phase 7: the lecturer's instruction audio for an assignment (25 MB, 10 minutes, D17).
   ASSIGNMENT_INSTRUCTION_AUDIO: {

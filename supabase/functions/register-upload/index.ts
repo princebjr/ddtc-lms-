@@ -11,16 +11,20 @@
 //                  The database checks both again when the file is attached.
 //   ASSIGNMENT_INSTRUCTION_AUDIO  (Phase 7) the same course rights, for an assignment of that
 //                  course that is not archived; path <course id>/<assignment id>/<file id>.<ext>.
+//   SUBMISSION_FILE  (Phase 8) a learner's answer file: audio, or PDF and Word where the lecturer
+//                  allowed them (ADR-009). submission_prepare_upload checks that the learner may
+//                  send an answer now (D10), the kind and the 5-file limit, and starts the draft
+//                  submission; path <assignment id>/<learner id>/<next version>/<file id>.<ext>.
 // The answer includes the content type the browser must send, chosen from the extension (the
 // buckets accept only those); finalize-upload checks the real bytes.
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { requireCourseEditor } from '../_shared/courses.ts';
-import { contentTypeFor, extensionOf, MAX_LESSON_AUDIO, RESOURCES, safeName } from '../_shared/files.ts';
-import { HttpError, json, readJson, serve } from '../_shared/http.ts';
+import { contentTypeFor, extensionOf, MAX_LESSON_AUDIO, RESOURCES, safeName, submissionLimitKey, submissionRoleFor } from '../_shared/files.ts';
+import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const Body = z.object({
-  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT', 'ASSIGNMENT_INSTRUCTION_AUDIO']),
+  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT', 'ASSIGNMENT_INSTRUCTION_AUDIO', 'SUBMISSION_FILE']),
   courseId: z.uuid().optional(),
   lessonId: z.uuid().optional(),
   assignmentId: z.uuid().optional(),
@@ -36,9 +40,24 @@ serve(async (req) => {
   const b = parsed.data;
   const rule = RESOURCES[b.resourceType];
   const admin = serviceClient();
+  const ext = extensionOf(b.filename);
+  let limitKey = rule.limitKey;
 
   let resourceId = caller.id;
   let folder = caller.id;
+  let version: number | null = null;
+  if (b.resourceType === 'SUBMISSION_FILE') {
+    if (!b.assignmentId) throw new HttpError(400, 'invalid', 'Choose the assignment first');
+    const role = submissionRoleFor(ext);
+    if (!role) throw new HttpError(400, 'wrong_type', 'Use an audio file (MP3, M4A, WAV, WebM or Ogg), a PDF or a Word (.docx) file');
+    const { data, error } = await admin.rpc('submission_prepare_upload', { p_actor: caller.id, p_assignment: b.assignmentId, p_role: role });
+    if (error) throw fromDbError(error);
+    const row = (data as Array<{ submission_id: string; version_number: number }>)[0];
+    resourceId = row.submission_id;
+    version = row.version_number;
+    folder = `${b.assignmentId}/${caller.id}/${version}`;
+    limitKey = submissionLimitKey(role);
+  }
   if (b.resourceType === 'COURSE_COVER') {
     if (!b.courseId) throw new HttpError(400, 'invalid', 'Choose the course first');
     await requireCourseEditor(admin, caller.id, caller.isAdmin, b.courseId);
@@ -85,10 +104,9 @@ serve(async (req) => {
   }
 
   const { data: setting } = await admin.from('system_settings').select('value').eq('key', 'file_limits').single();
-  const maxBytes = Number(setting?.value?.[rule.limitKey]?.max_bytes ?? 0);
+  const maxBytes = Number(setting?.value?.[limitKey]?.max_bytes ?? 0);
   if (!maxBytes || b.size > maxBytes) throw new HttpError(400, 'too_large', `The file is larger than ${Math.round(maxBytes / 1048576)} MB`);
 
-  const ext = extensionOf(b.filename);
   const allowed = Object.values(rule.types).flat();
   if (!allowed.includes(ext)) throw new HttpError(400, 'wrong_type', `Use a ${allowed.map((e) => e.toUpperCase()).join(', ')} file`);
 
@@ -109,6 +127,6 @@ serve(async (req) => {
 
   const { data: signed, error: signError } = await admin.storage.from(rule.bucket).createSignedUploadUrl(path);
   if (signError || !signed) throw new HttpError(500, 'server_error', 'Could not start the upload');
-  return json(req, 200, { fileId, bucket: rule.bucket, path, token: signed.token, contentType: contentTypeFor(b.resourceType, ext) });
+  return json(req, 200, { fileId, bucket: rule.bucket, path, token: signed.token, contentType: contentTypeFor(b.resourceType, ext), version });
 });
 
