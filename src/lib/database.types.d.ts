@@ -231,14 +231,14 @@ isOneToOne: false
                   ]
                 },"file_objects": {
                   Row: {
-                    "bucket_name": string,"checksum": string | null,"created_at": string,"deleted_at": string | null,"detected_mime_type": string | null,"duration_seconds": number | null,"file_size": number | null,"id": string,"original_filename": string,"resource_id": string | null,"resource_type": string,"safe_download_filename": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string,"uploaded_at": string,"uploaded_by": string,"validated_at": string | null,"validation_error": string | null,"waveform_peaks": (number)[] | null
+                    "bucket_name": string,"checksum": string | null,"created_at": string,"delete_attempts": number,"deleted_at": string | null,"detected_mime_type": string | null,"duration_seconds": number | null,"file_size": number | null,"id": string,"last_delete_error": string | null,"original_filename": string,"resource_id": string | null,"resource_type": string,"safe_download_filename": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string,"uploaded_at": string,"uploaded_by": string,"validated_at": string | null,"validation_error": string | null,"waveform_peaks": (number)[] | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "bucket_name": string,"checksum"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"original_filename": string,"resource_id"?: string | null,"resource_type": string,"safe_download_filename": string,"status"?: Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by": string,"validated_at"?: string | null,"validation_error"?: string | null,"waveform_peaks"?: (number)[] | null
+                    "bucket_name": string,"checksum"?: string | null,"created_at"?: string,"delete_attempts"?: number,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"last_delete_error"?: string | null,"original_filename": string,"resource_id"?: string | null,"resource_type": string,"safe_download_filename": string,"status"?: Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by": string,"validated_at"?: string | null,"validation_error"?: string | null,"waveform_peaks"?: (number)[] | null
                   }
                   Update: {
-                    "bucket_name"?: string,"checksum"?: string | null,"created_at"?: string,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"original_filename"?: string,"resource_id"?: string | null,"resource_type"?: string,"safe_download_filename"?: string,"status"?: Database["public"]['Enums']["file_status"],"storage_path"?: string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by"?: string,"validated_at"?: string | null,"validation_error"?: string | null,"waveform_peaks"?: (number)[] | null
+                    "bucket_name"?: string,"checksum"?: string | null,"created_at"?: string,"delete_attempts"?: number,"deleted_at"?: string | null,"detected_mime_type"?: string | null,"duration_seconds"?: number | null,"file_size"?: number | null,"id"?: string,"last_delete_error"?: string | null,"original_filename"?: string,"resource_id"?: string | null,"resource_type"?: string,"safe_download_filename"?: string,"status"?: Database["public"]['Enums']["file_status"],"storage_path"?: string,"updated_at"?: string,"uploaded_at"?: string,"uploaded_by"?: string,"validated_at"?: string | null,"validation_error"?: string | null,"waveform_peaks"?: (number)[] | null
                   }
                   Relationships: [
                     {
@@ -445,14 +445,14 @@ isOneToOne: false
                   ]
                 },"submission_extensions": {
                   Row: {
-                    "assignment_id": string,"created_at": string,"extended_due_at": string,"granted_by": string,"id": string,"learner_id": string,"reason": string | null,"updated_at": string
+                    "assignment_id": string,"created_at": string,"extended_due_at": string,"granted_by": string,"id": string,"learner_id": string,"reason": string | null,"revoked_at": string | null,"revoked_by": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assignment_id": string,"created_at"?: string,"extended_due_at": string,"granted_by": string,"id"?: string,"learner_id": string,"reason"?: string | null,"updated_at"?: string
+                    "assignment_id": string,"created_at"?: string,"extended_due_at": string,"granted_by": string,"id"?: string,"learner_id": string,"reason"?: string | null,"revoked_at"?: string | null,"revoked_by"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "assignment_id"?: string,"created_at"?: string,"extended_due_at"?: string,"granted_by"?: string,"id"?: string,"learner_id"?: string,"reason"?: string | null,"updated_at"?: string
+                    "assignment_id"?: string,"created_at"?: string,"extended_due_at"?: string,"granted_by"?: string,"id"?: string,"learner_id"?: string,"reason"?: string | null,"revoked_at"?: string | null,"revoked_by"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -469,6 +469,90 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "submission_extensions_learner_id_fkey"
+      columns: ["learner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submission_extensions_revoked_by_fkey"
+      columns: ["revoked_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"submission_files": {
+                  Row: {
+                    "created_at": string,"file_object_id": string,"file_role": Database["public"]['Enums']["submission_file_role"],"id": string,"submission_version_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"file_object_id": string,"file_role": Database["public"]['Enums']["submission_file_role"],"id"?: string,"submission_version_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"file_object_id"?: string,"file_role"?: Database["public"]['Enums']["submission_file_role"],"id"?: string,"submission_version_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_files_file_object_id_fkey"
+      columns: ["file_object_id"]
+isOneToOne: true
+      referencedRelation: "file_objects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submission_files_submission_version_id_fkey"
+      columns: ["submission_version_id"]
+isOneToOne: false
+      referencedRelation: "submission_versions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"submission_versions": {
+                  Row: {
+                    "client_request_id": string,"created_at": string,"id": string,"is_late": boolean,"submission_id": string,"submitted_at": string,"text_answer": string,"updated_at": string,"version_number": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "client_request_id": string,"created_at"?: string,"id"?: string,"is_late": boolean,"submission_id": string,"submitted_at"?: string,"text_answer"?: string,"updated_at"?: string,"version_number": number
+                  }
+                  Update: {
+                    "client_request_id"?: string,"created_at"?: string,"id"?: string,"is_late"?: boolean,"submission_id"?: string,"submitted_at"?: string,"text_answer"?: string,"updated_at"?: string,"version_number"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submission_versions_submission_id_fkey"
+      columns: ["submission_id"]
+isOneToOne: false
+      referencedRelation: "submissions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"submissions": {
+                  Row: {
+                    "assignment_id": string,"created_at": string,"current_version": number,"feedback": string | null,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"graded_at": string | null,"graded_by": string | null,"id": string,"is_late": boolean,"learner_id": string,"released_at": string | null,"score": number | null,"status": Database["public"]['Enums']["submission_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignment_id": string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id": string,"released_at"?: string | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "assignment_id"?: string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id"?: string,"released_at"?: string | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "submissions_assignment_id_fkey"
+      columns: ["assignment_id"]
+isOneToOne: false
+      referencedRelation: "assignments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submissions_graded_by_fkey"
+      columns: ["graded_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "submissions_learner_id_fkey"
       columns: ["learner_id"]
 isOneToOne: false
       referencedRelation: "profiles"
@@ -530,8 +614,18 @@ isOneToOne: false
 "assignment_set_publication":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_publish": boolean }; Returns: Json
                            },
+"assignment_submissions":
+{ Args: { "p_assignment": string }; Returns: {
+              "branch_name": string,"current_version": number,"effective_due_at": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"extended_due_at": string,"first_name": string,"id_number": number,"is_late": boolean,"learner_id": string,"profile_image_path": string,"second_name": string,"status": Database["public"]['Enums']["submission_status"],"submission_id": string,"submitted_at": string
+            }[]
+                           },
 "bootstrap_first_admin":
 { Args: { "p_user": string }; Returns: undefined
+                           },
+"cleanup_failures":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "bucket_name": string,"delete_attempts": number,"id": string,"last_delete_error": string,"resource_type": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string
+            }[]
                            },
 "course_cover_paths":
 { Args: { "p_courses": (string)[] }; Returns: {
@@ -618,12 +712,39 @@ isOneToOne: false
 "mark_lesson":
 { Args: { "p_completed": boolean,"p_lesson": string }; Returns: string
                            },
+"my_submission":
+{ Args: { "p_assignment": string }; Returns: Json
+                           },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"submission_draft_file_remove":
+{ Args: { "p_actor": string,"p_file": string }; Returns: {
+              "bucket_name": string,"storage_path": string
+            }[]
+                           },
+"submission_extension_remove":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_learner": string }; Returns: string
+                           },
+"submission_extension_set":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_due": string,"p_learner": string,"p_reason": string,"p_undo"?: boolean }; Returns: string
+                           },
+"submission_prepare_upload":
+{ Args: { "p_actor": string,"p_assignment": string,"p_role": Database["public"]['Enums']["submission_file_role"] }; Returns: {
+              "submission_id": string,"version_number": number
+            }[]
+                           },
+"submission_review":
+{ Args: { "p_assignment": string,"p_learner": string }; Returns: Json
+                           },
+"submission_submit":
+{ Args: { "p_actor": string,"p_assignment": string,"p_files": (string)[],"p_request": string,"p_text": string }; Returns: {
+              "is_late": boolean,"replayed": boolean,"resubmitted": boolean,"submission_id": string,"version_number": number
+            }[]
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","publication_status": "DRAFT"|"PUBLISHED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_release_status": "DRAFT"|"RELEASED","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -739,7 +860,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"publication_status": ["DRAFT", "PUBLISHED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_release_status": ["DRAFT", "RELEASED"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const
