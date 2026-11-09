@@ -101,3 +101,37 @@ audio, attachments or submission files.
   minutes, 5 to 60; the warning `idle_warning_seconds` takes 30 to 180). The database refuses other
   values and audits the change. Everyone's next page load uses the new value.
 
+
+## Written in Phase 8
+
+### Answers, files and the cleanup job (D10, D18, ADR-013)
+
+- A learner's files wait on the server until they press Submit. A file never sent is removed by
+  `cleanup-files` 24 hours after upload; files of submitted answers are never removed (until Phase
+  12 retention, which is off by default).
+- Files that fail to be removed three times or more: SQL editor, as the owner,
+  `select id, bucket_name, storage_path, delete_attempts, last_delete_error from public.file_objects
+  where delete_attempts >= 3 and status <> 'DELETED' order by updated_at desc;` (an administrator
+  with two-step verification gets the same list from `public.cleanup_failures()`). Phase 11 turns
+  this into an administrator alert. A file stuck in `DELETE_FAILED` is retried every hour; if
+  Storage keeps refusing, remove the object in the dashboard (Storage, the bucket, the path) and
+  the next run marks it `DELETED`.
+- A learner's extension cannot be deleted, only taken back (kept with who and when). To see the
+  history of one learner's extensions: `select extended_due_at, reason, granted_by, revoked_at,
+  revoked_by from public.submission_extensions where assignment_id = '<id>' and learner_id = '<id>'
+  order by created_at;` and the audit log rows `extension.granted`, `extension.changed` and
+  `extension.removed`.
+
+### Recording does not start (support)
+
+- The browser must be allowed to use the microphone, and the app must be opened over HTTPS (any
+  staging or production address is).
+- iPhone (Safari): when asked, tap Allow. If it was refused: Settings, Safari, Microphone, Ask or
+  Allow; or in Safari, the "aA" menu, Website Settings, Microphone, Allow. Then reload the page.
+- Android (Chrome): the padlock or settings icon next to the address, Permissions, Microphone,
+  Allow; or Chrome settings, Site settings, Microphone. Then reload the page.
+- Desktop browsers: the icon at the left of the address bar, Microphone, Allow; check the system's
+  microphone settings too.
+- Recording pauses when the learner leaves the app or locks the phone (phones stop the microphone in
+  the background). Long answers: record with the phone's own voice recorder and upload the file
+  (Upload, Upload audio); MP3, M4A, WAV, WebM and Ogg are accepted up to 10 minutes and 25 MB.

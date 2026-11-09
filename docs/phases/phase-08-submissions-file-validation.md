@@ -17,6 +17,8 @@
 - Text, audio, PDF and Word submission; extension management for lecturers.
 - D42 (ADR-010): submission review lists show each learner's branch chip. D43 (ADR-011): a text answer or a recording in progress is kept as a draft (per user, 24 hours) and restored with "Draft restored"; a recording or an upload in progress counts as activity, so nobody is signed out during one.
 
+- Owner decisions approving this plan (2026-11-08), recorded as ADR-013: one answer combines a plain-text answer (at most 20,000 characters) with up to 5 files; D10 read as "after the effective due date only a learner who never submitted may submit, marked late, where late answers are allowed"; files never sent are removed after 24 hours (at once when the learner removes them); lesson audio also accepts WebM and Ogg; extensions are set, changed (with Undo) and taken back from the assignment's submission list, kept when taken back, with the new toast "Extension removed".
+
 **Tests required**
 
 - A renamed .exe sent as .pdf is rejected; oversize and over-duration rejected; late and extension rules behave exactly as D10; resubmission blocked after GRADED; a learner cannot read, write or overwrite another learner's submission or files.

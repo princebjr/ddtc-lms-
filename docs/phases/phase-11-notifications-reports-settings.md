@@ -10,6 +10,8 @@
 
 **Build**
 
+- From Phase 8 (ADR-013): an administrator alert for files that keep failing to be removed (`public.cleanup_failures()`, 3 failures or more; until then the runbook shows the SQL), and notifications for extensions granted, changed and taken back (the audit log already records them).
+
 - Notification centre and preferences; emails through `send-notification-email` for the events in D21. Implement the delivery worker, retry schedule, reminder scheduler and deduplication in D31 and Section 8, using `notification_deliveries`.
 - Administrator dashboard: active learners, lecturers, courses, pending approvals, active enrolments, recent submissions, grading backlog, recent grade releases, and recent administrative/security events.
 - Lecturer dashboard: courses owned/taught, pending approval, ungraded submissions, upcoming deadlines, course performance summaries, and quick gradebook/course creation actions.
