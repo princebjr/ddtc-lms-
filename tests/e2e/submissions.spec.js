@@ -217,38 +217,45 @@ test('after the due date a first answer is refused unless late answers are allow
   await lecturerPage.context().close();
 });
 
-test('an upload interrupted by a dropped connection carries on and says "Upload resumed"', async ({ page }) => {
-  const tag = unique();
-  const lecturer = await createAccount({ role: 'LECTURER', first: 'Ama', second: `Boateng${tag}` });
-  const learner = await createAccount({ first: 'Yaw', second: `Darko${tag}` });
-  const course = await createCourseFixture({ ownerId: lecturer.id, title: `Prayer ${tag}` });
-  await enrolFixture(course.id, learner.id, lecturer.id);
-  const assignment = await createAssignmentFixture({ courseId: course.id, ownerId: lecturer.id, title: 'Voice reflection', dueAt: in7days() });
-  await signIn(page, learner.email, learner.password);
-  await expect(page).toHaveURL(/\/learner\/dashboard$/);
-  // The signal drops as the file's bytes start to go: the device goes offline and that attempt fails.
-  // (Offline, not only a cut request: WebKit can send a cut request again by itself, so the page never
-  // saw the cut and the test failed now and then in CI run 42661619134.) Then the signal comes back.
-  let cut = false;
-  await page.route('**/storage/v1/upload/resumable/**', async (route) => {
-    if (!cut && route.request().method() !== 'OPTIONS') {
-      cut = true;
-      await page.context().setOffline(true);
-      await route.abort('internetdisconnected');
-      return;
-    }
-    await route.continue();
+test.describe('dropped connection', () => {
+  // The test cuts a request with page.route, which never sees requests that go through a service
+  // worker (Playwright's documented limit), and the production build registers the app's service
+  // worker: once it controlled the page in time, the cut never happened (WebKit, CI runs 42661619134
+  // and 42666159566). Blocked here only; nothing else in this spec intercepts requests.
+  test.use({ serviceWorkers: 'block' });
+
+  test('an upload interrupted by a dropped connection carries on and says "Upload resumed"', async ({ page }) => {
+    const tag = unique();
+    const lecturer = await createAccount({ role: 'LECTURER', first: 'Ama', second: `Boateng${tag}` });
+    const learner = await createAccount({ first: 'Yaw', second: `Darko${tag}` });
+    const course = await createCourseFixture({ ownerId: lecturer.id, title: `Prayer ${tag}` });
+    await enrolFixture(course.id, learner.id, lecturer.id);
+    const assignment = await createAssignmentFixture({ courseId: course.id, ownerId: lecturer.id, title: 'Voice reflection', dueAt: in7days() });
+    await signIn(page, learner.email, learner.password);
+    await expect(page).toHaveURL(/\/learner\/dashboard$/);
+    // The signal drops as the file's bytes start to go, as on a phone changing networks: the device
+    // goes offline, that attempt fails, and so does anything sent before the signal comes back.
+    let cut = false;
+    await page.route('**/storage/v1/upload/resumable/**', async (route) => {
+      if (!cut && route.request().method() !== 'OPTIONS') {
+        cut = true;
+        await page.context().setOffline(true);
+        await route.abort('internetdisconnected');
+        return;
+      }
+      await route.continue();
+    });
+    await page.goto(`/learner/courses/${course.id}/assignments/${assignment.id}`);
+    await page.getByRole('tab', { name: 'Upload' }).click();
+    await page.getByTestId('answer-audio-input').setInputFiles({ name: 'reflection.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(mp3({ frames: 300 })) });
+    await expect.poll(() => cut).toBe(true);
+    // The signal stays away for a moment: anything sent meanwhile fails too, so the app sees the drop.
+    await page.waitForTimeout(1500);
+    await page.context().setOffline(false);
+    await expect(toast(page, 'Upload resumed')).toBeVisible();
+    await expect(page.locator('[data-slot="upload-row"][data-status="ready"]').filter({ hasText: 'reflection.mp3' })).toBeVisible();
+    expect(cut).toBe(true);
   });
-  await page.goto(`/learner/courses/${course.id}/assignments/${assignment.id}`);
-  await page.getByRole('tab', { name: 'Upload' }).click();
-  await page.getByTestId('answer-audio-input').setInputFiles({ name: 'reflection.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(mp3({ frames: 300 })) });
-  await expect.poll(() => cut).toBe(true);
-  // The signal stays away for a moment: anything sent meanwhile fails too, so the app sees the drop.
-  await page.waitForTimeout(1500);
-  await page.context().setOffline(false);
-  await expect(toast(page, 'Upload resumed')).toBeVisible();
-  await expect(page.locator('[data-slot="upload-row"][data-status="ready"]').filter({ hasText: 'reflection.mp3' })).toBeVisible();
-  expect(cut).toBe(true);
 });
 
 test("a lecturer records lesson audio in the app and it becomes the lesson's audio (ADR-007)", async ({ page }) => {
