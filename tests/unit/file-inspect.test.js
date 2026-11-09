@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { cleanPeaks, inspectAudio } from '../../supabase/functions/_shared/audio.ts';
 import { inspectDocument } from '../../supabase/functions/_shared/documents.ts';
-import { concat, m4a, mp3, wav, zip } from '../fixtures/media.js';
+import { concat, fmp4, m4a, mp3, ogg, wav, webm, zip } from '../fixtures/media.js';
 
 /** A ranged reader over bytes, as finalize-upload reads Storage. @param {Uint8Array} bytes */
 function reader(bytes) {
@@ -43,6 +43,57 @@ describe('inspectAudio', () => {
     expect(await inspectAudio(reader(zip(['[Content_Types].xml'])))).toBeNull();
     expect(await inspectAudio(reader(Uint8Array.from({ length: 8000 }, (_, i) => (i * 37) % 251)))).toBeNull();
     expect(await inspectAudio(reader(new Uint8Array(4)))).toBeNull();
+  });
+});
+
+// Phase 8: browsers record in WebM (Chrome, Android), Ogg (Firefox) or fragmented MP4 (Safari), and
+// those files rarely state their own length, so the length is worked out from the end of the file.
+describe('inspectAudio: browser recordings (Phase 8)', () => {
+  it('works out a WebM recording\'s length from its last cluster when it has no Duration (Chrome)', async () => {
+    expect(await inspectAudio(reader(webm({ seconds: 754 })))).toEqual({ mime: 'audio/webm', durationSeconds: 754 });
+  });
+
+  it('uses a WebM Duration when there is one', async () => {
+    expect(await inspectAudio(reader(webm({ seconds: 95, withDuration: true })))).toEqual({ mime: 'audio/webm', durationSeconds: 95 });
+  });
+
+  it('is not fooled by a cluster id inside the audio data', async () => {
+    expect(await inspectAudio(reader(webm({ seconds: 754, fakeCluster: true })))).toEqual({ mime: 'audio/webm', durationSeconds: 754 });
+  });
+
+  it('refuses a WebM with a video track, and Matroska that is not WebM', async () => {
+    expect(await inspectAudio(reader(webm({ seconds: 30, video: true })))).toBeNull();
+    expect(await inspectAudio(reader(webm({ seconds: 30, docType: 'matroska' })))).toBeNull();
+  });
+
+  it('reads an Ogg Opus recording\'s length from its last page, less the pre-skip (Firefox)', async () => {
+    expect(await inspectAudio(reader(ogg({ seconds: 754 })))).toEqual({ mime: 'audio/ogg', durationSeconds: 754 });
+  });
+
+  it('reads Ogg Vorbis too, and refuses Ogg with a video stream', async () => {
+    expect(await inspectAudio(reader(ogg({ seconds: 120, codec: 'vorbis' })))).toEqual({ mime: 'audio/ogg', durationSeconds: 120 });
+    expect(await inspectAudio(reader(ogg({ seconds: 30, video: true })))).toBeNull();
+  });
+
+  it('works out a fragmented MP4 recording\'s length from its last fragment (Safari)', async () => {
+    expect(await inspectAudio(reader(fmp4({ seconds: 754 })))).toEqual({ mime: 'audio/mp4', durationSeconds: 754 });
+  });
+
+  it('uses the movie-extends header when a fragmented MP4 has one', async () => {
+    expect(await inspectAudio(reader(fmp4({ seconds: 600, mehd: true })))).toEqual({ mime: 'audio/mp4', durationSeconds: 600 });
+  });
+
+  it('adds up every fragment when they carry no start times, with default sample durations', async () => {
+    const facts = await inspectAudio(reader(fmp4({ seconds: 120, tfdt: false, perSample: false })));
+    expect(facts?.mime).toBe('audio/mp4');
+    // With a default duration every frame is a whole 1024 samples: 60 fragments of 94 frames.
+    expect(facts?.durationSeconds).toBeCloseTo((60 * 94 * 1024) / 48000, 3);
+  });
+
+  it('keeps recordings over the 10-minute answer limit measurable (finalize-upload compares)', async () => {
+    expect((await inspectAudio(reader(webm({ seconds: 601 }))))?.durationSeconds).toBeGreaterThan(600);
+    expect((await inspectAudio(reader(ogg({ seconds: 601 }))))?.durationSeconds).toBeGreaterThan(600);
+    expect((await inspectAudio(reader(fmp4({ seconds: 601 }))))?.durationSeconds).toBeGreaterThan(600);
   });
 });
 
