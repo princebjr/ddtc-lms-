@@ -457,7 +457,7 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer or administrator | Extension granted or changed | "Extension granted" (S) | Undo |
 | Lecturer or administrator | Extension taken back (owner decision 6, 2026-11-08; the record is kept) | "Extension removed" (S) | none |
 | Lecturer | Grade draft saved | "Grade saved as draft" (S) | none |
-| Lecturer | Grades released | "Grades released to N learners" (S) | none |
+| Lecturer | Grades released | "Grades released to N learners" (S); for one, learner | none |
 | Lecturer | Score out of range | "Score must be between 0 and maximum" (E) | none |
 | Lecturer | Submission reopened | "Submission reopened" (S) | none |
 | Lecturer | Gradebook export ready | "Export ready" (S) | Download |
