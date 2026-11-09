@@ -13,7 +13,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(52);
+select plan(54);
 
 -- ---------------------------------------------------------------- people, course, assignment
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
@@ -95,16 +95,18 @@ select is((select reason from public.grade_change_history where submission_id = 
   'Marked the second part again', 'and the reason is kept with the change');
 
 select tests.as_service();
-select throws_ok($$ update public.grade_change_history set reason = 'x' $$, '42501', 'Grade history cannot be changed', 'nobody changes the history, not even the server');
-select throws_ok($$ delete from public.grade_change_history $$, '42501', 'Grade history cannot be changed', 'or deletes it');
+select throws_ok($$ update public.grade_change_history set reason = 'x' $$, '42501', null, 'the server cannot change the history (it may only add to it)');
+select throws_ok($$ delete from public.grade_change_history $$, '42501', null, 'or delete it');
 select tests.reset();
-select throws_ok($$ truncate public.grade_change_history $$, '42501', 'Grade history cannot be changed', 'or empties it');
+select throws_ok($$ update public.grade_change_history set reason = 'x' $$, '42501', 'Grade history cannot be changed', 'and even the database owner is refused by the table itself');
+select throws_ok($$ delete from public.grade_change_history $$, '42501', 'Grade history cannot be changed', 'when deleting');
+select throws_ok($$ truncate public.grade_change_history $$, '42501', 'Grade history cannot be changed', 'or emptying it');
 
 -- ---------------------------------------------------------------- grading columns stay closed to clients
-select tests.authenticate_as(tests.uid('l1'));
+select tests.reset(); select tests.authenticate_as(tests.uid('l1'));
 select throws_ok($$ select score from public.submissions where id = tests.id('s1') $$, '42501', null, 'a learner cannot read the grading columns directly');
 select throws_ok($$ select * from public.grade_change_history $$, '42501', null, 'or the grade history');
-select tests.authenticate_as(tests.uid('t1'));
+select tests.reset(); select tests.authenticate_as(tests.uid('t1'));
 select throws_ok($$ select score, feedback from public.submissions where id = tests.id('s2') $$, '42501', null, 'nor can a lecturer: grades go through the functions');
 select throws_ok($$ insert into public.grade_change_history (submission_id, event, changed_by) values (tests.id('s2'), 'SAVED', tests.uid('t1')) $$, '42501', null,
   'and nobody writes history by hand');
@@ -112,7 +114,7 @@ select throws_ok($$ select public.grade_save(tests.uid('t1'), false, tests.id('a
   'the trusted grading functions are for the server only');
 
 -- ---------------------------------------------------------------- the learner's own grade, released only (D16)
-select tests.authenticate_as(tests.uid('l1'));
+select tests.reset(); select tests.authenticate_as(tests.uid('l1'));
 select is((public.my_grade(tests.id('a1')) ->> 'score')::numeric, 16::numeric, 'a learner sees their released score');
 select is(public.my_grade(tests.id('a1')) ->> 'feedback', 'Good reading of the text.', 'and the released feedback');
 select is((public.my_grade(tests.id('a1')) ->> 'percentage')::numeric, 80::numeric, 'with the percentage from the database');
@@ -120,15 +122,15 @@ select is(public.my_grade(tests.id('a1')) ->> 'letter_grade', 'A', 'the letter g
 select is(public.my_grade(tests.id('a1')) ->> 'band', '80-89%', 'and the band (D15)');
 select is((public.my_grade(tests.id('a1')) ->> 'score')::numeric, 16::numeric,
   'a change waiting to be released does not reach the learner (15 is a draft; owner decision 2)');
-select tests.authenticate_as(tests.uid('l2'));
+select tests.reset(); select tests.authenticate_as(tests.uid('l2'));
 select is(public.my_grade(tests.id('a1')), null, 'a draft grade is invisible to its learner');
-select tests.authenticate_as(tests.uid('l3'));
+select tests.reset(); select tests.authenticate_as(tests.uid('l3'));
 select is(public.my_grade(tests.id('a1')), null, 'and a learner who sent nothing has no grade');
-select tests.authenticate_as(tests.uid('t1'));
+select tests.reset(); select tests.authenticate_as(tests.uid('t1'));
 select is(public.my_grade(tests.id('a1')), null, 'my_grade is only ever the caller''s own grade');
 
 -- ---------------------------------------------------------------- the lecturer's results
-select tests.authenticate_as(tests.uid('t1'));
+select tests.reset(); select tests.authenticate_as(tests.uid('t1'));
 select set_eq($$ select first_name, result, coalesce(score::text, '-') from public.assignment_results(tests.id('a1')) $$,
   $$ values ('Kwame', 'GRADED', '15.00'), ('Abena', 'GRADED', '12.50'), ('Yaw', 'NOT_YET_DUE', '-') $$,
   'the course''s lecturer sees every enrolled learner with their result, those who sent nothing included');
@@ -138,23 +140,23 @@ select is((select public.submission_review(tests.id('a1'), tests.uid('l1')) -> '
   'the answer view shows the released score');
 select is((select public.submission_review(tests.id('a1'), tests.uid('l1')) -> 'grade' ->> 'score')::numeric, 15::numeric, 'beside the changed one');
 select ok((select jsonb_array_length(public.submission_review(tests.id('a1'), tests.uid('l1')) -> 'history') >= 3), 'with the grade history');
-select tests.authenticate_as(tests.uid('t2'));
+select tests.reset(); select tests.authenticate_as(tests.uid('t2'));
 select is((select count(*)::int from public.assignment_results(tests.id('a1'))), 0, 'another course''s lecturer sees no results');
 select is((select count(*)::int from public.assignment_result_counts(tests.id('a1'))), 0, 'and no counts');
-select tests.authenticate_as(tests.uid('l1'));
+select tests.reset(); select tests.authenticate_as(tests.uid('l1'));
 select is((select count(*)::int from public.assignment_results(tests.id('a1'))), 0, 'a learner never sees the class''s results');
 select is(public.submission_review(tests.id('a1'), tests.uid('l2')), null, 'or another learner''s grade');
-select tests.authenticate_as(tests.uid('a1'), 'aal1');
+select tests.reset(); select tests.authenticate_as(tests.uid('a1'), 'aal1');
 select is((select count(*)::int from public.assignment_results(tests.id('a1'))), 0, 'an administrator without two-step verification sees nothing');
-select tests.authenticate_as(tests.uid('a1'), 'aal2');
+select tests.reset(); select tests.authenticate_as(tests.uid('a1'), 'aal2');
 select is((select count(*)::int from public.assignment_results(tests.id('a1'))), 3, 'an AAL2 administrator sees the results');
 
 -- ---------------------------------------------------------------- notifications: the recipient only
-select tests.authenticate_as(tests.uid('l1'));
+select tests.reset(); select tests.authenticate_as(tests.uid('l1'));
 select is((select count(*)::int from public.notifications where id = tests.id('n1')), 1, 'a learner reads their own notification');
 select lives_ok($$ update public.notifications set read_at = now() where id = tests.id('n1') $$, 'and marks it read');
 select throws_ok($$ update public.notifications set title = 'x' where id = tests.id('n1') $$, '42501', null, 'but changes nothing else');
-select tests.authenticate_as(tests.uid('l2'));
+select tests.reset(); select tests.authenticate_as(tests.uid('l2'));
 select is((select count(*)::int from public.notifications where id = tests.id('n1')), 0, 'another learner never sees it');
 
 -- ---------------------------------------------------------------- one helper for percentage, letter grade and band

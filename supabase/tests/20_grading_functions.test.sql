@@ -44,10 +44,11 @@ update public.grade_categories set weight = 90 where course_id = tests.id('c3');
 -- c1 learners: l1 to l6 active, l7 suspended, l8 completed (all counted); l9 withdrawn after sending an
 -- answer and lx withdrawn without one (never counted).
 insert into public.course_enrollments (course_id, learner_id, enrolment_status, enrolled_by)
-select tests.id('c1'), tests.uid(l), 'ACTIVE', tests.uid('a1') from unnest(array['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l9']) l;
+select tests.id('c1'), tests.uid(l), 'ACTIVE', tests.uid('a1') from unnest(array['l1', 'l2', 'l3', 'l4', 'l5', 'l6']) l;
 insert into public.course_enrollments (course_id, learner_id, enrolment_status, enrolled_by) values
   (tests.id('c1'), tests.uid('l7'), 'SUSPENDED', tests.uid('a1')),
   (tests.id('c1'), tests.uid('l8'), 'COMPLETED', tests.uid('a1')),
+  (tests.id('c1'), tests.uid('l9'), 'WITHDRAWN', tests.uid('a1')),
   (tests.id('c1'), tests.uid('lx'), 'WITHDRAWN', tests.uid('a1')),
   (tests.id('c3'), tests.uid('l1'), 'ACTIVE', tests.uid('a1')),
   (tests.id('c9'), tests.uid('l1'), 'ACTIVE', tests.uid('a1'));
