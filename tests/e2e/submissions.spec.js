@@ -226,11 +226,14 @@ test('an upload interrupted by a dropped connection carries on and says "Upload 
   const assignment = await createAssignmentFixture({ courseId: course.id, ownerId: lecturer.id, title: 'Voice reflection', dueAt: in7days() });
   await signIn(page, learner.email, learner.password);
   await expect(page).toHaveURL(/\/learner\/dashboard$/);
-  // The first attempt to send the file's bytes fails as a lost signal would; the upload retries.
+  // The signal drops as the file's bytes start to go: the device goes offline and that attempt fails.
+  // (Offline, not only a cut request: WebKit can send a cut request again by itself, so the page never
+  // saw the cut and the test failed now and then in CI run 42661619134.) Then the signal comes back.
   let cut = false;
   await page.route('**/storage/v1/upload/resumable/**', async (route) => {
     if (!cut && route.request().method() !== 'OPTIONS') {
       cut = true;
+      await page.context().setOffline(true);
       await route.abort('internetdisconnected');
       return;
     }
@@ -239,6 +242,10 @@ test('an upload interrupted by a dropped connection carries on and says "Upload 
   await page.goto(`/learner/courses/${course.id}/assignments/${assignment.id}`);
   await page.getByRole('tab', { name: 'Upload' }).click();
   await page.getByTestId('answer-audio-input').setInputFiles({ name: 'reflection.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(mp3({ frames: 300 })) });
+  await expect.poll(() => cut).toBe(true);
+  // The signal stays away for a moment: anything sent meanwhile fails too, so the app sees the drop.
+  await page.waitForTimeout(1500);
+  await page.context().setOffline(false);
   await expect(toast(page, 'Upload resumed')).toBeVisible();
   await expect(page.locator('[data-slot="upload-row"][data-status="ready"]').filter({ hasText: 'reflection.mp3' })).toBeVisible();
   expect(cut).toBe(true);
