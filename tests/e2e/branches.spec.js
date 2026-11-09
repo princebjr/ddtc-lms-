@@ -3,7 +3,7 @@ import { expectNoAxeViolations, horizontalOverflow, isPhoneProject } from './hel
 import { createAccount, getProfile, setBranch } from './support/accounts.js';
 import { createCourseFixture, enrolFixture } from './support/courses.js';
 import { requireSupabase } from './support/local-supabase.js';
-import { signIn, signInNewAdmin } from './support/ui.js';
+import { searchList, signIn, signInNewAdmin } from './support/ui.js';
 
 // D42 end to end (owner request 2026-11-07): learner branches. A learner chooses their branch on
 // Profile settings (the phone's own picker below 640 px; the drop-down list, by keyboard, from tablet
@@ -163,7 +163,7 @@ test("an administrator sees learners' branches, filters by branch and changes a 
 
   // The user panel: the administrator gives Esi a branch.
   await page.goto('/admin/learners');
-  await page.getByLabel('Search').fill(`Owusu${tag}`);
+  await searchList(page, `Owusu${tag}`);
   await page.getByRole('button', { name: `Manage Esi Owusu${tag}` }).click();
   const panel = page.getByRole('dialog');
   const saveBranch = panel.getByRole('button', { name: 'Save branch' });

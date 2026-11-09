@@ -1,7 +1,7 @@
 import { expect as baseExpect, test } from '@playwright/test';
 import { createAccount, emailLink, getProfile, SEED, SEED_PASSWORD } from './support/accounts.js';
 import { requireSupabase } from './support/local-supabase.js';
-import { signIn, signInNewAdmin } from './support/ui.js';
+import { searchList, signIn, signInNewAdmin } from './support/ui.js';
 
 // Phase 4 end to end: user management, profile photos and D32 absolute session limits.
 // Tests required: a non-administrator cannot change any role at the UI level; avatar upload rejects
@@ -96,7 +96,7 @@ test('administrator: find a learner, suspend with Undo, promote to lecturer, gra
   const learner = await createAccount({ first: 'Yaa', second });
   await signInNewAdmin(page);
   await page.goto('/admin/users');
-  await page.getByLabel('Search').fill(second);
+  await searchList(page, second);
   const manage = page.getByRole('button', { name: `Manage Yaa ${second}` });
   await expect(manage).toBeVisible();
 
@@ -126,7 +126,7 @@ test('administrator: cannot change their own role or status', async ({ page }) =
   const second = `Self${unique()}`;
   await signInNewAdmin(page, { first: 'Grace', second });
   await page.goto('/admin/users');
-  await page.getByLabel('Search').fill(second);
+  await searchList(page, second);
   await page.getByRole('button', { name: `Manage Grace ${second}` }).click();
   await expect(page.getByText('This is your account. Another administrator must change your role or status.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Suspend account' })).toHaveCount(0);

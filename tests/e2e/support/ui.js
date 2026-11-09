@@ -1,7 +1,20 @@
 import { expect } from '@playwright/test';
 import { createAccount, totp } from './accounts.js';
 
-// Sign-in steps shared by the end-to-end specs.
+// Sign-in steps and list searches shared by the end-to-end specs.
+
+/**
+ * Types into a list's search box and waits until the list shows only the matching rows (counted by
+ * their visible "Manage" buttons). The filtered results replace the unfiltered first page, so a
+ * click made before then can land where a row used to be (CI, main run 42437932103).
+ * @param {import('@playwright/test').Page} page
+ * @param {string} text
+ * @param {number} [rows] how many rows match
+ */
+export async function searchList(page, text, rows = 1) {
+  await page.getByLabel('Search').fill(text);
+  await expect(page.getByRole('button', { name: /^Manage / })).toHaveCount(rows);
+}
 
 /** @param {import('@playwright/test').Page} page @param {string} email @param {string} password */
 export async function signIn(page, email, password) {
