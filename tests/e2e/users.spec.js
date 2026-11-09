@@ -115,9 +115,15 @@ test('administrator: find a learner, suspend with Undo, promote to lecturer, gra
   await panel.getByLabel('Role').click();
   await page.getByRole('option', { name: 'Lecturer' }).click();
   await page.getByRole('button', { name: 'Change role' }).click();
-  await expect(page.locator('[data-toast-id]').filter({ hasText: 'Permissions updated' }).first()).toBeVisible();
+  const updated = page.locator('[data-toast-id]').filter({ hasText: 'Permissions updated' }).first();
+  await expect(updated).toBeVisible();
   await expect.poll(async () => (await getProfile(learner.id))?.role).toBe('LECTURER');
 
+  // On a phone the toast can sit over the switch, and a pointer resting on a toast keeps it open
+  // (UI_FEEDBACK: timers pause on hover), so a click there waits for ever (Pixel 7 in CI run
+  // 42661619134). Move away and let it go by itself; closing it would also close the panel.
+  await page.mouse.move(0, 0);
+  await expect(updated).toBeHidden();
   await panel.getByLabel('Can create courses').click();
   await expect.poll(async () => (await getProfile(learner.id))?.can_create_courses).toBe(true);
 });
