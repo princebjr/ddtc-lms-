@@ -44,7 +44,8 @@ async function fakeMicrophone(page) {
     navigator.mediaDevices.getUserMedia = async () => {
       const Context = window.AudioContext ?? /** @type {any} */ (window).webkitAudioContext;
       const context = new Context();
-      await context.resume().catch(() => undefined);
+      // Not awaited: on a machine without a sound device (CI) resuming may never finish; the stream works anyway.
+      void context.resume().catch(() => undefined);
       const tone = context.createOscillator();
       tone.frequency.value = 440;
       const gain = context.createGain();
@@ -90,6 +91,8 @@ test('a learner writes, records and uploads one answer; a renamed file is refuse
     await page.getByRole('button', { name: 'Start recording' }).click();
     await expect(page.getByText('Recording', { exact: true })).toBeVisible();
     await page.waitForTimeout(2500);
+    // The recorder's controls fit the narrowest phone (320 px) with no sideways scrolling.
+    expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
     await page.getByRole('button', { name: 'Stop recording' }).click();
     await page.getByRole('button', { name: 'Use recording' }).click();
     await expect(toast(page, 'Recording saved')).toBeVisible();
@@ -111,7 +114,10 @@ test('a learner writes, records and uploads one answer; a renamed file is refuse
     .setInputFiles({ name: 'sermon.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(concat('%PDF-1.7\n', new Uint8Array(4000))) });
   await expect(files.locator('[data-slot="upload-row"][data-status="rejected"]').filter({ hasText: 'sermon.mp3' })).toBeVisible();
   await expect(toast(page, 'File not accepted: ')).toBeVisible();
-  await page.getByRole('button', { name: 'Remove sermon.mp3' }).click();
+  // On a small phone the row can sit under the sticky Submit bar: bring it to the middle first, as a person would.
+  const remove = page.getByRole('button', { name: 'Remove sermon.mp3' });
+  await remove.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await remove.click();
   await dismissToasts(page);
   await expectNoAxeViolations(page);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);

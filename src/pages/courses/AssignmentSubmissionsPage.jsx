@@ -13,7 +13,7 @@ import { UserAvatar } from '@/components/UserAvatar.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { fetchAssignment } from '@/lib/assignments/assignments.js';
-import { formatDue } from '@/lib/assignments/due.js';
+import { formatDue, formatDueShort } from '@/lib/assignments/due.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 import { fetchAssignmentSubmissions } from '@/lib/submissions/submissions.js';
@@ -54,12 +54,6 @@ export default function AssignmentSubmissionsPage({ role }) {
 
   const columns = [
     { key: 'learner', header: 'Learner', card: /** @type {const} */ ('title'), cell: (/** @type {Row} */ r) => <Person row={r} /> },
-    {
-      key: 'id',
-      header: 'ID number',
-      card: /** @type {const} */ ('secondary'),
-      cell: (/** @type {Row} */ r) => <span className="tabular-nums">{formatIdNumber(r.id_number)}</span>,
-    },
     { key: 'branch', header: 'Branch', card: /** @type {const} */ ('status'), cell: (/** @type {Row} */ r) => <BranchChip name={r.branch_name} /> },
     {
       key: 'status',
@@ -77,26 +71,33 @@ export default function AssignmentSubmissionsPage({ role }) {
       header: 'Latest answer',
       card: /** @type {const} */ ('detail'),
       cell: (/** @type {Row} */ r) =>
-        r.submitted_at ? <span className="tabular-nums">{`Version ${r.current_version}, ${formatDue(r.submitted_at)}`}</span> : '—',
+        r.submitted_at ? (
+          <span className="flex flex-col whitespace-nowrap tabular-nums">
+            <span>Version {r.current_version}</span>
+            <span className="text-ink-secondary">{formatDueShort(r.submitted_at)}</span>
+          </span>
+        ) : (
+          '—'
+        ),
     },
     {
       key: 'due',
       header: 'Due',
       card: /** @type {const} */ ('detail'),
       cell: (/** @type {Row} */ r) => (
-        <span className="tabular-nums">
-          {formatDue(r.effective_due_at)}
-          {r.extended_due_at ? ' (extended)' : ''}
+        <span className="flex flex-col whitespace-nowrap tabular-nums">
+          <span>{formatDueShort(r.effective_due_at)}</span>
+          {r.extended_due_at ? <span className="text-ink-secondary">(extended)</span> : null}
         </span>
       ),
     },
     {
       key: 'actions',
       header: 'Actions',
-      card: /** @type {const} */ ('detail'),
+      card: /** @type {const} */ ('actions'),
       align: /** @type {const} */ ('end'),
       cell: (/** @type {Row} */ r) => (
-        <span className="flex flex-wrap justify-end gap-2">
+        <span className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
           {r.status ? (
             <Button asChild variant="outline">
               <Link
@@ -164,8 +165,11 @@ function Person({ row }) {
   return (
     <span className="flex min-w-0 items-center gap-3">
       <UserAvatar firstName={row.first_name} secondName={row.second_name} imageUrl={imageUrl} size={40} decorative />
-      <span className="truncate text-label text-ink">
-        {row.first_name} {row.second_name}
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate text-label text-ink">
+          {row.first_name} {row.second_name}
+        </span>
+        <span className="text-caption text-ink-secondary tabular-nums">ID {formatIdNumber(row.id_number)}</span>
       </span>
     </span>
   );

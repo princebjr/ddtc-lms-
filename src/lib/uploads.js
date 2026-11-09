@@ -165,6 +165,11 @@ async function resumable(
       },
       onSuccess: () => {
         window.removeEventListener('online', onOnline);
+        // Some browsers send no progress for a small file: an interrupted upload that finished has resumed.
+        if (interrupted) {
+          interrupted = false;
+          onResumed?.();
+        }
         resolve(undefined);
       },
       onError: () => {

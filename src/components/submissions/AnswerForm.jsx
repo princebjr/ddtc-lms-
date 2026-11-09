@@ -15,6 +15,7 @@ import { extensionForMime, LEARNER_RECORDING } from '@/lib/recording/format.js';
 import { clearRecordingDraft, loadRecordingDraft } from '@/lib/recording/recording-drafts.js';
 import { MAX_TEXT_ANSWER, removeDraftFile, submitAnswer } from '@/lib/submissions/submissions.js';
 import { uploadFile } from '@/lib/uploads.js';
+import { cn } from '@/lib/utils.js';
 import { UploadRow } from './UploadRow.jsx';
 
 // The learner's answer (Phase 8; prototype `nsub`; D10, ADR-009, owner decisions 1, 2 and 4; D43).
@@ -72,6 +73,8 @@ export function AnswerForm({ assignmentId, title, mine, onSent }) {
   const [parts, setParts] = useState(() => mine.draft_files.map(fromServer));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
+  // While recording or reviewing a recording, the Submit bar stays in place instead of floating over the recorder.
+  const [recorderActive, setRecorderActive] = useState(false);
   const [restored, setRestored] = useState(/** @type {import('@/hooks/use-recorder.js').Recording | null} */ (null));
   const controllers = useRef(/** @type {Map<string, AbortController>} */ (new Map()));
   const sources = useRef(/** @type {Map<string, { file: File, peaks: number[] | null }>} */ (new Map()));
@@ -320,6 +323,7 @@ export function AnswerForm({ assignmentId, title, mine, onSent }) {
             </p>
           ) : (
             <Recorder
+              onActiveChange={setRecorderActive}
               limits={LEARNER_RECORDING}
               audience="learner"
               draft={recordingDraft}
@@ -377,7 +381,12 @@ export function AnswerForm({ assignmentId, title, mine, onSent }) {
       ) : null}
 
       <FormMessage>{message}</FormMessage>
-      <div className="sticky bottom-above-nav z-20 flex flex-col gap-2 rounded-lg border border-hairline bg-pill p-3 blur-material sm:flex-row sm:items-center sm:justify-between lg:bottom-4">
+      <div
+        className={cn(
+          recorderActive && mode === 'record' ? 'relative' : 'sticky bottom-above-nav lg:bottom-4',
+          'z-20 flex flex-col gap-2 rounded-lg border border-hairline bg-pill p-3 blur-material sm:flex-row sm:items-center sm:justify-between',
+        )}
+      >
         <p className="m-0 text-body-sm text-ink-secondary">
           {[text.trim() ? 'Text' : null, ready.length ? `${ready.length} file${ready.length === 1 ? '' : 's'}` : null].filter(Boolean).join(' and ') ||
             'Nothing added yet'}

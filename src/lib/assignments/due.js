@@ -12,6 +12,13 @@ export function formatDue(iso) {
   return dateTime.format(new Date(iso));
 }
 
+const shortDateTime = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+/** "20 Nov, 23:59" (Ghana time), for lists. @param {string} iso */
+export function formatDueShort(iso) {
+  return shortDateTime.format(new Date(iso));
+}
+
 /** Whole Ghana calendar days from one moment to another. @param {Date} from @param {Date} to */
 function calendarDays(from, to) {
   return Math.round((Date.parse(dayKey.format(to)) - Date.parse(dayKey.format(from))) / 86_400_000);

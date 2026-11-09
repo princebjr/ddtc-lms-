@@ -10,8 +10,9 @@ import { cn } from '@/lib/utils.js';
  * @property {string} key
  * @property {string} header
  * @property {(row: Row) => import('react').ReactNode} cell
- * @property {'leading' | 'title' | 'secondary' | 'status' | 'value' | 'detail' | 'hidden'} [card]
- *   how the column appears in the phone card; 'detail' columns show as label and value rows
+ * @property {'leading' | 'title' | 'secondary' | 'status' | 'value' | 'detail' | 'actions' | 'hidden'} [card]
+ *   how the column appears in the phone card; 'detail' columns show as label and value rows;
+ *   'actions' show as a row of buttons at the bottom of the card, without a label
  * @property {'start' | 'end'} [align]
  */
 
@@ -29,6 +30,7 @@ export function ResponsiveTable({ caption, columns, rows, getRowKey, empty, clas
   const status = byRole('status');
   const value = byRole('value');
   const details = byRole('detail');
+  const actions = byRole('actions');
 
   return (
     <div data-slot="responsive-table" className={className}>
@@ -61,6 +63,15 @@ export function ResponsiveTable({ caption, columns, rows, getRowKey, empty, clas
                   </div>
                 ))}
               </dl>
+            ) : null}
+            {actions.length ? (
+              <div className="flex flex-wrap gap-2">
+                {actions.map((c) => (
+                  <span key={c.key} className="contents">
+                    {c.cell(row)}
+                  </span>
+                ))}
+              </div>
             ) : null}
           </li>
         ))}

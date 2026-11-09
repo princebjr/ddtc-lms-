@@ -1,5 +1,5 @@
 import { Check, Mic, MicOff, Pause, Play, RotateCcw, Square, Trash2, Upload } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AudioPlayer } from '@/components/audio/AudioPlayer.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { Button } from '@/components/ui/button.jsx';
@@ -41,9 +41,10 @@ const TOASTS = /** @type {const} */ ({
  *   restored?: Recording | null,
  *   disabled?: boolean,
  *   title?: string,
+ *   onActiveChange?: (active: boolean) => void,
  * }} props
  */
-export function Recorder({ limits, audience, onUse, onUploadInstead, draft = null, restored = null, disabled = false, title = 'Recording' }) {
+export function Recorder({ limits, audience, onUse, onUploadInstead, draft = null, restored = null, disabled = false, title = 'Recording', onActiveChange }) {
   const toast = useToast();
   const r = useRecorder({
     maxSeconds: limits.maxSeconds,
@@ -54,6 +55,23 @@ export function Recorder({ limits, audience, onUse, onUploadInstead, draft = nul
   const minutes = Math.round(limits.maxSeconds / 60);
   const megabytes = Math.round(limits.maxBytes / 1048576);
   const { restore, state } = r;
+  const root = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const previous = useRef(state);
+  const active = state === 'recording' || state === 'paused' || state === 'stopped';
+
+  // While the recorder is in use the parent keeps its sticky bar out of the way (it would cover Stop).
+  useEffect(() => {
+    onActiveChange?.(active);
+  }, [active, onActiveChange]);
+
+  // When recording starts, the recorder comes to the middle of the screen.
+  useEffect(() => {
+    if (state === 'recording' && previous.current === 'starting') {
+      const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      root.current?.scrollIntoView?.({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+    }
+    previous.current = state;
+  }, [state]);
 
   // A recording kept on this device (D43) comes back for review.
   useEffect(() => {
@@ -74,7 +92,7 @@ export function Recorder({ limits, audience, onUse, onUploadInstead, draft = nul
           ? 'This browser or device cannot record here. Use your phone’s own recorder and upload the file instead.'
           : 'The recording could not start. Try again, or upload a recording instead.';
     return (
-      <div data-slot="recorder" data-state={state} className="flex flex-col items-start gap-3 rounded-md bg-fill p-4" role="status">
+      <div ref={root} data-slot="recorder" data-state={state} className="flex flex-col items-start gap-3 rounded-md bg-fill p-4" role="status">
         <p className="m-0 flex items-start gap-2 text-body text-ink">
           <MicOff className="mt-0.5 size-5 shrink-0 text-ink-secondary" aria-hidden="true" />
           {text}
@@ -98,22 +116,24 @@ export function Recorder({ limits, audience, onUse, onUploadInstead, draft = nul
 
   if (state === 'stopped' && r.recording) {
     return (
-      <Review
-        recording={r.recording}
-        title={title}
-        disabled={disabled}
-        onRerecord={() => {
-          r.discard();
-          toast.show(ids.discarded);
-        }}
-        onUse={(peaks) => {
-          const rec = /** @type {Recording} */ (r.recording);
-          const file = new File([rec.blob], recordingFileName(new Date(), rec.extension), { type: rec.mimeType.split(';')[0] });
-          toast.show(ids.saved);
-          onUse(file, { seconds: rec.seconds, peaks });
-          r.discard();
-        }}
-      />
+      <div ref={root}>
+        <Review
+          recording={r.recording}
+          title={title}
+          disabled={disabled}
+          onRerecord={() => {
+            r.discard();
+            toast.show(ids.discarded);
+          }}
+          onUse={(peaks) => {
+            const rec = /** @type {Recording} */ (r.recording);
+            const file = new File([rec.blob], recordingFileName(new Date(), rec.extension), { type: rec.mimeType.split(';')[0] });
+            toast.show(ids.saved);
+            onUse(file, { seconds: rec.seconds, peaks });
+            r.discard();
+          }}
+        />
+      </div>
     );
   }
 
@@ -121,7 +141,7 @@ export function Recorder({ limits, audience, onUse, onUploadInstead, draft = nul
     const left = Math.max(0, limits.maxSeconds - r.seconds);
     const paused = state === 'paused';
     return (
-      <div data-slot="recorder" data-state={state} className="flex flex-col gap-4 rounded-md border border-hairline bg-card p-4">
+      <div ref={root} data-slot="recorder" data-state={state} className="flex flex-col gap-4 rounded-md border border-hairline bg-card p-4">
         <LiveWaveform levels={r.levels} paused={paused} />
         <div className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 text-label text-ink">
@@ -161,28 +181,29 @@ export function Recorder({ limits, audience, onUse, onUploadInstead, draft = nul
             Recording paused because you left the app. Tap Resume to carry on.
           </p>
         ) : null}
-        <div className="flex items-center justify-center gap-4">
-          <Button type="button" variant="ghost" onClick={r.discard} aria-label="Discard recording">
+        <div className="flex items-center justify-center gap-2 sm:gap-4">
+          {/* On phones Discard and Pause show their icon only (44 px targets; the words stay for screen readers). */}
+          <Button type="button" variant="ghost" onClick={r.discard} aria-label="Discard recording" className="max-sm:w-11 max-sm:px-0">
             <Trash2 aria-hidden="true" />
-            Discard
+            <span className="max-sm:sr-only">Discard</span>
           </Button>
           <button
             type="button"
             onClick={r.stop}
             aria-label="Stop recording"
-            className="inline-flex size-18 items-center justify-center rounded-full bg-error text-on-error transition-transform duration-fast active:scale-95 focus-visible:focus-ring"
+            className="inline-flex size-18 shrink-0 items-center justify-center rounded-full bg-error text-on-error transition-transform duration-fast active:scale-95 focus-visible:focus-ring"
           >
             <Square className="size-7 fill-current" aria-hidden="true" />
           </button>
           {paused ? (
-            <Button type="button" variant="secondary" onClick={r.resume}>
+            <Button type="button" variant="secondary" onClick={r.resume} className="max-sm:w-11 max-sm:px-0">
               <Play aria-hidden="true" />
-              Resume
+              <span className="max-sm:sr-only">Resume</span>
             </Button>
           ) : (
-            <Button type="button" variant="secondary" onClick={r.pause}>
+            <Button type="button" variant="secondary" onClick={r.pause} className="max-sm:w-11 max-sm:px-0">
               <Pause aria-hidden="true" />
-              Pause
+              <span className="max-sm:sr-only">Pause</span>
             </Button>
           )}
         </div>
@@ -191,7 +212,12 @@ export function Recorder({ limits, audience, onUse, onUploadInstead, draft = nul
   }
 
   return (
-    <div data-slot="recorder" data-state={state} className="flex flex-col items-center gap-3 rounded-md border border-hairline bg-card p-4 text-center">
+    <div
+      ref={root}
+      data-slot="recorder"
+      data-state={state}
+      className="flex flex-col items-center gap-3 rounded-md border border-hairline bg-card p-4 text-center"
+    >
       <button
         type="button"
         onClick={() => void r.start()}
