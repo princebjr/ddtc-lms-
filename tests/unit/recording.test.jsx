@@ -96,8 +96,9 @@ describe('recording drafts (D43)', () => {
     await startRecordingDraft('u1', 'answer:a1', 'audio/webm');
     await appendRecordingChunk('u1', 'answer:a1', new Blob(['abc']), 1);
     stopDrafts('u1');
-    await new Promise((r) => setTimeout(r, 20));
-    expect(await loadRecordingDraft('u1', 'answer:a1')).toBeNull();
+    // Sign-out starts the deletion without waiting for it: wait for the outcome, not a fixed time
+    // (a fixed 20 ms was not always enough on a busy machine).
+    await vi.waitFor(async () => expect(await loadRecordingDraft('u1', 'answer:a1')).toBeNull());
     await startRecordingDraft('u1', 'answer:a1', 'audio/webm');
     await appendRecordingChunk('u1', 'answer:a1', new Blob(['late']), 1);
     expect(await loadRecordingDraft('u1', 'answer:a1')).toBeNull();
