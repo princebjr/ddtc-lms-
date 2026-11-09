@@ -54,6 +54,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # Supabase's local ports (54320 to 54329, supabase/config.toml) lie inside Linux's range for
+      # outgoing connections, so a busy runner could already hold one when Supabase starts ("address
+      # already in use": three jobs on 2026-11-09, none of their tests run). Reserve them first.
+      - name: Keep Supabase's local ports for Supabase
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54330
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -79,6 +84,9 @@ jobs:
         # 8 shards (owner request 2026-11-06: CI was too slow): about 8 minutes of tests each instead of 16.
         shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
+      # As in the database job: Supabase's local ports stay free for Supabase.
+      - name: Keep Supabase's local ports for Supabase
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54320-54330
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
