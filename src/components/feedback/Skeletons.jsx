@@ -235,3 +235,53 @@ export function LessonPageSkeleton() {
     </div>
   );
 }
+
+/** Grading screen (UI_FEEDBACK.md): the learner header, the submission area block and a grading panel with field blocks; two panes from tablet width. */
+export function GradingSkeleton() {
+  return (
+    <div data-skeleton="grading" className="flex flex-col gap-6">
+      <Skeleton className="h-3 w-40" />
+      <div className="flex items-center gap-4 rounded-lg border border-hairline bg-card p-4">
+        <Skeleton shape="circle" className="size-14" />
+        <div className="flex flex-1 flex-col gap-2">
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-6 md:grid md:grid-cols-grading md:items-start">
+        <div className="flex flex-col gap-3 rounded-lg border border-hairline bg-card p-4">
+          {['w-full', 'w-11/12', 'w-full', 'w-4/5', 'w-2/3'].map((w, i) => (
+            <Skeleton key={i} className={w} />
+          ))}
+          <Skeleton shape="card" className="h-16 w-full" />
+        </div>
+        <div className="flex flex-col gap-4 rounded-lg border border-hairline bg-card p-4">
+          <Skeleton className="h-5 w-20" />
+          <Skeleton shape="field" className="w-full" />
+          <Skeleton shape="card" className="h-36 w-full" />
+          <div className="flex gap-2 self-end">
+            <Skeleton shape="button" className="w-28" />
+            <Skeleton shape="button" className="w-32" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Assignment results (UI_FEEDBACK.md results table): the count tiles, the search and filters, and the rows. */
+export function ResultsSkeleton() {
+  return (
+    <div data-skeleton="results" className="flex flex-col gap-4">
+      <Skeleton className="h-3 w-40" />
+      <Skeleton className="h-8 w-2/3" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {Array.from({ length: 6 }, (_, i) => (
+          <Skeleton key={i} shape="card" className="h-24 w-full" />
+        ))}
+      </div>
+      <Skeleton shape="field" className="w-full sm:w-80" />
+      <ListSkeleton rows={6} columns={4} />
+    </div>
+  );
+}

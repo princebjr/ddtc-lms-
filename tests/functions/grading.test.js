@@ -24,9 +24,12 @@ let courseId = '';
 let assignmentId = '';
 
 const in7days = () => new Date(Date.now() + 7 * 86400000).toISOString();
+/** @param {{ token: string }} user @param {string} id @param {string} [text] */
 const send = (user, id, text = 'Genesis 1 shows a God who creates with purpose.') =>
   call('submit-assignment', user.token, { action: 'submit', assignmentId: id, text, fileIds: [], requestId: randomUUID() });
+/** @param {{ token: string }} user @param {Record<string, unknown>} body */
 const save = (user, body) => call('grade-submission', user.token, { action: 'save', assignmentId, ...body });
+/** @param {string} id */
 const fileRow = async (id) => (await serviceGet(`file_objects?select=status&id=eq.${id}`))[0];
 
 beforeAll(async () => {

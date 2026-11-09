@@ -144,6 +144,9 @@ export async function fetchAssignmentSubmissions(assignmentId) {
  * @property {'SUBMITTED' | 'GRADED' | 'REOPENED' | null} status
  * @property {number} current_version
  * @property {boolean} is_late
+ * @property {number} max_marks
+ * @property {import('@/components/grading/GradingPanel.jsx').GradeInfo | null} grade  the grade being worked on and what the learner sees (Phase 9)
+ * @property {import('@/components/grading/GradeHistory.jsx').HistoryEntry[]} history  newest first (Phase 9)
  * @property {AnswerVersion[]} versions
  */
 

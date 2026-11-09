@@ -2,6 +2,7 @@ import { FileUp, ShieldPlus, SlidersHorizontal, UserPlus, UserRoundPlus } from '
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { BranchChip } from '@/components/branches/BranchChip.jsx';
+import { FilterSelect } from '@/components/data/FilterSelect.jsx';
 import { BranchFilter } from '@/components/branches/BranchFilter.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
 import { SpeedDial } from '@/components/feedback/Fab.jsx';
@@ -12,7 +13,6 @@ import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx';
 import { Sheet, SheetContent } from '@/components/ui/sheet.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { Switch } from '@/components/ui/switch.jsx';
@@ -311,31 +311,6 @@ function Filters({ view, search, onSearch, role, onRole, status, onStatus, branc
           </Sheet>
         </>
       )}
-    </div>
-  );
-}
-
-/**
- * @param {{ label: string, value: string, onChange: (v: string) => void, options: Array<[string, string]> }} props
- * Radix Select cannot hold an empty value, so "" is stored as "any".
- */
-function FilterSelect({ label, value, onChange, options }) {
-  const id = `filter-${label.toLowerCase()}`;
-  return (
-    <div className="flex flex-col gap-2 sm:w-44">
-      <Label htmlFor={id}>{label}</Label>
-      <Select value={value || 'any'} onValueChange={(v) => onChange(v === 'any' ? '' : v)}>
-        <SelectTrigger id={id} aria-label={label}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map(([v, text]) => (
-            <SelectItem key={v || 'any'} value={v || 'any'}>
-              {text}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
     </div>
   );
 }

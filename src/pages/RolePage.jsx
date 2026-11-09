@@ -4,6 +4,7 @@ import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { IdleSessionProvider } from '@/components/auth/IdleSessionProvider.jsx';
 import { SessionWatcher } from '@/components/auth/SessionWatcher.jsx';
 import { DashboardSkeleton } from '@/components/feedback/Skeletons.jsx';
+import { GradeNotices } from '@/components/grading/GradeNotices.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { AppShell } from '@/components/layout/AppShell.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
@@ -76,6 +77,7 @@ export function RoleShell({ role, slug, children }) {
     >
       <SessionWatcher />
       <IdleSessionProvider />
+      {role === 'learner' ? <GradeNotices /> : null}
       <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
     </AppShell>
   );

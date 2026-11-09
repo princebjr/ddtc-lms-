@@ -1,7 +1,9 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { BranchChip } from '@/components/branches/BranchChip.jsx';
-import { LessonPageSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
+import { GradeHistory } from '@/components/grading/GradeHistory.jsx';
+import { GradingPanel } from '@/components/grading/GradingPanel.jsx';
+import { GradingSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { VersionList } from '@/components/submissions/VersionList.jsx';
 import { Card } from '@/components/ui/card.jsx';
@@ -11,20 +13,23 @@ import { useLoad } from '@/hooks/use-load.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { fetchAssignment } from '@/lib/assignments/assignments.js';
 import { formatDue } from '@/lib/assignments/due.js';
+import { fetchCourse } from '@/lib/courses/courses.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 import { fetchSubmissionReview } from '@/lib/submissions/submissions.js';
 
-// One learner's answer, read-only, for the course's lecturers and administrators (Phase 8; D10, D42):
-// the learner with their ID number and branch, the due date and any extension, and every version
-// sent (the latest is the one graded; older ones are kept). Phase 9 adds the grading panel here.
+// Grading one learner's answer (Phase 8 answer view, grading added in Phase 9; DESIGN.md 13 grading
+// screen; D10, D16, D30, D42). The header shows the learner's photo, name, ID number and branch chip;
+// below, on phones the answer comes first and the grading panel after it with a sticky Save draft and
+// Release grade bar; from tablet width the answer and the grading panel sit side by side and the panel
+// stays in view. The grade history sits under the panel. An archived course is read-only.
 
 /** @param {{ role: 'admin' | 'lecturer' }} props */
 export default function SubmissionViewPage({ role }) {
   const { courseId = '', assignmentId = '', learnerId = '' } = useParams();
   const page = useLoad(async () => {
-    const [assignment, review] = await Promise.all([fetchAssignment(assignmentId), fetchSubmissionReview(assignmentId, learnerId)]);
-    return { assignment, review };
-  }, [assignmentId, learnerId]);
+    const [course, assignment, review] = await Promise.all([fetchCourse(courseId), fetchAssignment(assignmentId), fetchSubmissionReview(assignmentId, learnerId)]);
+    return { course, assignment, review };
+  }, [courseId, assignmentId, learnerId]);
 
   if (page.state === 'error') return <ErrorState title="The answer could not be loaded" onRetry={page.reload} />;
   const d = page.data;
@@ -33,9 +38,11 @@ export default function SubmissionViewPage({ role }) {
   }
   const r = d?.review;
   const a = d?.assignment;
+  const readOnly = d?.course?.status === 'ARCHIVED';
+  const name = r ? `${r.learner.first_name} ${r.learner.second_name}` : '';
 
   return (
-    <LoadingRegion loading={page.state === 'loading'} skeleton={<LessonPageSkeleton />} onRetry={page.reload}>
+    <LoadingRegion loading={page.state === 'loading'} skeleton={<GradingSkeleton />} onRetry={page.reload}>
       {r && a ? (
         <article className="flex flex-col gap-6" aria-labelledby="answer-learner">
           <Link
@@ -50,7 +57,7 @@ export default function SubmissionViewPage({ role }) {
               <Avatar learner={r.learner} />
               <div className="flex min-w-0 flex-col gap-1">
                 <h1 id="answer-learner" className="m-0 text-title-2 break-words text-ink">
-                  {r.learner.first_name} {r.learner.second_name}
+                  {name}
                 </h1>
                 <span className="text-body-sm text-ink-secondary tabular-nums">ID number {formatIdNumber(r.learner.id_number)}</span>
               </div>
@@ -80,11 +87,28 @@ export default function SubmissionViewPage({ role }) {
               ) : null}
             </dl>
           </Card>
-          {r.versions.length ? (
-            <VersionList versions={r.versions} title={`${r.learner.first_name} ${r.learner.second_name}: ${a.title}`} heading="Answers" latestLabel="Latest" />
-          ) : (
-            <EmptyState title="No answer yet" description="This learner has not submitted an answer." />
-          )}
+          <div className="flex flex-col gap-6 md:grid md:grid-cols-grading md:items-start">
+            <div className="min-w-0">
+              {r.versions.length ? (
+                <VersionList versions={r.versions} title={`${name}: ${a.title}`} heading="Answers" latestLabel="Latest" />
+              ) : (
+                <EmptyState title="No answer yet" description="This learner has not submitted an answer." />
+              )}
+            </div>
+            <div className="flex min-w-0 flex-col gap-4 md:sticky md:top-20">
+              <GradingPanel
+                // A fresh form whenever the saved grade changes (after Save, Release or Reopen).
+                key={`${r.status}-${r.grade?.graded_at ?? ''}-${r.grade?.released_at ?? ''}`}
+                assignmentId={assignmentId}
+                learnerId={learnerId}
+                learnerName={name}
+                review={r}
+                readOnly={readOnly}
+                onChanged={page.reload}
+              />
+              <GradeHistory entries={r.history ?? []} maxMarks={r.max_marks} />
+            </div>
+          </div>
         </article>
       ) : null}
     </LoadingRegion>
