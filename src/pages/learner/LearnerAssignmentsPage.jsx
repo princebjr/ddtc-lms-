@@ -9,24 +9,28 @@ import { useLoad } from '@/hooks/use-load.js';
 import { CONTENT_TYPE_LABEL, fetchMyAssignments } from '@/lib/assignments/assignments.js';
 import { dueStatus } from '@/lib/assignments/due.js';
 
-// The learner's Assignments (prototype `nasg`; Phase 7): published assignments of the courses they
-// are enrolled in, To do (still open, soonest first) and Past due, each with its course, how the
-// instructions are given, and a due-date chip in Ghana time that uses their own extension (D13).
-// Submitting arrives in Phase 8, with Submitted and Graded.
+// The learner's Assignments (prototype `nasg`; Phases 7 and 8): published assignments of the courses
+// they are enrolled in, To do (not answered and still open, soonest first), Submitted (answered,
+// awaiting a grade; Graded arrives in Phase 9) and Past due (not answered, closed), each with its
+// course, how the instructions are given, and a chip: the due date in Ghana time with their own
+// extension (D13), or the answer's version and lateness.
 
 const SEGMENTS = /** @type {const} */ ([
   { key: 'todo', label: 'To do' },
+  { key: 'sent', label: 'Submitted' },
   { key: 'past', label: 'Past due' },
 ]);
 
 export default function LearnerAssignmentsPage() {
   const list = useLoad(fetchMyAssignments, []);
-  const [segment, setSegment] = useState(/** @type {'todo' | 'past'} */ ('todo'));
+  const [segment, setSegment] = useState(/** @type {'todo' | 'sent' | 'past'} */ ('todo'));
   const now = new Date();
   const rows = (list.data ?? []).map((a) => ({ ...a, due: dueStatus({ dueAt: a.due_at, allowLate: a.allow_late, extendedTo: a.extended_to }, now) }));
-  const open = rows.filter((a) => !a.due.overdue || a.allow_late).sort((x, y) => Date.parse(x.due.effective) - Date.parse(y.due.effective));
-  const past = rows.filter((a) => a.due.overdue && !a.allow_late).sort((x, y) => Date.parse(y.due.effective) - Date.parse(x.due.effective));
-  const shown = segment === 'todo' ? open : past;
+  const open = rows.filter((a) => !a.submission && (!a.due.overdue || a.allow_late)).sort((x, y) => Date.parse(x.due.effective) - Date.parse(y.due.effective));
+  const sent = rows.filter((a) => a.submission).sort((x, y) => Date.parse(y.due.effective) - Date.parse(x.due.effective));
+  const past = rows.filter((a) => !a.submission && a.due.overdue && !a.allow_late).sort((x, y) => Date.parse(y.due.effective) - Date.parse(x.due.effective));
+  const lists = { todo: open, sent, past };
+  const shown = lists[segment];
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,7 +49,7 @@ export default function LearnerAssignmentsPage() {
                 : 'min-h-11 rounded-full px-4 text-label text-ink-secondary hover:text-ink focus-visible:focus-ring'
             }
           >
-            {s.label} {list.state === 'ready' ? `(${s.key === 'todo' ? open.length : past.length})` : ''}
+            {s.label} {list.state === 'ready' ? `(${lists[s.key].length})` : ''}
           </button>
         ))}
       </div>
@@ -54,7 +58,10 @@ export default function LearnerAssignmentsPage() {
       ) : (
         <LoadingRegion loading={list.state === 'loading'} skeleton={<ListSkeleton rows={4} columns={2} />} onRetry={list.reload}>
           {shown.length ? (
-            <ul className="m-0 flex list-none flex-col divide-y divide-hairline rounded-md border border-hairline bg-card p-0" aria-label={segment === 'todo' ? 'Assignments to do' : 'Assignments past their due date'}>
+            <ul
+              className="m-0 flex list-none flex-col divide-y divide-hairline rounded-md border border-hairline bg-card p-0"
+              aria-label={segment === 'todo' ? 'Assignments to do' : segment === 'sent' ? 'Assignments submitted' : 'Assignments past their due date'}
+            >
               {shown.map((a) => (
                 <li key={a.id}>
                   <Link
@@ -67,8 +74,15 @@ export default function LearnerAssignmentsPage() {
                         {a.course?.title ?? ''} · {CONTENT_TYPE_LABEL[a.content_type]} instructions
                       </span>
                     </span>
-                    <span className="shrink-0">
-                      <StatusChip tone={a.due.tone}>{a.due.label}</StatusChip>
+                    <span className="flex shrink-0 flex-wrap gap-2">
+                      {a.submission ? (
+                        <>
+                          <StatusChip tone="info">{`Awaiting grade · version ${a.submission.current_version}`}</StatusChip>
+                          {a.submission.is_late ? <StatusChip tone="warning">Late</StatusChip> : null}
+                        </>
+                      ) : (
+                        <StatusChip tone={a.due.tone}>{a.due.label}</StatusChip>
+                      )}
                     </span>
                   </Link>
                 </li>
@@ -77,8 +91,14 @@ export default function LearnerAssignmentsPage() {
           ) : (
             <EmptyState
               icon={ClipboardList}
-              title={segment === 'todo' ? 'Nothing to do right now' : 'Nothing past due'}
-              description={segment === 'todo' ? 'New assignments from your lecturers appear here.' : undefined}
+              title={segment === 'todo' ? 'Nothing to do right now' : segment === 'sent' ? 'Nothing submitted yet' : 'Nothing past due'}
+              description={
+                segment === 'todo'
+                  ? 'New assignments from your lecturers appear here.'
+                  : segment === 'sent'
+                    ? 'Answers you send appear here until they are graded.'
+                    : undefined
+              }
             />
           )}
         </LoadingRegion>

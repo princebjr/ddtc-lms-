@@ -1,11 +1,13 @@
 import { ArrowDown, ArrowUp, Download, FilePlus2, FileText, Mic, Pencil, RefreshCw, Trash2 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AudioPlayer } from '@/components/audio/AudioPlayer.jsx';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
+import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField } from '@/components/auth/FormField.jsx';
 import { ConfirmDeleteDialog } from '@/components/feedback/ConfirmDeleteDialog.jsx';
 import { LessonPageSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
+import { Recorder } from '@/components/recorder/Recorder.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
@@ -14,6 +16,8 @@ import { useMediaDelete } from '@/hooks/use-media-delete.js';
 import { fileSize } from '@/lib/audio/format.js';
 import { computePeaks } from '@/lib/audio/peaks.js';
 import { downloadMedia, fetchAudioHistory, fetchLessonMedia, MAX_LESSON_AUDIO, playbackUrl, renameAudio, reorderAudio } from '@/lib/lessons/lessons.js';
+import { extensionForMime, LESSON_RECORDING } from '@/lib/recording/format.js';
+import { loadRecordingDraft } from '@/lib/recording/recording-drafts.js';
 import { uploadFile } from '@/lib/uploads.js';
 
 // The lesson editor's media cards (Phase 6; D09, D17, D18, ADR-006, ADR-007), for the course's
@@ -26,14 +30,23 @@ import { uploadFile } from '@/lib/uploads.js';
 // Every delete is confirmed and goes through delete-media (useMediaDelete); the list changes only
 // once the server has confirmed. An archived course is read-only: no actions are offered.
 
-const AUDIO_ACCEPT = '.mp3,.m4a,.wav,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav';
-const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'wav'];
+// Phase 8 (owner decision 5): WebM and Ogg too, as browsers record them.
+const AUDIO_ACCEPT = '.mp3,.m4a,.mp4,.wav,.webm,.weba,.ogg,.oga,.opus,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/webm,audio/ogg';
+const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'mp4', 'wav', 'webm', 'weba', 'ogg', 'oga', 'opus'];
 const AUDIO_MAX = 100 * 1024 * 1024; // D17; the server checks again
-const DOC_ACCEPT = '.pdf,.docx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation';
+const DOC_ACCEPT =
+  '.pdf,.docx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation';
 const DOC_EXTENSIONS = ['pdf', 'docx', 'pptx'];
 const DOC_MAX = 25 * 1024 * 1024;
 
-const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Accra' });
+const dateFormat = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Africa/Accra',
+});
 /** @param {string} name */
 const extension = (name) => (/\.([a-z0-9]+)$/i.exec(name)?.[1] ?? '').toLowerCase();
 
@@ -44,6 +57,13 @@ const extension = (name) => (/\.([a-z0-9]+)$/i.exec(name)?.[1] ?? '').toLowerCas
  */
 export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
   const toast = useToast();
+  const auth = useAuth();
+  const userId = auth.profile?.id ?? '';
+  // Phase 8 (ADR-007): record lesson audio in the app, 30 minutes per recording, kept as a draft
+  // on this device until used (D43).
+  const [recording, setRecording] = useState(false);
+  const [restored, setRestored] = useState(/** @type {import('@/hooks/use-recorder.js').Recording | null} */ (null));
+  const recordingDraft = useMemo(() => (userId ? { userId, key: `lesson-audio:${lessonId}` } : null), [userId, lessonId]);
   const input = useRef(/** @type {HTMLInputElement | null} */ (null));
   const replacing = useRef(/** @type {LessonMedia | null} */ (null));
   const media = useLoad(async () => {
@@ -66,16 +86,33 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
     input.current?.click();
   };
 
-  /** @param {File} file */
-  const upload = async (file) => {
-    const target = replacing.current;
+  useEffect(() => {
+    if (!userId || archived) return undefined;
+    let live = true;
+    loadRecordingDraft(userId, `lesson-audio:${lessonId}`).then((d) => {
+      if (!live || !d) return;
+      setRestored({ blob: d.blob, mimeType: d.mimeType, seconds: d.seconds, extension: extensionForMime(d.mimeType) });
+      setRecording(true);
+      toast.show('draft.restored');
+    });
+    return () => {
+      live = false;
+    };
+  }, [userId, lessonId, archived, toast]);
+
+  /**
+   * @param {File} file
+   * @param {{ peaks?: number[] | null, title?: string }} [recorded] a recording made here: its waveform and title
+   */
+  const upload = async (file, recorded) => {
+    const target = recorded ? null : replacing.current;
     setProblem(null);
-    if (!AUDIO_EXTENSIONS.includes(extension(file.name))) return setProblem('Use an MP3, M4A or WAV file.');
+    if (!AUDIO_EXTENSIONS.includes(extension(file.name))) return setProblem('Use an audio file: MP3, M4A, WAV, WebM or Ogg.');
     if (file.size > AUDIO_MAX) return setProblem('The file is larger than 100 MB.');
     setProgress({ name: file.name, stage: 'Uploading', fraction: 0 });
     try {
       // The waveform is prepared here while the file uploads (ADR-006); the server checks its shape.
-      const peaks = computePeaks(file).then((p) => (p ? { peaks: p } : {}));
+      const peaks = recorded?.peaks ? Promise.resolve({ peaks: recorded.peaks }) : computePeaks(file).then((p) => (p ? { peaks: p } : {}));
       const res = /** @type {{ replaced: boolean }} */ (
         await uploadFile({
           resourceType: 'LESSON_AUDIO',
@@ -83,7 +120,9 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
           courseId,
           lessonId,
           replaceAudioId: target?.item_id,
+          finalize: recorded?.title ? { title: recorded.title } : {},
           finalizeLater: peaks,
+          alwaysResumable: Boolean(recorded),
           onProgress: (fraction) => setProgress({ name: file.name, stage: fraction < 1 ? 'Uploading' : 'Checking the file', fraction }),
         })
       );
@@ -156,7 +195,13 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
                     <Button variant="ghost" size="icon" onClick={() => move(i, -1)} disabled={i === 0 || moving} aria-label={`Move ${a.title} up`}>
                       <ArrowUp aria-hidden="true" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => move(i, 1)} disabled={i === audios.length - 1 || moving} aria-label={`Move ${a.title} down`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => move(i, 1)}
+                      disabled={i === audios.length - 1 || moving}
+                      aria-label={`Move ${a.title} down`}
+                    >
                       <ArrowDown aria-hidden="true" />
                     </Button>
                     <Button variant="ghost" className="px-3" onClick={() => setRenaming(a)} aria-label={`Rename ${a.title}`}>
@@ -167,7 +212,13 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
                       <RefreshCw aria-hidden="true" />
                       Replace
                     </Button>
-                    <Button variant="ghost" size="icon" className="ml-auto text-error" onClick={() => deleter.ask({ id: a.item_id, name: a.title })} aria-label={`Delete ${a.title}`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-auto text-error"
+                      onClick={() => deleter.ask({ id: a.item_id, name: a.title })}
+                      aria-label={`Delete ${a.title}`}
+                    >
                       <Trash2 aria-hidden="true" />
                     </Button>
                   </div>
@@ -176,7 +227,10 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
             ))}
           </ol>
         ) : (
-          <CardDescription>No audio yet. Add up to {MAX_LESSON_AUDIO} audio files: MP3, M4A or WAV, each up to 100 MB and 90 minutes.</CardDescription>
+          <CardDescription>
+            No audio yet. Add up to {MAX_LESSON_AUDIO} audio files: MP3, M4A, WAV, WebM or Ogg, each up to 100 MB and 90 minutes, or record in the app (up to 30
+            minutes each).
+          </CardDescription>
         )}
       </LoadingRegion>
       {progress ? (
@@ -211,17 +265,53 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
               if (file) upload(file);
             }}
           />
-          <Button variant="outline" onClick={() => choose(null)} disabled={progress !== null || full || media.state !== 'ready'}>
-            <Mic aria-hidden="true" />
-            Add audio
-          </Button>
+          {recording && !full ? (
+            <Recorder
+              limits={LESSON_RECORDING}
+              audience="lecturer"
+              draft={recordingDraft}
+              restored={restored}
+              title={`Recording for ${lessonTitle}`}
+              disabled={progress !== null}
+              onUse={(file, { peaks }) => {
+                setRestored(null);
+                setRecording(false);
+                void upload(file, { peaks, title: file.name.replace(/\.[^.]+$/, '') });
+              }}
+              onUploadInstead={() => {
+                setRecording(false);
+                choose(null);
+              }}
+            />
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => choose(null)} disabled={progress !== null || full || media.state !== 'ready'}>
+              <FilePlus2 aria-hidden="true" />
+              Add audio
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setRecording((v) => !v)}
+              disabled={progress !== null || full || media.state !== 'ready'}
+              aria-expanded={recording}
+            >
+              <Mic aria-hidden="true" />
+              {recording ? 'Close recorder' : 'Record audio'}
+            </Button>
+          </div>
           {full ? <CardDescription>A lesson can have up to {MAX_LESSON_AUDIO} audio files. Delete one to add another.</CardDescription> : null}
         </>
       )}
       <FormMessage>{problem}</FormMessage>
       {history.length ? (
         <div className="flex flex-col gap-1 text-body-sm text-ink-secondary">
-          <Button variant="ghost" className="self-start px-2" aria-expanded={showHistory} aria-controls={`audio-history-${lessonId}`} onClick={() => setShowHistory((v) => !v)}>
+          <Button
+            variant="ghost"
+            className="self-start px-2"
+            aria-expanded={showHistory}
+            aria-controls={`audio-history-${lessonId}`}
+            onClick={() => setShowHistory((v) => !v)}
+          >
             Audio history ({history.length})
           </Button>
           <ul id={`audio-history-${lessonId}`} hidden={!showHistory} className="m-0 flex list-none flex-col p-0">
@@ -237,7 +327,13 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
                   {dateFormat.format(new Date(h.created_at))}
                 </span>
                 {archived || h.lifecycle_status === 'DELETED' ? null : (
-                  <Button variant="ghost" size="icon" className="text-error" onClick={() => deleter.ask({ id: h.id, name: h.title })} aria-label={`Delete the replaced version of ${h.title}`}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-error"
+                    onClick={() => deleter.ask({ id: h.id, name: h.title })}
+                    aria-label={`Delete the replaced version of ${h.title}`}
+                  >
                     <Trash2 aria-hidden="true" />
                   </Button>
                 )}
@@ -356,7 +452,13 @@ export function AttachmentsCard({ lessonId, courseId, archived }) {
                 <Download aria-hidden="true" />
               </Button>
               {archived ? null : (
-                <Button variant="ghost" size="icon" className="text-error" onClick={() => deleter.ask({ id: a.item_id, name: a.title })} aria-label={`Delete ${a.title}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-error"
+                  onClick={() => deleter.ask({ id: a.item_id, name: a.title })}
+                  aria-label={`Delete ${a.title}`}
+                >
                   <Trash2 aria-hidden="true" />
                 </Button>
               )}

@@ -396,7 +396,8 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer or administrator | Assignment archived, never deleted (Phase 7) | "Assignment archived" (S) | Undo |
 | Lecturer or administrator | Archived assignment restored (Phase 7) | "Assignment restored" (S) | none |
 | Lecturer or administrator | Grade categories saved (Phase 7) | "Categories saved" (S) | none |
-| Lecturer | Extension granted | "Extension granted" (S) | Undo |
+| Lecturer or administrator | Extension granted or changed | "Extension granted" (S) | Undo |
+| Lecturer or administrator | Extension taken back (owner decision 6, 2026-11-08; the record is kept) | "Extension removed" (S) | none |
 | Lecturer | Grade draft saved | "Grade saved as draft" (S) | none |
 | Lecturer | Grades released | "Grades released to N learners" (S) | none |
 | Lecturer | Score out of range | "Score must be between 0 and maximum" (E) | none |
@@ -404,8 +405,8 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer | Gradebook export ready | "Export ready" (S) | Download |
 | Learner | Lesson marked complete or incomplete | "Lesson completed" or "Marked not complete" (S) | Undo |
 | Learner | Audio download starts | "Downloading audio (size)" (I) | none |
-| Learner | Recording saved or discarded | "Recording saved" or "Recording discarded" (S) | none |
-| Learner | Microphone blocked | "Microphone blocked. Upload a file instead" (W) | Upload file |
+| Learner or lecturer (lesson audio, ADR-007) | Recording saved or discarded | "Recording saved" or "Recording discarded" (S) | none |
+| Learner or lecturer (lesson audio, ADR-007) | Microphone blocked | "Microphone blocked. Upload a file instead" (W) | Upload file |
 | Learner | Submission received | "Submission received" (S) | none |
 | Learner | Late submission received | "Submitted late" (W) | none |
 | Learner | Resubmitted | "Resubmitted as version N" (S) | none |

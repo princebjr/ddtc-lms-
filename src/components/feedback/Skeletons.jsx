@@ -12,14 +12,21 @@ import { ErrorState } from './States.jsx';
  */
 export function LoadingRegion({ loading, skeleton, children, onRetry, label = 'Loading' }) {
   const phase = useDelayedLoading(loading);
-  if (phase === 'timeout') return <ErrorState title="This is taking too long" description="The page did not load in time. Check your connection and try again." onRetry={onRetry} />;
+  if (phase === 'timeout')
+    return <ErrorState title="This is taking too long" description="The page did not load in time. Check your connection and try again." onRetry={onRetry} />;
   if (phase === 'content') return <>{children}</>;
   return (
     <div aria-busy="true" data-loading-phase={phase}>
       <span className="sr-only" role="status">
         {label}
       </span>
-      {phase === 'skeleton' ? skeleton : <div className="invisible" aria-hidden="true">{skeleton}</div>}
+      {phase === 'skeleton' ? (
+        skeleton
+      ) : (
+        <div className="invisible" aria-hidden="true">
+          {skeleton}
+        </div>
+      )}
     </div>
   );
 }
@@ -177,6 +184,30 @@ export function LessonListSkeleton({ rows = 5 }) {
 }
 
 /** Lesson page: title, text lines, then the audio player's bars and controls. */
+/** The submission screen (UI_FEEDBACK.md): instruction lines, the response-type selector, a large input block. */
+export function SubmissionSkeleton() {
+  return (
+    <div data-skeleton="submission" className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-8 w-3/4" />
+        <Skeleton shape="chip" className="w-32" />
+      </div>
+      <div className="flex flex-col gap-3 rounded-lg border border-hairline bg-card p-4">
+        {['w-full', 'w-11/12', 'w-4/5', 'w-2/3'].map((w, i) => (
+          <Skeleton key={i} className={w} />
+        ))}
+      </div>
+      <div className="flex gap-1 self-start rounded-full bg-fill p-1">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} shape="button" className="w-24" />
+        ))}
+      </div>
+      <Skeleton shape="card" className="h-48 w-full" />
+    </div>
+  );
+}
+
 export function LessonPageSkeleton() {
   return (
     <div data-skeleton="lesson-page" className="flex flex-col gap-6">

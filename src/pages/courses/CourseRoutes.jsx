@@ -14,6 +14,8 @@ const LessonEditorPage = lazy(() => import('./LessonEditorPage.jsx'));
 const LearnerLessonPage = lazy(() => import('../learner/LearnerLessonPage.jsx'));
 const AssignmentEditorPage = lazy(() => import('./AssignmentEditorPage.jsx'));
 const LearnerAssignmentPage = lazy(() => import('../learner/LearnerAssignmentPage.jsx'));
+const AssignmentSubmissionsPage = lazy(() => import('./AssignmentSubmissionsPage.jsx'));
+const SubmissionViewPage = lazy(() => import('./SubmissionViewPage.jsx'));
 
 export const AdminNewCourse = () => (
   <RoleShell role="admin" slug="courses">
@@ -68,5 +70,26 @@ export const LecturerAssignment = () => (
 export const LearnerAssignment = () => (
   <RoleShell role="learner" slug="assignments">
     <LearnerAssignmentPage />
+  </RoleShell>
+);
+// Phase 8: an assignment's submissions and one learner's answer, for lecturers and administrators.
+export const AdminSubmissions = () => (
+  <RoleShell role="admin" slug="courses">
+    <AssignmentSubmissionsPage role="admin" />
+  </RoleShell>
+);
+export const LecturerSubmissions = () => (
+  <RoleShell role="lecturer" slug="my-courses">
+    <AssignmentSubmissionsPage role="lecturer" />
+  </RoleShell>
+);
+export const AdminSubmission = () => (
+  <RoleShell role="admin" slug="courses">
+    <SubmissionViewPage role="admin" />
+  </RoleShell>
+);
+export const LecturerSubmission = () => (
+  <RoleShell role="lecturer" slug="my-courses">
+    <SubmissionViewPage role="lecturer" />
   </RoleShell>
 );
