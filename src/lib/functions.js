@@ -48,6 +48,15 @@ export async function callFunction(name, body) {
   }
   clearTimeout(timer);
   const payload = await res.json().catch(() => ({}));
-  if (!res.ok) throw new FunctionError(res.status, payload.code ?? 'server_error', payload.message ?? 'Something went wrong. Try again.');
+  if (!res.ok) {
+    // Our functions answer { code, message } with a lowercase code and a message written for people.
+    // Anything else came from the platform in front of them (for example WORKER_LIMIT or BOOT_ERROR
+    // from the Supabase gateway) and is not shown word for word.
+    const ours = typeof payload.code === 'string' && OUR_CODE.test(payload.code) && typeof payload.message === 'string';
+    throw ours ? new FunctionError(res.status, payload.code, payload.message) : new FunctionError(res.status, 'server_error', 'Something went wrong. Try again.');
+  }
   return /** @type {T} */ (payload);
 }
+
+/** The shape of the error codes our Edge Functions send (`HttpError` in `_shared/http.ts`). */
+const OUR_CODE = /^[a-z][a-z_]*$/;
