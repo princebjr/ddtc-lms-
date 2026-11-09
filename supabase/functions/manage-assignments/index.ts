@@ -1,8 +1,9 @@
 // manage-assignments (Phase 7; D12, D29, ADR-009): course lecturers and administrators save
 // assignments (instructions cleaned against the lesson allow-list first), publish and unpublish them,
-// archive and restore them, and save the course's grade categories. The database functions re-check
-// the actor and the course (archived courses are read-only), enforce the instruction types and the
-// answer formats, keep snapshots of published assignments and audit every change.
+// archive and restore them, and save the course's grade categories; since Phase 8 they also set,
+// change and take back one learner's extension (D13, owner decision 6). The database functions
+// re-check the actor and the course (archived courses are read-only), enforce the instruction types
+// and the answer formats, keep snapshots of published assignments and audit every change.
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
@@ -49,6 +50,17 @@ const Body = z.discriminatedUnion('action', [
       .min(1, 'Keep at least one category')
       .max(10, 'Use at most 10 categories'),
   }),
+  // Phase 8 (D13, owner decision 6): one learner's extension, set or changed (undo restores a
+  // previous date), or taken back.
+  z.object({
+    action: z.literal('extension-set'),
+    assignmentId: z.uuid(),
+    learnerId: z.uuid(),
+    extendedDueAt: z.iso.datetime({ offset: true, error: 'Choose the new due date and time' }),
+    reason: z.string().trim().max(1000, 'Keep the reason to 1,000 characters').optional(),
+    undo: z.boolean().optional(),
+  }),
+  z.object({ action: z.literal('extension-remove'), assignmentId: z.uuid(), learnerId: z.uuid() }),
 ]);
 
 serve(async (req) => {
@@ -100,6 +112,23 @@ serve(async (req) => {
       const { data, error } = await admin.rpc('grade_categories_save', { ...actor, p_course: b.courseId, p_categories: b.categories });
       if (error) throw fromDbError(error);
       return json(req, 200, data);
+    }
+    case 'extension-set': {
+      const { data, error } = await admin.rpc('submission_extension_set', {
+        ...actor,
+        p_assignment: b.assignmentId,
+        p_learner: b.learnerId,
+        p_due: b.extendedDueAt,
+        p_reason: b.reason ?? null,
+        p_undo: b.undo ?? false,
+      });
+      if (error) throw fromDbError(error);
+      return json(req, 200, { previous: data ?? null });
+    }
+    case 'extension-remove': {
+      const { data, error } = await admin.rpc('submission_extension_remove', { ...actor, p_assignment: b.assignmentId, p_learner: b.learnerId });
+      if (error) throw fromDbError(error);
+      return json(req, 200, { removed: data });
     }
   }
 });

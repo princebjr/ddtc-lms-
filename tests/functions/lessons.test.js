@@ -121,7 +121,8 @@ describe('lesson audio (D18, D09, ADR-006)', () => {
   it('rejects a renamed non-audio file, an over-length file and a name that does not match the content', async () => {
     const renamed = await upload(owner.token, 'LESSON_AUDIO', pdf(), 'sermon.mp3');
     expect(renamed.status).toBe(422);
-    expect(renamed.body.message).toBe('The file is not an MP3, M4A or WAV audio file.');
+    // Phase 8 (owner decision 5): lesson audio also takes in-app recordings in WebM and Ogg.
+    expect(renamed.body.message).toBe('The file is not an audio file we can play (MP3, M4A, WAV, WebM or Ogg).');
     const long = await upload(owner.token, 'LESSON_AUDIO', mp3({ frames: 10, xingFrames: 248000 }), 'long.mp3');
     expect(long.status).toBe(422);
     expect(long.body.message).toBe('The audio is longer than 90 minutes.');
