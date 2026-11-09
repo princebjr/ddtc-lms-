@@ -201,7 +201,7 @@ Only VALIDATED files can be played or downloaded. Pending uploads older than 24 
 | `lesson-audio` | Lecturer lesson audio | Course lecturers | Course lecturers, enrolled learners (published lessons), administrators |
 | `lesson-attachments` | Lesson PDFs, Word, PowerPoint | Course lecturers | Same as lesson audio |
 | `assignment-instructions-audio` | Lecturer assignment audio | Course lecturers | Course lecturers, enrolled learners (published assignments), administrators |
-| `learner-submissions` | Learner audio, PDF, Word | The learner | The learner, that course's lecturers, administrators |
+| `learner-submissions` | Learner audio (uploaded or recorded), PDF, Word | The learner | The learner; that course's lecturers and AAL2 administrators, for submitted versions only |
 | `profile-images` | Avatars | The owner | Signed-in users |
 | `course-covers` | Cover images | Course lecturers | Users who can see the course |
 
@@ -291,6 +291,64 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
 - **Drafts:** `src/lib/drafts.js` keeps unsaved editor work per user and screen (`ddtc:draft:<user>:<key>`) for 24 hours, restored only over the same saved version (`useDraftStart`, `useDraftAutosave`; the lesson and assignment editors now, answers in Phase 8) with the "Draft restored" toast; a deliberate sign-out deletes the user's drafts.
 - **Absolute lifetimes:** `SessionWatcher` keeps D32's limits: a warning toast without a button, then `/login?expired=1`.
 
+### Submissions and file validation as built (Phase 8)
+
+- **Tables:**
+  - `submissions`: one per assignment and learner; DRAFT until the first version is sent (a CHECK ties DRAFT to version 0); the grading columns stay closed to clients until Phase 9.
+  - `submission_versions`: numbered per submission, with plain text up to 20,000 characters, `is_late` from the server's clock, and a `client_request_id` unique per submission, so a repeated request makes no second version.
+  - `submission_files`: one row per file, with its role AUDIO, PDF or DOCX; a file belongs to one version only.
+  - Two triggers:
+    - `private.keep_submitted_answers` refuses any change or deletion of versions and their files for every role.
+    - `private.submission_files_guard` lets a file join only in the transaction that creates its version, only as a VALIDATED file of that submission, and at most `max_files_per_submission_version` (5).
+  - `submission_extensions` gained `revoked_at` and `revoked_by`; a partial unique index allows one live extension; `private.effective_due_at()` ignores revoked ones.
+  - `file_objects` gained `delete_attempts` and `last_delete_error`.
+  - Foreign keys are `ON DELETE RESTRICT`.
+- **Rules (D10 as read in ADR-013):**
+  - `private.submission_check` decides who may submit and whether the answer will be late.
+  - Before the effective due date a learner resubmits freely until GRADED.
+  - After it, only a learner who never submitted may submit, marked late, and only where late answers are allowed.
+  - Otherwise it gives a reason (graded, past due, read-only course, not open, not enrolled), shown in plain words.
+- **Access:**
+  - `private.can_see_submission`: the learner reads their own (drafts included); the course's active lecturers and AAL2 administrators read submitted answers only. No client writes.
+  - Read functions:
+    - `my_submission()` gives the learner's state, versions and waiting files.
+    - `assignment_submissions()` gives managers every learner of the course except WITHDRAWN, plus anyone who submitted, with branch (D42), status, version, lateness and effective due date.
+    - `submission_review()` gives managers one learner's versions with their files.
+- **Storage:**
+  - Private `learner-submissions` bucket: 25 MB; MP3, MP4, WAV, WebM and Ogg audio, PDF and DOCX.
+  - Path `<assignment id>/<learner id>/<version>/<file id>.<ext>`.
+  - Reads require a VALIDATED file and `private.can_read_submission_object`: the uploader for files sent or waiting; managers for files of submitted versions only. Nobody writes directly.
+  - `lesson-audio` also accepts WebM and Ogg (decision 5).
+- **Pipeline:**
+  - `register-upload` (SUBMISSION_FILE) calls `submission_prepare_upload`, which creates the DRAFT submission if needed and gives the next version number.
+  - The browser always uploads answers resumably (tus): it retries a dropped attempt and waits for the connection when offline ("Upload resumed").
+  - `finalize-upload` accepts audio within 25 MB and 10 minutes, and PDF or Word within 10 MB where the assignment accepts them; it refuses PPTX.
+  - `_shared/audio.ts` reads real browser recordings: WebM without a stored duration (last cluster), Ogg Opus or Vorbis (last page's granule), and fragmented MP4 (`mehd` or the fragments' timing).
+- **Trusted functions (service role only, audited, run behind `submit-assignment` and `manage-assignments`):**
+  - `submission_submit`: locks, re-checks, is idempotent, and links the files to the new version.
+  - `submission_draft_file_remove`: removes a waiting file, which is then deleted from Storage at once.
+  - `submission_extension_set`: set or change, with Undo.
+  - `submission_extension_remove`: takes an extension back, kept with who and when.
+- **Recorder:**
+  - `src/lib/recording/format.js` picks the first format the browser offers: MP4 AAC, WebM Opus, WebM, Ogg Opus, then plain MP4.
+  - `levels.js` turns the input into the live waveform and spots silence.
+  - `use-recorder.js` runs MediaRecorder at 64 kbit/s in 1-second pieces, keeps a Wake Lock, pauses when the page is hidden, stops at the limit and holds the session awake (D43).
+  - `Recorder.jsx` draws the controls and the review.
+  - `recording-drafts.js` keeps a recording in progress in IndexedDB (ArrayBuffer pieces, 24 hours), deleted by a deliberate sign-out through the `onStopDrafts` hook.
+  - Limits: `LEARNER_RECORDING` 10 minutes and 25 MB; `LESSON_RECORDING` 30 minutes (ADR-007).
+- **Screens:**
+  - The answer form (`src/components/submissions/`: `AnswerForm`, `UploadRow`, `VersionList`, `ExtensionDialog`) on the learner's assignment page, and Assignments > To do, Submitted and Past due.
+  - `AssignmentSubmissionsPage` and `SubmissionViewPage` for lecturers and administrators.
+  - The lesson editor's Record audio.
+  - `callFunction` shows only our functions' own messages; platform errors show "Something went wrong. Try again."
+- **Clean-up:**
+  - `files_due_for_cleanup` adds answer files never sent (24 hours, `expired_draft_file`).
+  - `cleanup-files` counts each failed removal and audits `files.cleanup_failed`.
+  - `cleanup_failures()` lists files at 3 failures or more for AAL2 administrators (the alert comes in Phase 11).
+- **Routes:**
+  - `/:role/courses/:courseId/assignments/:assignmentId/submissions` and `.../submissions/:learnerId` for lecturers and administrators.
+  - The learner answers on `/learner/courses/:courseId/assignments/:assignmentId`.
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.
@@ -314,7 +372,7 @@ Nothing is stored as a total. One database function, `calculate_course_grades`, 
 |---|---|---|
 | `send-notification-email` | every minute | Sends queued emails; retries up to 5 times (1, 5, 15, 60, 240 minutes) |
 | `schedule-reminders` | every 15 minutes | Creates one due-date reminder 24 hours before the due date, once per learner and assignment |
-| `cleanup-files` | hourly | Removes expired pending uploads, rejected files and replaced avatars or covers; never touches lesson audio, instruction audio, attachments or validated submissions |
+| `cleanup-files` | hourly | Removes expired pending uploads, rejected files, replaced avatars or covers, and answer files never sent (after 24 hours); counts and audits each failed removal (`cleanup_failures()`); never touches lesson audio, instruction audio, attachments or submitted answers |
 | `retention-runner` | daily | Deletes eligible learner assignment audio only (graded and released, at least 180 days old, no hold). Off at launch; dry run for the first 30 days; only an administrator can switch it on |
 
 Retention never deletes: lesson audio, instruction audio, attachments, text answers, PDFs, Word files, or anything under a hold. The submission, grade, feedback and history always stay.

@@ -88,9 +88,11 @@ Formatting: some files edited in this phase were reflowed by Prettier (single qu
 
 | Line | Result | Proof |
 |---|---|---|
-| Recording and playback verified on a real iPhone (iOS 18 Safari), a real Android phone (Chrome) and desktop; an upload interrupted by switching networks resumes | **Waiting for the owner's real-device check** (Claude Code has no devices) | Automated: recording with the browsers' real recorders on desktop Chrome and Firefox, and on the phone and tablet projects in CI; an interrupted upload resuming end to end. The real-device steps are in section 6 |
+| Recording and playback verified on a real iPhone (iOS 18 Safari), a real Android phone (Chrome) and desktop; an upload interrupted by switching networks resumes | **PASS** (owner-reported, 2026-11-09) | Prince Boateng ran every step in section 6 on staging on an iPhone with iOS 18 in Safari, an Android phone in Chrome and a desktop browser, and reported all of them passed on all three devices. Automated as well: recording with the browsers' real recorders on desktop Chrome and Firefox and on the phone and tablet projects in CI; an interrupted upload resuming end to end |
 
 ## 6. Owner steps
+
+Done by the owner on 2026-11-09 and checked read-only by Claude Code: `supabase migration list --linked` shows `20261108000100` and `20261108000200` applied on `ddtc-lms-staging`; `supabase functions list` shows `submit-assignment` (new, version 1), `register-upload`, `finalize-upload`, `manage-assignments` and `cleanup-files` deployed at 17:46 UTC, after the last change to any function's code. The owner approved the merge the same day.
 
 Staging, after approval and before merging (as before, the owner runs these; they change the hosted project):
 
@@ -118,7 +120,6 @@ Captured with reduced motion (the recording dot stands still) and a simulated mi
 
 | Item | Reason | Owner |
 |---|---|---|
-| Real-device checks (section 6) | Need real phones | Prince Boateng |
 | Grading, release, reopening and the results counts on the submission screens | Phase 9 (the list and the answer view are built to grow into them; the grading columns stay closed until then) | Prince Boateng |
 | The administrator alert for files that keep failing to be removed, and notifications for extensions | Phase 11 (the list and the audit records exist now; the runbook has the SQL) | Prince Boateng |
 | Files sent in an earlier version are not carried into a new one: the learner adds them again | D10 keeps each version's files with it (a file belongs to one version) | Prince Boateng |
