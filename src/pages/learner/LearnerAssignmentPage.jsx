@@ -150,7 +150,7 @@ export default function LearnerAssignmentPage() {
                   </p>
                 </Card>
               ) : null}
-              {mine ? <VersionList versions={mine.versions} title={a.title} /> : null}
+              {mine ? <VersionList versions={mine.versions} title={a.title} latestLabel={d.grade && mine.status === 'GRADED' ? 'Graded' : undefined} /> : null}
             </div>
 
             <div className="flex flex-col gap-4">

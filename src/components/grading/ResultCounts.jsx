@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card.jsx';
 // The assignment's counts (Phase 9; owner decisions 4 and 5): Enrolled, Submitted, Graded (with how
 // many are released), Ungraded, Missing and Not yet due, from assignment_result_counts() so they
 // always agree with the list and add up (enrolled = submitted + not yet due + missing; submitted =
-// graded + ungraded). Two tiles per row on phones, three on tablets, six on wide screens.
+// graded + ungraded). Two tiles per row on phones, three from tablet width, six on very wide screens.
 
 /** @param {{ counts: import('@/lib/grading/grading.js').ResultCounts }} props */
 export function ResultCounts({ counts }) {
@@ -17,7 +17,7 @@ export function ResultCounts({ counts }) {
     { label: 'Not yet due', value: counts.not_yet_due, detail: 'nothing sent yet', icon: Clock },
   ];
   return (
-    <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 xl:grid-cols-6" aria-label="Counts" data-slot="result-counts">
+    <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 2xl:grid-cols-6" aria-label="Counts" data-slot="result-counts">
       {tiles.map((t) => (
         <li key={t.label}>
           <Card className="flex h-full items-start gap-3 p-4">

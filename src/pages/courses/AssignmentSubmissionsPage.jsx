@@ -135,7 +135,6 @@ export default function AssignmentSubmissionsPage({ role }) {
 
   const columns = [
     { key: 'learner', header: 'Learner', card: /** @type {const} */ ('title'), cell: (/** @type {Row} */ r) => <Person row={r} /> },
-    { key: 'branch', header: 'Branch', card: /** @type {const} */ ('status'), cell: (/** @type {Row} */ r) => <BranchChip name={r.branch_name} /> },
     {
       key: 'result',
       header: 'Result',
@@ -143,7 +142,7 @@ export default function AssignmentSubmissionsPage({ role }) {
       cell: (/** @type {Row} */ r) => (
         <span className="flex flex-col gap-1">
           <span className="flex flex-wrap gap-2">
-            <StatusChip tone={RESULT[r.result].tone}>{RESULT[r.result].label}</StatusChip>
+            <ResultChip row={r} />
             {r.submission_id && r.is_late ? <StatusChip tone="warning">Late</StatusChip> : null}
             {!r.counted ? <StatusChip>Withdrawn</StatusChip> : null}
           </span>
@@ -161,18 +160,12 @@ export default function AssignmentSubmissionsPage({ role }) {
       header: 'Score',
       card: /** @type {const} */ ('detail'),
       cell: (/** @type {Row} */ r) => {
-        if (!r.submission_id) return '—';
-        const state = gradeState(r);
+        if (!isSet(r.score)) return '—';
         return (
-          <span className="flex flex-col items-start gap-1">
-            {isSet(r.score) ? (
-              <span className="whitespace-nowrap tabular-nums text-ink">
-                {formatScore(r.score, r.max_marks)}
-                {isSet(r.percentage) ? <span className="text-ink-secondary"> · {formatPercentage(r.percentage)}</span> : null}
-                {r.letter_grade ? <span className="text-ink-secondary"> · {r.letter_grade}</span> : null}
-              </span>
-            ) : null}
-            <StatusChip tone={state.tone}>{state.label}</StatusChip>
+          <span className="whitespace-nowrap tabular-nums text-ink">
+            {formatScore(r.score, r.max_marks)}
+            {isSet(r.percentage) ? <span className="text-ink-secondary"> · {formatPercentage(r.percentage)}</span> : null}
+            {r.letter_grade ? <span className="text-ink-secondary"> · {r.letter_grade}</span> : null}
           </span>
         );
       },
@@ -200,7 +193,7 @@ export default function AssignmentSubmissionsPage({ role }) {
         const name = `${r.first_name} ${r.second_name}`;
         const toGrade = r.result === 'UNGRADED';
         return (
-          <span className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
+          <span className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
             {r.submission_id ? (
               <Button asChild variant={toGrade && !archived ? 'primary' : 'outline'}>
                 <Link to={`/${role}/courses/${courseId}/assignments/${assignmentId}/submissions/${r.learner_id}`} aria-label={`${toGrade && !archived ? 'Grade' : 'View'} answer from ${name}`}>
@@ -254,6 +247,8 @@ export default function AssignmentSubmissionsPage({ role }) {
           <Filters search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} branch={branch} onBranch={setBranch} sort={sort} onSort={setSort} />
           <ResponsiveTable
             caption={`Submissions for ${a.title}`}
+            // Five columns with stacked actions do not fit a tablet: cards up to 1024 px.
+            cardsBelow="lg"
             columns={columns}
             rows={rows}
             getRowKey={(r) => r.learner_id}
@@ -326,6 +321,16 @@ function Filters({ search, onSearch, filter, onFilter, branch, onBranch, sort, o
   );
 }
 
+/**
+ * One chip for where the learner stands: for a graded or reopened answer the grade's state (Released,
+ * Draft grade, Changed, not released, Reopened), otherwise Ungraded, Missing or Not yet due.
+ * @param {{ row: Row }} props
+ */
+function ResultChip({ row }) {
+  const { label, tone } = row.result === 'GRADED' || row.status === 'REOPENED' ? gradeState(row) : RESULT[row.result];
+  return <StatusChip tone={tone}>{label}</StatusChip>;
+}
+
 /** @param {{ row: Row }} props */
 function Person({ row }) {
   const imageUrl = useProfileImage(row.profile_image_path);
@@ -337,6 +342,10 @@ function Person({ row }) {
           {row.first_name} {row.second_name}
         </span>
         <span className="text-caption text-ink-secondary tabular-nums">ID {formatIdNumber(row.id_number)}</span>
+        {/* The branch chip with the name (D42), so the table fits a laptop screen. */}
+        <span className="mt-1">
+          <BranchChip name={row.branch_name} />
+        </span>
       </span>
     </span>
   );

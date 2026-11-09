@@ -275,7 +275,7 @@ export function ResultsSkeleton() {
     <div data-skeleton="results" className="flex flex-col gap-4">
       <Skeleton className="h-3 w-40" />
       <Skeleton className="h-8 w-2/3" />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-6">
         {Array.from({ length: 6 }, (_, i) => (
           <Skeleton key={i} shape="card" className="h-24 w-full" />
         ))}

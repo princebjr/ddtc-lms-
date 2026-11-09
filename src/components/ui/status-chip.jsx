@@ -16,7 +16,7 @@ const TONES = Object.freeze({
 export function StatusChip({ tone = 'neutral', children, className }) {
   const { icon: Icon, className: toneClass } = TONES[tone];
   return (
-    <span data-slot="status-chip" data-tone={tone} className={cn('inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-label', toneClass, className)}>
+    <span data-slot="status-chip" data-tone={tone} className={cn('inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-label', toneClass, className)}>
       <Icon className="size-4 shrink-0" aria-hidden="true" />
       <span className="text-ink">{children}</span>
     </span>
