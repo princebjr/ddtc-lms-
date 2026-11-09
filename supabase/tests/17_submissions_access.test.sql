@@ -147,7 +147,7 @@ select tests.authenticate_as(tests.uid('t2'));
 select is((select count(*)::int from public.submissions) + (select count(*)::int from public.submission_versions), 0, 'another lecturer sees none');
 select tests.reset();
 select tests.authenticate_as(tests.uid('a1'), 'aal2');
-select is((select count(*)::int from public.submissions), 2, 'an administrator sees submitted answers');
+select is((select count(*)::int from public.submissions where assignment_id = tests.id('a1')), 2, 'an administrator sees submitted answers');
 select throws_ok($$ update public.submissions set status = 'GRADED' where id = tests.id('s1') $$, '42501', NULL, 'and cannot change them directly either');
 select tests.reset();
 select tests.authenticate_as(tests.uid('a1'));
