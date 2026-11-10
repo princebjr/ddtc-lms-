@@ -25,6 +25,8 @@ import { formatDue, formatDueShort } from '@/lib/assignments/due.js';
 import { fetchBranches } from '@/lib/branches.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
 import { fetchAssignmentResults, fetchPracticalMarks, formatPercentage, formatScore, gradeState, isSet } from '@/lib/grading/grading.js';
+import { BranchGroups, GroupByBranchSwitch } from '@/components/branches/BranchGroups.jsx';
+import { useGroupByBranch } from '@/lib/branch-groups.js';
 
 // An assignment's submissions and results for its course's lecturers and administrators (Phase 8 list,
 // grading and results added in Phase 9; DESIGN.md 13 results table; D13, D16, D42; owner decisions 4
@@ -99,6 +101,8 @@ export default function AssignmentSubmissionsPage({ role }) {
   const [filter, setFilter] = useState('');
   const [branch, setBranch] = useState('');
   const [sort, setSort] = useState('name');
+  // Grouped by branch unless switched off (Phase 10.1; owner answer of 2026-11-10).
+  const [grouped, setGrouped] = useGroupByBranch();
   // BranchFilter gives a branch id (or NO_BRANCH); the rows carry the branch name.
   const branches = useLoad(fetchBranches, []);
   const branchName = branch && branch !== NO_BRANCH ? (branches.data?.find((b) => b.id === branch)?.name ?? null) : null;
@@ -269,12 +273,15 @@ export default function AssignmentSubmissionsPage({ role }) {
             </p>
           ) : null}
           <Filters search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} branch={branch} onBranch={setBranch} sort={sort} onSort={setSort} />
+          <GroupByBranchSwitch on={grouped} onChange={setGrouped} />
+          <BranchGroups rows={rows} on={grouped && rows.length > 0}>
+            {(group, branchName) => (
           <ResponsiveTable
-            caption={`Submissions for ${a.title}`}
+            caption={branchName ? `Submissions for ${a.title}, ${branchName}` : `Submissions for ${a.title}`}
             // Five columns with stacked actions do not fit a tablet: cards up to 1024 px.
             cardsBelow="lg"
             columns={columns}
-            rows={rows}
+            rows={group}
             getRowKey={(r) => r.learner_id}
             empty={
               filtered ? (
@@ -284,6 +291,8 @@ export default function AssignmentSubmissionsPage({ role }) {
               )
             }
           />
+            )}
+          </BranchGroups>
           {extending ? (
             <ExtensionDialog
               assignmentId={assignmentId}

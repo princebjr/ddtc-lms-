@@ -363,3 +363,21 @@ describe('Export (owner request 2026-11-06)', () => {
     expect(toast.show).toHaveBeenCalledWith('admin.export-ready', expect.anything());
   });
 });
+
+describe('the gradebook grouped by branch (Phase 10.1; owner answer of 2026-11-10)', () => {
+  it('puts each branch under its heading, "No branch" last, on phones and in the matrix', () => {
+    const learners = [
+      learner({ learner_id: 'l1', first_name: 'Kwame', branch_name: 'Sampa' }),
+      learner({ learner_id: 'l2', first_name: 'Abena', branch_name: null }),
+      learner({ learner_id: 'l3', first_name: 'Yaw', branch_name: 'Kasoa C.P' }),
+    ];
+    const { container } = render(<GradebookMatrix columns={columns} learners={learners} grouped />);
+    expect(screen.getAllByRole('region').map((r) => r.getAttribute('aria-label')).filter((l) => l && / learners?$/.test(l))).toEqual([
+      'Kasoa C.P, 1 learner',
+      'Sampa, 1 learner',
+      'No branch, 1 learner',
+    ]);
+    expect([...container.querySelectorAll('tbody[data-branch]')].map((b) => b.getAttribute('data-branch'))).toEqual(['Kasoa C.P', 'Sampa', 'No branch']);
+    expect(screen.getAllByRole('columnheader').some((h) => h.getAttribute('scope') === 'colgroup')).toBe(true);
+  });
+});

@@ -27,6 +27,8 @@ import { useLoad } from '@/hooks/use-load.js';
 import { useMediaDelete } from '@/hooks/use-media-delete.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { validate } from '@/lib/auth/schemas.js';
+import { BranchGroups, GroupByBranchSwitch } from '@/components/branches/BranchGroups.jsx';
+import { useGroupByBranch } from '@/lib/branch-groups.js';
 import {
   changeLecturer,
   COURSE_STATUS_LABEL,
@@ -454,6 +456,7 @@ export function CoverCard({ course, canEdit, onChanged }) {
 /** Learners by name, photo, ID number and branch only (course_roster, ADR-008, D42). @param {{ course: Course, admin: boolean }} props */
 function LearnersTab({ course, admin }) {
   const roster = useLoad(() => fetchRoster(course.id), [course.id]);
+  const [grouped, setGrouped] = useGroupByBranch();
   /** @typedef {Awaited<ReturnType<typeof fetchRoster>>[number]} RosterRow */
   const columns = [
     { key: 'name', header: 'Learner', card: /** @type {const} */ ('title'), cell: (/** @type {RosterRow} */ r) => <RosterPerson row={r} /> },
@@ -485,13 +488,21 @@ function LearnersTab({ course, admin }) {
         <ErrorState title="The learners could not be loaded" onRetry={roster.reload} />
       ) : (
         <LoadingRegion loading={roster.state === 'loading'} skeleton={<ListSkeleton rows={5} columns={2} />} onRetry={roster.reload}>
-          <ResponsiveTable
-            caption="Learners"
-            columns={columns}
-            rows={roster.data ?? []}
-            getRowKey={(r) => r.enrolment_id}
-            empty={<EmptyState title="No learners yet" description="Learners appear here once an administrator enrols them." />}
-          />
+          {/* Grouped by branch unless switched off (Phase 10.1; owner answer of 2026-11-10). */}
+          <div className="flex flex-col gap-3">
+            <GroupByBranchSwitch on={grouped} onChange={setGrouped} />
+            <BranchGroups rows={roster.data ?? []} on={grouped && (roster.data ?? []).length > 0}>
+              {(group, branchName) => (
+                <ResponsiveTable
+                  caption={branchName ? `Learners, ${branchName}` : 'Learners'}
+                  columns={columns}
+                  rows={group}
+                  getRowKey={(r) => r.enrolment_id}
+                  empty={<EmptyState title="No learners yet" description="Learners appear here once an administrator enrols them." />}
+                />
+              )}
+            </BranchGroups>
+          </div>
         </LoadingRegion>
       )}
     </div>
