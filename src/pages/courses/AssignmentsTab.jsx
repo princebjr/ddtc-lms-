@@ -326,7 +326,7 @@ function CategoriesDialog({ courseId, initial, locked, onClose, onSaved }) {
             </Button>
             {impact ? (
               changes.length ? (
-                <ul className="m-0 flex max-h-48 list-none flex-col divide-y divide-hairline overflow-y-auto p-0" aria-label="Overall grades that would change">
+                <ul className="m-0 flex max-h-48 list-none flex-col divide-y divide-hairline overflow-y-auto p-0 focus-visible:focus-ring" aria-label="Overall grades that would change" tabIndex={0}>
                   {changes.map((l) => (
                     <li key={l.learner_id} className="flex min-h-11 items-center justify-between gap-3 py-1 text-body-sm">
                       <span className="min-w-0 truncate text-ink">

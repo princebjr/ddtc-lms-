@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils.js';
 
 // ResponsiveChart wrapper (RESPONSIVE.md 15.2, DESIGN.md 13): full width on phones with shortened
-// labels; a text summary is always visible below the chart. The chart library itself is chosen
-// and lazy-loaded in Phase 10; this wrapper is library-agnostic and passes the measured width and
-// a `compact` flag (below 640 px) to its render function.
+// labels; a text summary is always visible below the chart. It passes the measured width and a
+// `compact` flag (below 640 px) to its render function. Phase 10 draws its charts as plain SVG with
+// tokens (DistributionChart; ADR-015), so no chart library is loaded.
 
 export const COMPACT_CHART_WIDTH = 640;
 

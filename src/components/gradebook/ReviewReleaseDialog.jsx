@@ -64,7 +64,7 @@ export function ReviewReleaseDialog({ courseId, onClose, onReleased }) {
           ) : rows.length === 0 ? (
             <p className="m-0 text-body text-ink-secondary">There are no draft grades to release.</p>
           ) : (
-            <div className="flex max-h-80 flex-col gap-4 overflow-y-auto" data-slot="release-preview">
+            <div className="flex max-h-80 flex-col gap-4 overflow-y-auto focus-visible:focus-ring" data-slot="release-preview" tabIndex={0} role="region" aria-label="Draft grades to release">
               {groups.map((g) => (
                 <section key={g.id} aria-labelledby={`release-${g.id}`} className="flex flex-col gap-1">
                   <h3 id={`release-${g.id}`} className="m-0 text-label text-ink">
