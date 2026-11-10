@@ -86,7 +86,7 @@ test('a lecturer grades, releases and changes a grade; the learner is told and s
   await lecturerPage.getByLabel('Feedback (optional)').fill('Good reading of the text. Develop the section on purpose.');
   await lecturerPage.getByRole('button', { name: 'Save draft' }).click();
   await expect(toast(lecturerPage, 'Grade saved as draft')).toBeVisible();
-  await expect(lecturerPage.getByTestId('grade-facts')).toHaveText('Saved: 15.5 / 20 · 77.5% · B · band 70-79%');
+  await expect(lecturerPage.getByTestId('grade-facts')).toHaveText('Saved: 15.5 / 20 · 77.5% · band 70-79%'); // no letter on one piece of work (Step 10.2)
   await expect(lecturerPage.getByText('Draft grade')).toBeVisible();
   await expectNoAxeViolations(lecturerPage);
   expect(await horizontalOverflow(lecturerPage)).toBeLessThanOrEqual(0);
