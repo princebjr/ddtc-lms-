@@ -1,7 +1,7 @@
 # Phase 10.1 acceptance evidence: Examinations, practical marks and branch groups
 
 - Phase file: `docs/phases/phase-10-1-examinations-practicals-branches.md`
-- Branch and pull request: `phase-10-1-exams`, PR link added when opened
+- Branch and pull request: `phase-10-1-exams`, https://github.com/princebjr/ddtc-lms-/pull/17
 - Reviewer (O2): Prince Boateng
 - Evidence date: 2026-11-10
 - Source: the owner's requests and answers of 2026-11-10 (`docs/requests/2026-11-10-examinations.md`, `docs/requests/2026-11-10-practical-marks-and-branch-groups.md`); plan approved 2026-11-10 ("phase 10.1 recommendations approved"); decisions recorded as ADR-016.
