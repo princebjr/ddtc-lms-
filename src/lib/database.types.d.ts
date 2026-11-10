@@ -780,6 +780,9 @@ isOneToOne: false
               "assignment_id": string,"assignment_title": string,"branch_name": string,"course_code": string,"course_id": string,"course_title": string,"current_version": number,"due_at": string,"first_name": string,"id_number": number,"is_late": boolean,"learner_id": string,"max_marks": number,"profile_image_path": string,"score": number,"second_name": string,"state": string,"status": Database["public"]['Enums']["submission_status"],"submitted_at": string
             }[]
                            },
+"i_manage_course":
+{ Args: { "p_course": string }; Returns: boolean
+                           },
 "idle_settings":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
@@ -834,6 +837,9 @@ isOneToOne: false
                            },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"record_export":
+{ Args: { "p_actor": string,"p_entity_id": string,"p_entity_type": string,"p_kind": string,"p_metadata": Json }; Returns: undefined
                            },
 "submission_draft_file_remove":
 { Args: { "p_actor": string,"p_file": string }; Returns: {
