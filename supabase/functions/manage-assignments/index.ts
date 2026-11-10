@@ -43,14 +43,21 @@ const Body = z.discriminatedUnion('action', [
       .array(
         z.object({
           id: z.uuid().optional(),
-          name: z.string().trim().min(1, 'Give each category a name').max(80, 'Use 80 characters or fewer'),
+          // Since Phase 10.1 (ADR-016) the three parts keep their names; only the weights change.
+          name: z.string().trim().max(80, 'Use 80 characters or fewer').optional(),
           weight: z.number().int('Each weight is a whole number').min(0).max(100, 'Each weight is at most 100'),
         }),
       )
       .min(1, 'Keep at least one category')
       .max(10, 'Use at most 10 categories'),
-    // Phase 10 (owner decision 4): after the first release only an administrator changes weights, with a reason.
+    // Phase 10.1 (ADR-016): only an administrator changes the weights, always with a reason (the database checks both).
     reason: z.string().trim().max(1000, 'Keep the reason to 1,000 characters').optional(),
+  }),
+  // Phase 10.1 (ADR-016): an administrator switches an existing course to the three parts, with a reason.
+  z.object({
+    action: z.literal('apply-parts'),
+    courseId: z.uuid(),
+    reason: z.string().trim().min(1, 'Give a reason for changing the grade weights').max(1000, 'Keep the reason to 1,000 characters'),
   }),
   // Phase 8 (D13, owner decision 6): one learner's extension, set or changed (undo restores a
   // previous date), or taken back.
@@ -119,6 +126,11 @@ serve(async (req) => {
       });
       if (error) throw fromDbError(error);
       return json(req, 200, data);
+    }
+    case 'apply-parts': {
+      const { error } = await admin.rpc('apply_standard_parts', { ...actor, p_course: b.courseId, p_reason: b.reason });
+      if (error) throw fromDbError(error);
+      return json(req, 200, { applied: true });
     }
     case 'extension-set': {
       const { data, error } = await admin.rpc('submission_extension_set', {
