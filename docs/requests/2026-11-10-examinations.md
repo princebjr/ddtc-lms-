@@ -1,6 +1,6 @@
 # Owner request (2026-11-10): end-of-course examinations
 
-Status: **recorded; questions 1 to 5 answered by the owner on 2026-11-10; not yet scheduled.** Received during Phase 10, with the instruction to build it
+Status: **recorded; all eight questions answered by the owner on 2026-11-10; to be planned as its own phase after Phase 10 is merged.** Received during Phase 10, with the instruction to build it
 after Phase 10's tests. Following the phase protocol (CLAUDE.md sections 4 and 8), it becomes its own
 phase: a written plan with the open questions below goes to the owner for approval once Phase 10 is
 merged, and the answers are recorded as an ADR in `docs/DECISIONS.md`. Nothing is built before that.
@@ -19,9 +19,9 @@ grading, release and history (Phase 9) and the gradebook and exports (Phase 10, 
 3. ~~Retakes~~ **Answered by the owner on 2026-11-10: the retake counts.** The retake's result replaces the earlier one in the course grade; earlier attempts stay in the history (never deleted).
 4. ~~Late work~~ **Answered by the owner on 2026-11-10: the lecturer can extend the deadline.** After the deadline the server refuses submissions; the course's lecturers (and administrators) can extend it. Proposal for the plan: for the whole examination, or for one learner (as assignment extensions, ADR-013), each extension audited and the learner told the new deadline.
 5. ~~Unsubmitted at the deadline~~ **Answered by the owner on 2026-11-10: keep (as proposed).** Saved but unsubmitted answers are kept for the lecturer, who may choose to grade them; they are marked "Not submitted".
-6. **MCQ options:** exactly four options A to D (as requested), one correct answer, no negative marking?
-7. **Question order:** the same for every learner, or shuffled?
-8. **Audio:** text answers only for examinations (as requested), unlike assignments (ADR-009)?
+6. ~~MCQ options~~ **Answered by the owner on 2026-11-10: keep.** Exactly four options A to D, one correct answer, no marks taken off for a wrong answer.
+7. ~~Question order~~ **Answered by the owner on 2026-11-10: the same for every learner.**
+8. ~~Audio~~ **Answered by the owner on 2026-11-10: both text and audio.** Short-answer and essay questions accept a typed answer and an audio answer, as assignments do (ADR-009): recorded in the app or uploaded, through register-upload and finalize-upload (D18) with the learner submission audio limits (D17), played by the lecturer while grading. Multiple-choice questions are answered by choosing A to D.
 
 ## The request, verbatim
 
