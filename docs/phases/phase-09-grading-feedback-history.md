@@ -16,6 +16,8 @@
 - D42 (ADR-010): the grading header shows the learner's branch chip beside their name, photo and ID number; submission review and results lists show it too.
 - Built in Phase 8 to start from: the submission list per assignment (`assignment_submissions()`: every learner, branch, status, latest version, lateness, effective due date, Extension) and the read-only answer view (`submission_review()`: every version with text, recordings and documents) at `/:role/courses/:courseId/assignments/:assignmentId/submissions[/:learnerId]`; the grading panel and the results counts join them here. The grading columns of `submissions` (score, feedback, graded_by, graded_at) exist but no client can read or write them yet: open them here (learners only after release, D16). A REOPENED answer may be sent again before the effective due date (ADR-013).
 
+- Owner decisions approving this plan (2026-11-09), recorded as ADR-014: the `notifications` table is created now and written on release and on a released change ("New grade available" on the next page load; centre and email in Phase 11); what the learner sees is kept apart, so after a change they keep seeing the released grade until it is released; Reopen grade needs a reason and lets the learner send again only before their effective due date; enrolled means every enrolment except WITHDRAWN (a withdrawn learner who sent an answer is listed, not counted); Missing only after the learner's effective due date, "Not yet due" before; scores up to two decimals; plain-text feedback up to 10,000 characters, no audio feedback.
+
 **Tests required**
 
 - A pending upload older than 24 hours is removed by `cleanup-files`, while lesson audio and VALIDATED submission files are untouched.

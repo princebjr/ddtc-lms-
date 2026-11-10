@@ -76,7 +76,7 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer or administrator | Extension granted or changed | "Extension granted" (S) | Undo |
 | Lecturer or administrator | Extension taken back (owner decision 6, 2026-11-08; the record is kept) | "Extension removed" (S) | none |
 | Lecturer | Grade draft saved | "Grade saved as draft" (S) | none |
-| Lecturer | Grades released | "Grades released to N learners" (S) | none |
+| Lecturer | Grades released | "Grades released to N learners" (S); for one, learner | none |
 | Lecturer | Score out of range | "Score must be between 0 and maximum" (E) | none |
 | Lecturer | Submission reopened | "Submission reopened" (S) | none |
 | Lecturer | Gradebook export ready | "Export ready" (S) | Download |
@@ -135,6 +135,7 @@ Not a toast: a dialog, because it needs an answer. After `idle_timeout_minutes` 
 | Assignment list and detail | Cards with title, due-date chip and status chip; detail has instruction lines and an audio bar |
 | Submission screen | Instruction lines, response-type selector blocks, a large input block |
 | Grading screen | Submission area block and a grading panel with field blocks |
+| Assignment results (Phase 9) | Six count-tile blocks, a search field block, then the list skeleton |
 | Gradebook | Sticky first column blocks and a grid of cells; per-learner cards on phones |
 | Charts | Chart frame with six grey bars and axis lines, plus a text-summary line |
 | Notifications | List rows with a small circle and two text lines |

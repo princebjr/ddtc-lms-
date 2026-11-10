@@ -349,6 +349,34 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
   - `/:role/courses/:courseId/assignments/:assignmentId/submissions` and `.../submissions/:learnerId` for lecturers and administrators.
   - The learner answers on `/learner/courses/:courseId/assignments/:assignmentId`.
 
+### Grading and results as built (Phase 9)
+
+- **Tables and columns (migration 28):**
+  - `submissions` gains `released_score`, `released_feedback` and `released_by`: what the learner sees, copied on release (ADR-014). RELEASED means the learner sees the current grade; a later change waits in `score` and `feedback` until released again. A CHECK keeps a released grade complete.
+  - `grade_change_history`: event SAVED, RELEASED or REOPENED, previous and new score and feedback, reason, who, and when (clock time). Written by the trigger `private.record_grade_change`. `private.keep_grade_history` refuses update, delete and truncate to everyone; the service role may only select and insert.
+  - `notifications`: GRADE_RELEASED and GRADE_UPDATED for now, with a unique deduplication key and a `link_path` inside the app. The recipient reads their own and may set `read_at` only.
+- **Rules for any writer:**
+  - `private.submissions_grade_guard` keeps the score (and the released score) between 0 and the assignment's maximum marks, and refuses a change to a released grade without a reason (`app.grade_reason`).
+  - `private.assignments_max_marks_guard` stops maximum marks dropping below a given score.
+- **One place for the figures (D14, D15, D30):** `private.grade_facts(score, max)` gives the percentage (two decimals), the letter grade (the highest `grade_scale` band the percentage reaches), the band (`distribution_bands`, lower <= p < upper, 100 in the last) and pass (`pass_mark`). Phase 10's `calculate_course_grades` is to build on it.
+- **Trusted functions (migration 29; service role only; audited; actor and course re-checked; archived courses read-only):**
+  - `grade_save`: the same grade twice changes nothing; a released grade changes only with a reason; status becomes GRADED.
+  - `grade_release`: one learner or every draft grade. Refused unless category weights total 100. Copies to the released columns and writes one notification per learner and event (`grade-release:{submission}:{n}`).
+  - `grade_reopen`: reason required; GRADED becomes REOPENED. `submission_check` lets a reopened answer be sent again only before the effective due date.
+  - These sit behind the Edge Functions `grade-submission` (save, reopen) and `release-grades`.
+- **Reads:**
+  - `assignment_results` and `assignment_result_counts`, for the course's lecturers and AAL2 administrators. Every enrolment except WITHDRAWN is counted; a withdrawn learner who sent an answer is listed, not counted. Result is GRADED, UNGRADED, MISSING (nothing sent, effective due date passed) or NOT_YET_DUE. The counts always satisfy enrolled = submitted + not yet due + missing and submitted = graded + ungraded (pgTAP 20, the exit gate).
+  - `submission_review` adds the grade, what the learner sees and the history.
+  - `my_grade`: the learner's own released grade only.
+  - The grading columns stay closed to client SELECT.
+- **Screens:**
+  - `SubmissionViewPage`: the grading screen. On phones, the answer, then `GradingPanel` with a bar that sticks above the navigation. From tablet width, two panes (`grid-cols-grading`), with `GradeHistory` under the panel and `ReopenDialog`.
+  - `AssignmentSubmissionsPage`: the results, with `ResultCounts`, search, Show, Branch and Sort filters, one chip per learner, Grade for answers waiting, and `ReleaseAllDialog`. Cards up to 1024 px through `ResponsiveTable`'s `cardsBelow="lg"`.
+  - `LearnerGradeCard` on the learner's assignment page.
+  - `GradeNotices` in the learner shell: "New grade available" once per tab, read when the assignment is opened.
+  - `src/lib/grading/grading.js` holds the calls and labels, with no figures.
+- **Routes:** unchanged from Phase 8 (`/:role/courses/:courseId/assignments/:assignmentId/submissions[/:learnerId]`); the grading panel and results join those pages.
+
 ## 12. Grades, gradebook and charts
 
 Nothing is stored as a total. One database function, `calculate_course_grades`, works out every percentage, overall grade, band and chart count whenever a screen or export needs it, so figures always match the latest grades.
@@ -457,7 +485,7 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer or administrator | Extension granted or changed | "Extension granted" (S) | Undo |
 | Lecturer or administrator | Extension taken back (owner decision 6, 2026-11-08; the record is kept) | "Extension removed" (S) | none |
 | Lecturer | Grade draft saved | "Grade saved as draft" (S) | none |
-| Lecturer | Grades released | "Grades released to N learners" (S) | none |
+| Lecturer | Grades released | "Grades released to N learners" (S); for one, learner | none |
 | Lecturer | Score out of range | "Score must be between 0 and maximum" (E) | none |
 | Lecturer | Submission reopened | "Submission reopened" (S) | none |
 | Lecturer | Gradebook export ready | "Export ready" (S) | Download |

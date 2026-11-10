@@ -553,6 +553,12 @@
   bottom: calc(var(--bottom-nav-space) + var(--safe-bottom) + 1rem);
 }
 
+/* The grading screen's two panes from tablet width (Phase 9, RESPONSIVE.md): the answer takes the
+   room left, the grading panel keeps 18 to 24 rem. */
+@utility grid-cols-grading {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+}
+
 /* The phone pill bar floats 16 px above the home-indicator safe area */
 @utility bottom-pill {
   bottom: calc(var(--safe-bottom) + var(--pill-gap));

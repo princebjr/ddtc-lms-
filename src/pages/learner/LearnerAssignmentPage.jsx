@@ -1,9 +1,11 @@
 import { ArrowLeft } from 'lucide-react';
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { AudioPlayer } from '@/components/audio/AudioPlayer.jsx';
 import { LoadingRegion, SubmissionSkeleton } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
+import { LearnerGradeCard } from '@/components/grading/LearnerGradeCard.jsx';
 import { AnswerForm } from '@/components/submissions/AnswerForm.jsx';
 import { VersionList } from '@/components/submissions/VersionList.jsx';
 import { Card, CardTitle } from '@/components/ui/card.jsx';
@@ -13,6 +15,7 @@ import { fetchAssignment, fetchInstructionAudio } from '@/lib/assignments/assign
 import { dueStatus, formatDue } from '@/lib/assignments/due.js';
 import { fileSize } from '@/lib/audio/format.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
+import { fetchMyGrade, markGradeNotificationsRead } from '@/lib/grading/grading.js';
 import { downloadMedia, playbackUrl } from '@/lib/lessons/lessons.js';
 import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
 import { blockedMessage, fetchMySubmission } from '@/lib/submissions/submissions.js';
@@ -22,7 +25,9 @@ import { blockedMessage, fetchMySubmission } from '@/lib/submissions/submissions
 // answers are accepted, maximum marks; then the answer (Phase 8): text, recordings and uploads in
 // one answer (owner decision 1), sent as the next version while the server allows it (D10, owner
 // decision 3), and every version sent. Whether an answer may be sent and whether it would be late
-// come from my_submission() on the server (D24).
+// come from my_submission() on the server (D24). Once released, the grade comes first (Phase 9;
+// D16; owner decision 2): my_grade() only ever returns a released grade; opening the page marks that
+// assignment's grade notifications read.
 
 /** ", PDF or Word" for the answer kinds the lecturer added (ADR-009). @param {string[]} formats */
 function answerFiles(formats) {
@@ -34,20 +39,27 @@ export default function LearnerAssignmentPage() {
   const { courseId = '', assignmentId = '' } = useParams();
   const toast = useToast();
   const page = useLoad(async () => {
-    const [course, assignment, audio, mine] = await Promise.all([
+    const [course, assignment, audio, mine, grade] = await Promise.all([
       fetchCourse(courseId),
       fetchAssignment(assignmentId),
       fetchInstructionAudio(assignmentId),
       fetchMySubmission(assignmentId),
+      fetchMyGrade(assignmentId),
     ]);
     return {
       course,
       assignment,
       audio,
       mine,
+      grade,
       extendedTo: mine?.extended ? mine.effective_due_at : null,
     };
   }, [courseId, assignmentId]);
+  const shown = Boolean(page.data?.grade);
+  useEffect(() => {
+    // A grade on screen is a grade seen: its notifications count as read (the toast stops showing).
+    if (shown) markGradeNotificationsRead(assignmentId).catch(() => undefined);
+  }, [shown, assignmentId]);
 
   if (page.state === 'error') return <ErrorState title="The assignment could not be loaded" onRetry={page.reload} />;
   if (page.state === 'ready' && (!page.data?.course || !page.data?.assignment || page.data.assignment.course_id !== courseId)) {
@@ -88,6 +100,7 @@ export default function LearnerAssignmentPage() {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
+              {d.grade ? <LearnerGradeCard grade={d.grade} /> : null}
               <Card className="flex flex-col gap-4" aria-labelledby="instructions-title">
                 <CardTitle id="instructions-title">Instructions</CardTitle>
                 {d.audio ? (
@@ -130,10 +143,14 @@ export default function LearnerAssignmentPage() {
               ) : mine ? (
                 <Card className="flex flex-col gap-2" aria-labelledby="closed-title">
                   <CardTitle id="closed-title">{sent ? 'Your answer' : 'Answers'}</CardTitle>
-                  <p className="m-0 text-body text-ink-secondary">{blockedMessage(mine.blocked_reason)}</p>
+                  <p className="m-0 text-body text-ink-secondary">
+                    {mine.blocked_reason === 'graded' && !d.grade
+                      ? 'Your answer is being graded, so it cannot be sent again. Your grade will appear here once it is released.'
+                      : blockedMessage(mine.blocked_reason)}
+                  </p>
                 </Card>
               ) : null}
-              {mine ? <VersionList versions={mine.versions} title={a.title} /> : null}
+              {mine ? <VersionList versions={mine.versions} title={a.title} latestLabel={d.grade && mine.status === 'GRADED' ? 'Graded' : undefined} /> : null}
             </div>
 
             <div className="flex flex-col gap-4">

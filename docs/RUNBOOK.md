@@ -135,3 +135,33 @@ audio, attachments or submission files.
 - Recording pauses when the learner leaves the app or locks the phone (phones stop the microphone in
   the background). Long answers: record with the phone's own voice recorder and upload the file
   (Upload, Upload audio); MP3, M4A, WAV, WebM and Ogg are accepted up to 10 minutes and 25 MB.
+
+## Written in Phase 9
+
+### Grades, release and history (D12, D16, D30, ADR-014)
+
+- "Category weights must total 100 before grades can be released": the course's lecturer opens the
+  course's Assignments tab, Categories, and makes the weights add up to 100 (D12). Release then works.
+- What a learner sees is the released grade only. After a lecturer changes a released grade (a reason
+  is required), the learner keeps seeing the released one until the lecturer presses Release grade
+  again; the learner then gets "Grade updated" and sees "Updated" on the grade.
+- A grade's full history (every save, release and reopening, with who, when and why): the lecturer
+  sees it under the grading panel ("Grade history"). In the SQL editor, as the owner:
+  `select h.event, h.previous_score, h.new_score, h.reason, p.first_name || ' ' || p.second_name as by_whom,
+  h.changed_at from public.grade_change_history h join public.profiles p on p.id = h.changed_by
+  join public.submissions s on s.id = h.submission_id where s.assignment_id = '<assignment id>'
+  and s.learner_id = '<learner id>' order by h.changed_at;` The history cannot be changed or deleted,
+  by anyone; a mistaken grade is corrected by a new change with its reason.
+- Audit records: `grade.saved`, `grade.changed`, `grade.released`, `grade.reopened` (entity
+  `submission`).
+- Reopening: the lecturer's Reopen grade (reason required). Before the learner's due date the learner
+  may send the answer again; after it they cannot, and only the grade changes. To let a learner send
+  again after the due date, give them an extension first (Submissions, Extension), then reopen.
+- Counts on the Submissions page: Enrolled counts every enrolment except withdrawn ones (suspended and
+  completed learners count); a learner is Missing only once their own due date (with any extension)
+  has passed, "Not yet due" before. Enrolled always equals Submitted + Not yet due + Missing, and
+  Submitted equals Graded + Ungraded. A withdrawn learner who had sent an answer is listed with a
+  Withdrawn chip and not counted.
+- Notifications: since Phase 9 a release writes a row in `public.notifications` (one per learner and
+  event); the learner sees "New grade available" on their next page and the grade on the assignment
+  page, which marks it read. Email and the notification centre arrive in Phase 11.

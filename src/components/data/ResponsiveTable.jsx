@@ -2,7 +2,15 @@ import { cn } from '@/lib/utils.js';
 
 // ResponsiveTable (RESPONSIVE.md 15.2 and 15.8 item 4): a full table from 640 px; stacked cards on
 // phones showing the leading avatar, the title, a secondary line, a status and the key value.
-// Wide data scrolls only inside its own container, never the page.
+// Wide data scrolls only inside its own container, never the page. A table too wide for a tablet
+// (RESPONSIVE.md: tables on tablets only when all columns fit) passes cardsBelow="lg" and stays as
+// cards up to 1024 px.
+
+/** Where the cards give way to the table (complete class names, for Tailwind). */
+const SWITCH = /** @type {const} */ ({
+  sm: { cards: 'sm:hidden', table: 'sm:block' },
+  lg: { cards: 'lg:hidden', table: 'lg:block' },
+});
 
 /**
  * @template Row
@@ -18,9 +26,11 @@ import { cn } from '@/lib/utils.js';
 
 /**
  * @template Row
- * @param {{ caption: string, columns: Column<Row>[], rows: Row[], getRowKey: (row: Row) => string, empty?: import('react').ReactNode, className?: string }} props
+ * @param {{ caption: string, columns: Column<Row>[], rows: Row[], getRowKey: (row: Row) => string, empty?: import('react').ReactNode, className?: string,
+ *   cardsBelow?: 'sm' | 'lg' }} props
  */
-export function ResponsiveTable({ caption, columns, rows, getRowKey, empty, className }) {
+export function ResponsiveTable({ caption, columns, rows, getRowKey, empty, className, cardsBelow = 'sm' }) {
+  const at = SWITCH[cardsBelow];
   if (rows.length === 0 && empty) return <>{empty}</>;
   /** @param {Column<Row>['card']} role */
   const byRole = (role) => columns.filter((c) => c.card === role);
@@ -34,7 +44,7 @@ export function ResponsiveTable({ caption, columns, rows, getRowKey, empty, clas
 
   return (
     <div data-slot="responsive-table" className={className}>
-      <ul className="m-0 flex list-none flex-col gap-3 p-0 sm:hidden" aria-label={caption}>
+      <ul className={cn('m-0 flex list-none flex-col gap-3 p-0', at.cards)} aria-label={caption}>
         {rows.map((row) => (
           <li key={getRowKey(row)} className="flex flex-col gap-3 rounded-md border border-hairline bg-card p-4">
             <div className="flex items-center gap-3">
@@ -77,7 +87,7 @@ export function ResponsiveTable({ caption, columns, rows, getRowKey, empty, clas
         ))}
       </ul>
 
-      <div className="hidden max-w-full overflow-x-auto rounded-md border border-hairline bg-card sm:block">
+      <div className={cn('hidden max-w-full overflow-x-auto rounded-md border border-hairline bg-card', at.table)}>
         <table className="w-full border-collapse text-left text-body-sm tabular-nums">
           <caption className="sr-only">{caption}</caption>
           <thead className="sticky top-0 bg-fill">

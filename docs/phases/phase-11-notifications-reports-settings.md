@@ -10,6 +10,7 @@
 
 **Build**
 
+- From Phase 9 (ADR-014): the `notifications` table exists with GRADE_RELEASED and GRADE_UPDATED rows (deduplication key `grade-release:{submission}:{n}`, `link_path` for View); add the other D21 types and `notification_deliveries`, send grade emails from these rows, and replace the learner's "New grade available" check (`GradeNotices`, once per tab) with the notification centre and its unread count, keeping the toast.
 - From Phase 8 (ADR-013): an administrator alert for files that keep failing to be removed (`public.cleanup_failures()`, 3 failures or more; until then the runbook shows the SQL), and notifications for extensions granted, changed and taken back (the audit log already records them).
 
 - Notification centre and preferences; emails through `send-notification-email` for the events in D21. Implement the delivery worker, retry schedule, reminder scheduler and deduplication in D31 and Section 8, using `notification_deliveries`.

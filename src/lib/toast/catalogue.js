@@ -96,7 +96,8 @@ export const TOASTS = Object.freeze({
   'lecturer.recording-discarded': { type: 'success', text: fixed('Recording discarded') },
   'lecturer.microphone-blocked': { type: 'warning', text: fixed('Microphone blocked. Upload a file instead'), action: 'Upload file' },
   'lecturer.grade-draft-saved': { type: 'success', text: fixed('Grade saved as draft') },
-  'lecturer.grades-released': { type: 'success', text: (p) => `Grades released to ${str(p, 'n')} learners`, params: ['n'] },
+  // "Grades released to 1 learner" for one (Phase 9: releasing a single learner's grade).
+  'lecturer.grades-released': { type: 'success', text: (p) => `Grades released to ${str(p, 'n')} ${str(p, 'n') === '1' ? 'learner' : 'learners'}`, params: ['n'] },
   'lecturer.score-out-of-range': { type: 'error', text: fixed('Score must be between 0 and maximum') },
   'lecturer.submission-reopened': { type: 'success', text: fixed('Submission reopened') },
   'lecturer.gradebook-export-ready': { type: 'success', text: fixed('Export ready'), action: 'Download' },
