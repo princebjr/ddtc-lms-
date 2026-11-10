@@ -71,6 +71,8 @@ Staging, before merging:
 
 Then I check read-only. On staging, courses that already have released grades show administrators "Switch to the three parts" on their Assignments tab.
 
+Done by the owner on 2026-11-10 and checked read-only the same day: migrations `20261110000400` to `20261110000700` applied on `ddtc-lms-staging`; `manage-examinations`, `exam-attempt` and `grade-examination` (new), `grade-submission`, `manage-assignments`, `register-upload`, `finalize-upload` and `export-gradebook` deployed.
+
 ## 7. Screenshots
 
 `docs/acceptance/phase-10-1/screens/`, 66 images at 375, 768 and 1280 px in light and dark:
