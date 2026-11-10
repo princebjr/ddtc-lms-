@@ -1,12 +1,12 @@
 import { ArrowLeft, CalendarClock, Eye, PenLine, Send, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { BranchChip } from '@/components/branches/BranchChip.jsx';
 import { BranchFilter } from '@/components/branches/BranchFilter.jsx';
 import { FilterSelect } from '@/components/data/FilterSelect.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
 import { LoadingRegion, ResultsSkeleton } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
+import { LearnerCell } from '@/components/grading/LearnerCell.jsx';
 import { ReleaseAllDialog } from '@/components/grading/ReleaseAllDialog.jsx';
 import { ResultCounts } from '@/components/grading/ResultCounts.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
@@ -16,17 +16,14 @@ import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { Sheet, SheetContent } from '@/components/ui/sheet.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
-import { UserAvatar } from '@/components/UserAvatar.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { TABLET_UP_QUERY, useMediaQuery } from '@/hooks/use-media-query.js';
-import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { NO_BRANCH } from '@/lib/admin/users.js';
 import { fetchAssignment } from '@/lib/assignments/assignments.js';
 import { formatDue, formatDueShort } from '@/lib/assignments/due.js';
 import { fetchBranches } from '@/lib/branches.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
 import { fetchAssignmentResults, formatPercentage, formatScore, gradeState, isSet } from '@/lib/grading/grading.js';
-import { formatIdNumber } from '@/lib/id-number.js';
 
 // An assignment's submissions and results for its course's lecturers and administrators (Phase 8 list,
 // grading and results added in Phase 9; DESIGN.md 13 results table; D13, D16, D42; owner decisions 4
@@ -134,7 +131,7 @@ export default function AssignmentSubmissionsPage({ role }) {
   const filtered = Boolean(search.trim() || filter || branch);
 
   const columns = [
-    { key: 'learner', header: 'Learner', card: /** @type {const} */ ('title'), cell: (/** @type {Row} */ r) => <Person row={r} /> },
+    { key: 'learner', header: 'Learner', card: /** @type {const} */ ('title'), cell: (/** @type {Row} */ r) => <LearnerCell row={r} /> },
     {
       key: 'result',
       header: 'Result',
@@ -329,24 +326,4 @@ function Filters({ search, onSearch, filter, onFilter, branch, onBranch, sort, o
 function ResultChip({ row }) {
   const { label, tone } = row.result === 'GRADED' || row.status === 'REOPENED' ? gradeState(row) : RESULT[row.result];
   return <StatusChip tone={tone}>{label}</StatusChip>;
-}
-
-/** @param {{ row: Row }} props */
-function Person({ row }) {
-  const imageUrl = useProfileImage(row.profile_image_path);
-  return (
-    <span className="flex min-w-0 items-center gap-3">
-      <UserAvatar firstName={row.first_name} secondName={row.second_name} imageUrl={imageUrl} size={40} decorative />
-      <span className="flex min-w-0 flex-col">
-        <span className="truncate text-label text-ink">
-          {row.first_name} {row.second_name}
-        </span>
-        <span className="text-caption text-ink-secondary tabular-nums">ID {formatIdNumber(row.id_number)}</span>
-        {/* The branch chip with the name (D42), so the table fits a laptop screen. */}
-        <span className="mt-1">
-          <BranchChip name={row.branch_name} />
-        </span>
-      </span>
-    </span>
-  );
 }
