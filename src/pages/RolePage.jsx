@@ -32,6 +32,7 @@ const AdminAssignmentsPage = lazy(() => import('./admin/AdminAssignmentsPage.jsx
 const LearnerAssignmentsPage = lazy(() => import('./learner/LearnerAssignmentsPage.jsx'));
 const ToGradePage = lazy(() => import('./lecturer/ToGradePage.jsx'));
 const LearnerGradesPage = lazy(() => import('./learner/LearnerGradesPage.jsx'));
+const GradebooksPage = lazy(() => import('./courses/GradebooksPage.jsx'));
 
 /** @type {Record<string, () => import('react').ReactNode>} */
 const BUILT = {
@@ -43,10 +44,12 @@ const BUILT = {
   'admin/approvals': () => <ApprovalsPage />,
   'admin/enrolments': () => <EnrolmentsPage />,
   'admin/assignments': () => <AdminAssignmentsPage />,
+  'admin/gradebooks': () => <GradebooksPage role="admin" />,
   'admin/profile': () => <ProfilePage />,
   'lecturer/dashboard': () => <LecturerDashboardPage />,
   'lecturer/my-courses': () => <CoursesPage role="lecturer" />,
   'lecturer/to-grade': () => <ToGradePage />,
+  'lecturer/gradebooks': () => <GradebooksPage role="lecturer" />,
   'learner/dashboard': () => <LearnerDashboardPage />,
   'learner/my-courses': () => <LearnerCoursesPage />,
   'learner/assignments': () => <LearnerAssignmentsPage />,

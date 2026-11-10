@@ -62,10 +62,13 @@ export async function fetchCategories(courseId) {
 /**
  * @param {string} courseId
  * @param {Array<{ id?: string, name: string, weight: number }>} categories the full list, in order
+ * @param {string} [reason] required after the first release (an administrator only; Phase 10, owner decision 4)
  * @returns {Promise<{ total: number, ready: boolean }>}
  */
-export async function saveCategories(courseId, categories) {
-  return /** @type {{ total: number, ready: boolean }} */ (await callFunction('manage-assignments', { action: 'save-categories', courseId, categories }));
+export async function saveCategories(courseId, categories, reason) {
+  return /** @type {{ total: number, ready: boolean }} */ (
+    await callFunction('manage-assignments', { action: 'save-categories', courseId, categories, ...(reason ? { reason } : {}) })
+  );
 }
 
 /**

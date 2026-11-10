@@ -1,9 +1,10 @@
-import { BookOpen, CircleCheck, Circle, ClipboardList, Library } from 'lucide-react';
+import { BookOpen, CircleCheck, Circle, ClipboardCheck, ClipboardList, Library } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { CourseCover } from '@/components/courses/CourseCover.jsx';
 import { CourseWorkspaceSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
+import { Button } from '@/components/ui/button.jsx';
 import { Card, CardTitle } from '@/components/ui/card.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { UserAvatar } from '@/components/UserAvatar.jsx';
@@ -46,7 +47,18 @@ export default function LearnerCoursePage() {
     <LoadingRegion loading={state === 'loading'} skeleton={<CourseWorkspaceSkeleton />} onRetry={reload}>
       {course ? (
         <div className="flex flex-col gap-6">
-          <PageHeader title={course.title} description={course.category ? `${course.course_code} · ${course.category}` : course.course_code} />
+          <PageHeader
+            title={course.title}
+            description={course.category ? `${course.course_code} · ${course.category}` : course.course_code}
+            actions={
+              <Button asChild variant="outline">
+                <Link to={`/learner/courses/${course.id}/grades`}>
+                  <ClipboardCheck aria-hidden="true" />
+                  My grades
+                </Link>
+              </Button>
+            }
+          />
           {readOnly ? (
             <div className="flex flex-col gap-3">
               <span>

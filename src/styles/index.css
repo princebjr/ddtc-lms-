@@ -559,6 +559,21 @@
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
 }
 
+/* The gradebook matrix (Phase 10, RESPONSIVE.md): it scrolls inside its own frame, both ways, so the
+   learner column and the header row stay in view; the page itself never scrolls sideways. */
+@utility max-h-gradebook {
+  max-height: 70dvh;
+}
+
+/* Gradebook columns: a learner column wide enough for the photo, name, ID and branch chip, and
+   assignment columns that keep a score and its chip on one line. */
+@utility min-w-gradebook-learner {
+  min-width: 15rem;
+}
+@utility min-w-gradebook-cell {
+  min-width: 8.5rem;
+}
+
 /* The phone pill bar floats 16 px above the home-indicator safe area */
 @utility bottom-pill {
   bottom: calc(var(--safe-bottom) + var(--pill-gap));

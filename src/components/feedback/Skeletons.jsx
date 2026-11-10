@@ -285,3 +285,46 @@ export function ResultsSkeleton() {
     </div>
   );
 }
+
+/** The course gradebook (Phase 10): the toolbar, then learner cards on phones or the matrix with a sticky learner column. */
+export function GradebookSkeleton() {
+  const rows = Array.from({ length: 5 }, (_, i) => i);
+  const cols = Array.from({ length: 4 }, (_, i) => i);
+  return (
+    <div data-skeleton="gradebook" className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Skeleton className="w-48" />
+        <div className="flex gap-2">
+          <Skeleton shape="button" className="w-40" />
+          <Skeleton shape="button" className="w-24" />
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 sm:hidden">
+        {rows.map((i) => (
+          <div key={i} className="flex items-start gap-3 rounded-md border border-hairline bg-card p-4">
+            <Skeleton shape="circle" className="size-10" />
+            <div className="flex flex-1 flex-col gap-2">
+              <Skeleton className="w-2/3" />
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton shape="chip" />
+            </div>
+            <Skeleton shape="chip" />
+          </div>
+        ))}
+      </div>
+      <div className="hidden overflow-hidden rounded-md border border-hairline bg-card sm:block">
+        {[-1, ...rows].map((i) => (
+          <div key={i} className="flex h-16 items-center gap-4 border-t border-hairline px-4 first:border-t-0">
+            <div className="flex min-w-gradebook-learner items-center gap-3">
+              {i < 0 ? null : <Skeleton shape="circle" className="size-10" />}
+              <Skeleton className="w-32" />
+            </div>
+            {cols.map((c) => (
+              <Skeleton key={c} className="flex-1" />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
