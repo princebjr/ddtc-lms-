@@ -14,7 +14,7 @@ import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { formatDue } from '@/lib/assignments/due.js';
@@ -367,11 +367,9 @@ function Taking({ exam, userId, audio, onSubmitted }) {
             </TabsTrigger>
           ))}
         </TabsList>
-      </Tabs>
-      {sections
-        .filter((s) => s.id === tab)
-        .map((s) => (
-          <section key={s.id} aria-labelledby={`take-${s.id}`} className="flex flex-col gap-3">
+      {sections.map((s) => (
+          <TabsContent key={s.id} value={s.id}>
+          <section aria-labelledby={`take-${s.id}`} className="flex flex-col gap-3">
             <h2 id={`take-${s.id}`} className="m-0 text-title-3 text-ink">
               {s.title}
             </h2>
@@ -403,7 +401,9 @@ function Taking({ exam, userId, audio, onSubmitted }) {
               </Card>
             ))}
           </section>
+          </TabsContent>
         ))}
+      </Tabs>
       <div className="sticky bottom-above-nav z-10 flex flex-wrap items-center justify-between gap-2 rounded-md border border-hairline bg-card p-3 lg:static">
         <span className="text-body-sm text-ink-secondary tabular-nums">{`${done} of ${all.length} answered`}</span>
         <span className="flex flex-wrap gap-2">

@@ -28,27 +28,22 @@ function toast(page, text) {
   return page.locator('[data-toast-id]').filter({ hasText: text }).first();
 }
 
-test('a lecturer sets the category weights, writes a text-and-audio assignment, adds its audio and publishes it', async ({ page }) => {
+test('a lecturer sees the three parts of the course grade, writes a text-and-audio assignment, adds its audio and publishes it', async ({ page }) => {
   const lecturer = await createAccount({ role: 'LECTURER', first: 'Ama', second: `Boateng${unique()}` });
   const course = await createCourseFixture({ ownerId: lecturer.id, title: `Biblical Studies ${unique()}` });
   await signIn(page, lecturer.email, lecturer.password);
   await expect(page).toHaveURL(/\/lecturer\/dashboard$/);
 
-  // Grade categories: Assignments 70, Participation 30 (D12).
+  // The parts of the course grade (D12; since Phase 10.1, ADR-016, fixed at 40, 30 and 30 and changed only
+  // by an administrator): the lecturer sees them read-only.
   await page.goto(`/lecturer/courses/${course.id}/assignments`);
-  await expect(page.getByText('Total 100%')).toBeVisible();
-  await page.getByRole('button', { name: 'Edit categories' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Grade categories' });
-  await dialog.getByLabel('Weight %').first().fill('70');
-  await expect(dialog.getByRole('status')).toHaveText('Total 70%');
-  await dialog.getByRole('button', { name: 'Add category' }).click();
-  await dialog.getByLabel('Category 2', { exact: true }).fill('Participation');
-  await dialog.getByLabel('Weight %').nth(1).fill('30');
-  await expect(dialog.getByRole('status')).toHaveText('Total 100%');
-  await dialog.getByRole('button', { name: 'Save categories' }).click();
-  await expect(toast(page, 'Categories saved')).toBeVisible();
-  await expect(page.getByText('Participation')).toBeVisible();
-  await dismissToasts(page);
+  const parts = page.locator('[aria-labelledby="categories-title"]');
+  await expect(parts.getByText('Total 100%')).toBeVisible();
+  await expect(parts.getByText('Weekly assignments')).toBeVisible();
+  await expect(parts.getByText('Local Assembly practicals')).toBeVisible();
+  await expect(parts.getByText('Final examinations')).toBeVisible();
+  await expect(parts.getByText('Only an administrator can change the weights.')).toBeVisible();
+  await expect(parts.getByRole('button', { name: 'Change weights' })).toHaveCount(0);
 
   // A new assignment: text and audio instructions.
   await page.goto(`/lecturer/courses/${course.id}/assignments/new`);
