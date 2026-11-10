@@ -3,7 +3,7 @@ import { dismissToasts, expectNoAxeViolations, horizontalOverflow } from './help
 import { createAccount } from './support/accounts.js';
 import { createAssignmentFixture } from './support/assignments.js';
 import { createCourseFixture, enrolFixture } from './support/courses.js';
-import { gradeFixture, sendAnswerFixture } from './support/grading.js';
+import { gradeFixture, releaseFixture, sendAnswerFixture } from './support/grading.js';
 import { requireSupabase } from './support/local-supabase.js';
 import { signIn } from './support/ui.js';
 
@@ -18,6 +18,8 @@ import { signIn } from './support/ui.js';
 //   change is released ("Updated").
 // - Releasing a whole assignment asks first.
 // - Reopening needs a reason, and the learner may then send again before the due date.
+// - Step 9.1: the lecturer's To grade (from the dashboard tile) lists the answers waiting and opens the
+//   grading screen; the learner's Grades and feedback shows the released grade and what awaits a grade.
 
 const expect = baseExpect.configure({ timeout: 30_000 });
 test.describe.configure({ timeout: 180_000 });
@@ -190,4 +192,55 @@ test('releasing a whole assignment asks first; reopening needs a reason and the 
   await kwamePage.getByLabel('Text answer').fill('Here is my answer again, with the recording described in words.');
   await kwamePage.getByRole('button', { name: 'Submit again' }).click();
   await expect(toast(kwamePage, 'Resubmitted as version 2')).toBeVisible();
+});
+
+test("To grade lists the answers waiting and opens the grading screen; the learner's Grades and feedback shows released and awaiting answers (Step 9.1)", async ({
+  browser,
+}) => {
+  const tag = unique();
+  const lecturer = await createAccount({ role: 'LECTURER', first: 'Ama', second: `Boateng${tag}` });
+  const kwame = await createAccount({ first: 'Kwame', second: `Mensah${tag}` });
+  const abena = await createAccount({ first: 'Abena', second: `Frimpong${tag}` });
+  const course = await createCourseFixture({ ownerId: lecturer.id, title: `Church History ${tag}` });
+  for (const l of [kwame, abena]) await enrolFixture(course.id, l.id, lecturer.id);
+  const essay = await createAssignmentFixture({ courseId: course.id, ownerId: lecturer.id, title: 'Reformation essay', dueAt: in7days() });
+  const journal = await createAssignmentFixture({ courseId: course.id, ownerId: lecturer.id, title: 'Prayer journal', dueAt: in7days() });
+  // Kwame: essay graded 15 and released; journal sent, waiting. Abena: essay sent, waiting.
+  await sendAnswerFixture(kwame, essay.id);
+  await sendAnswerFixture(kwame, journal.id);
+  await sendAnswerFixture(abena, essay.id);
+  await gradeFixture(lecturer, essay.id, kwame.id, 15, 'Clear and well organised.');
+  await releaseFixture(lecturer, essay.id, kwame.id);
+
+  const lecturerPage = await (await browser.newContext()).newPage();
+  await signIn(lecturerPage, lecturer.email, lecturer.password);
+  await expect(lecturerPage).toHaveURL(/\/lecturer\/dashboard$/);
+  await expect(lecturerPage.getByTestId('to-grade-count')).toHaveText('2');
+  await lecturerPage.getByTestId('to-grade-count').click();
+  await expect(lecturerPage).toHaveURL(/\/lecturer\/to-grade$/);
+  await expect(lecturerPage.getByTestId('to-grade-summary')).toHaveText('2 answers waiting in 2 assignments');
+  await expectNoAxeViolations(lecturerPage);
+  expect(await horizontalOverflow(lecturerPage)).toBeLessThanOrEqual(0);
+  await lecturerPage
+    .getByRole('link', { name: `Grade answer from Abena Frimpong${tag}` })
+    .filter({ visible: true })
+    .click();
+  await expect(lecturerPage.getByRole('heading', { name: `Abena Frimpong${tag}` })).toBeVisible();
+  await expect(lecturerPage.locator('[data-slot="grading-panel"]')).toBeVisible();
+
+  const kwamePage = await (await browser.newContext()).newPage();
+  await signIn(kwamePage, kwame.email, kwame.password);
+  await expect(kwamePage).toHaveURL(/\/learner\/dashboard$/);
+  await kwamePage.goto('/learner/grades');
+  await expect(kwamePage.getByRole('heading', { name: 'Grades and feedback' })).toBeVisible();
+  const essayRow = kwamePage.locator('[data-slot="my-grade-row"]').filter({ hasText: 'Reformation essay' });
+  await expect(essayRow.getByText('15 / 20')).toBeVisible();
+  await expect(essayRow.getByText('Grade B')).toBeVisible();
+  await expect(essayRow.getByText('Clear and well organised.')).toBeVisible();
+  await expect(kwamePage.locator('[data-slot="my-grade-row"]').filter({ hasText: 'Prayer journal' }).getByText('Awaiting grade')).toBeVisible();
+  await expectNoAxeViolations(kwamePage);
+  expect(await horizontalOverflow(kwamePage)).toBeLessThanOrEqual(0);
+  await dismissToasts(kwamePage);
+  await essayRow.click();
+  await expect(kwamePage).toHaveURL(new RegExp(`/learner/courses/${course.id}/assignments/${essay.id}$`));
 });

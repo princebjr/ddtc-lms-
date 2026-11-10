@@ -26,3 +26,14 @@ export async function gradeFixture(lecturer, assignmentId, learnerId, score, fee
   if (res.status !== 200) throw new Error(`grade not saved: ${res.status} ${JSON.stringify(res.body)}`);
   return res.body;
 }
+
+/**
+ * The lecturer releases one learner's grade, or every draft grade of the assignment (release-grades).
+ * @param {{ email: string, password: string }} lecturer @param {string} assignmentId @param {string} [learnerId]
+ */
+export async function releaseFixture(lecturer, assignmentId, learnerId) {
+  const { token } = await apiSignIn(lecturer.email, lecturer.password);
+  const res = await call('release-grades', token, { assignmentId, ...(learnerId ? { learnerId } : {}) });
+  if (res.status !== 200) throw new Error(`grades not released: ${res.status} ${JSON.stringify(res.body)}`);
+  return res.body;
+}
