@@ -93,10 +93,17 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      # A slow Ubuntu mirror once held this step for the whole 30-minute job (it normally takes under
-      # a minute). Fail it after 10 minutes instead, so only that shard needs re-running.
+      # The browsers are cached between runs (keyed on the lockfile, so a Playwright upgrade fetches
+      # new ones). The system libraries still come from the runner's Ubuntu mirror, which on
+      # 2026-11-10 took more than 10 minutes three times in a row on one shard (the browsers took
+      # seconds): allow 20 minutes (the job allows 40).
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install browsers and their system libraries
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Start local Supabase (database, auth, Mailpit) for the authentication tests
         run: npm run db:start
