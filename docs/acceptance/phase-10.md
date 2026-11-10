@@ -1,7 +1,7 @@
 # Phase 10 acceptance evidence: Gradebook, distribution charts and exports
 
 - Phase file: `docs/phases/phase-10-gradebook-charts-exports.md`
-- Branch and pull request: `phase-10-gradebook`, PR link added when opened
+- Branch and pull request: `phase-10-gradebook`, https://github.com/princebjr/ddtc-lms-/pull/16
 - Reviewer (O2): Prince Boateng
 - Evidence date: 2026-11-10
 - Plan approved by the owner on 2026-11-10 with five decisions, recorded with the later owner choices as ADR-015:
