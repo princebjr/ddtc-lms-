@@ -1,6 +1,7 @@
 import { BookOpen, ChartColumn, ClipboardCheck, ImageUp, Trash2, UserMinus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { CourseCover } from '@/components/courses/CourseCover.jsx';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
@@ -415,15 +416,7 @@ export function CoverCard({ course, canEdit, onChanged }) {
   return (
     <Card className="flex flex-col gap-3">
       <CardTitle>Cover image</CardTitle>
-      <div className="aspect-video w-full overflow-hidden rounded-md bg-fill">
-        {url ? (
-          <img src={url} alt={`Cover of ${course.title}`} className="size-full object-cover" />
-        ) : (
-          <span className="flex size-full items-center justify-center bg-hero-soft text-link">
-            <BookOpen className="size-10" aria-hidden="true" />
-          </span>
-        )}
-      </div>
+      <CourseCover url={url} alt={`Cover of ${course.title}`} className="rounded-md" />
       <CardDescription>JPG, PNG or WebP, up to 2 MB.</CardDescription>
       {canEdit ? (
         <>

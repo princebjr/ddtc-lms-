@@ -172,3 +172,41 @@ export function fmp4({ seconds, mehd = false, tfdt = true, perSample = true }) {
   }
   return concat(box('ftyp', concat('iso5', [0, 0, 0, 1], 'iso5', 'mp41')), moov, ...frags);
 }
+
+/** CRC-32 of a PNG chunk's type and data. @param {Uint8Array} bytes */
+function crc32(bytes) {
+  let crc = 0xffffffff;
+  for (const b of bytes) {
+    crc ^= b;
+    for (let k = 0; k < 8; k += 1) crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/**
+ * A real greyscale PNG of the given size with a gradient (Step 9.1: a tall photo as a course cover).
+ * @param {number} width @param {number} height @param {(data: Uint8Array) => Uint8Array} deflate zlib deflate (node:zlib deflateSync)
+ */
+export function png(width, height, deflate) {
+  /** @param {string} type @param {Uint8Array} data */
+  const chunk = (type, data) => {
+    const out = new Uint8Array(12 + data.length);
+    const view = new DataView(out.buffer);
+    view.setUint32(0, data.length);
+    out.set(new TextEncoder().encode(type), 4);
+    out.set(data, 8);
+    view.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+    return out;
+  };
+  const ihdr = new Uint8Array(13);
+  const v = new DataView(ihdr.buffer);
+  v.setUint32(0, width);
+  v.setUint32(4, height);
+  ihdr.set([8, 0, 0, 0, 0], 8); // 8 bits, greyscale, deflate, no filter, no interlace
+  const raw = new Uint8Array((width + 1) * height);
+  for (let y = 0; y < height; y += 1) {
+    raw[y * (width + 1)] = 0; // filter: none
+    for (let x = 0; x < width; x += 1) raw[y * (width + 1) + 1 + x] = (y * 255) / height;
+  }
+  return concat(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', deflate(raw)), chunk('IEND', new Uint8Array(0)));
+}
