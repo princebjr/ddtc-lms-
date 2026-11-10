@@ -1,4 +1,4 @@
-import { BookOpen, CircleCheck, Clock, UsersRound } from 'lucide-react';
+import { BookOpen, CircleCheck, ClipboardList, Clock, UsersRound } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
@@ -9,16 +9,31 @@ import { InsetList, InsetListLink } from '@/components/ui/inset-list.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { COURSE_STATUS_LABEL, COURSE_STATUS_TONE, fetchCourses } from '@/lib/courses/courses.js';
+import { fetchGradingQueue } from '@/lib/grading/grading.js';
 import { greeting } from '@/lib/greeting.js';
 
 // Lecturer dashboard (Phase 5): courses taught at a glance and the most recently changed courses.
-// Grading and activity join it in later phases.
+// Step 9.1 adds To grade: the answers waiting for marks and feedback, opening the To grade page.
+// Activity joins it in Phase 11.
 
 export default function LecturerDashboardPage() {
   const auth = useAuth();
-  const { state, data, reload } = useLoad(() => fetchCourses({}), []);
-  const courses = data ?? [];
+  const { state, data, reload } = useLoad(async () => {
+    const [courses, queue] = await Promise.all([fetchCourses({}), fetchGradingQueue()]);
+    return { courses, queue };
+  }, []);
+  const courses = data?.courses ?? [];
+  const waiting = (data?.queue ?? []).filter((r) => r.state === 'UNGRADED');
+  const waitingIn = new Set(waiting.map((r) => r.assignment_id)).size;
+  /** @type {Array<{ label: string, value: number, icon: import('lucide-react').LucideIcon, to?: string, detail?: string }>} */
   const tiles = [
+    {
+      label: 'To grade',
+      value: waiting.length,
+      icon: ClipboardList,
+      to: '/lecturer/to-grade',
+      detail: waiting.length ? `in ${waitingIn} ${waitingIn === 1 ? 'assignment' : 'assignments'}` : 'nothing waiting',
+    },
     { label: 'Courses you teach', value: courses.filter((c) => c.status !== 'ARCHIVED').length, icon: BookOpen },
     { label: 'Published', value: courses.filter((c) => c.status === 'PUBLISHED').length, icon: CircleCheck },
     { label: 'Waiting for approval', value: courses.filter((c) => c.status === 'PENDING_APPROVAL').length, icon: Clock },
@@ -32,20 +47,34 @@ export default function LecturerDashboardPage() {
         <ErrorState title="The dashboard could not be loaded" onRetry={reload} />
       ) : (
         <LoadingRegion loading={state === 'loading'} skeleton={<DashboardSkeleton />} onRetry={reload}>
-          <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
-            {tiles.map((t) => (
-              <li key={t.label}>
-                <Card className="flex items-center gap-4">
+          <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+            {tiles.map((t) => {
+              const card = (
+                <Card className={t.to ? 'flex items-center gap-4 hover:bg-fill' : 'flex items-center gap-4'}>
                   <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-fill text-link">
                     <t.icon className="size-6" aria-hidden="true" />
                   </span>
                   <span className="flex flex-col">
-                    <span className="text-title-2 text-ink">{t.value}</span>
+                    <span className="text-title-2 text-ink" data-testid={t.to ? 'to-grade-count' : undefined}>
+                      {t.value}
+                    </span>
                     <span className="text-body-sm text-ink-secondary">{t.label}</span>
+                    {t.detail ? <span className="text-caption text-ink-secondary">{t.detail}</span> : null}
                   </span>
                 </Card>
-              </li>
-            ))}
+              );
+              return (
+                <li key={t.label}>
+                  {t.to ? (
+                    <Link to={t.to} className="block rounded-lg focus-visible:focus-ring">
+                      {card}
+                    </Link>
+                  ) : (
+                    card
+                  )}
+                </li>
+              );
+            })}
           </ul>
           <section aria-labelledby="recent-courses" className="mt-6 flex flex-col gap-3">
             <div className="flex items-center justify-between">

@@ -376,6 +376,7 @@ Limits (adjustable settings): lesson audio 100 MB and 90 minutes; learner audio 
   - `GradeNotices` in the learner shell: "New grade available" once per tab, read when the assignment is opened.
   - `src/lib/grading/grading.js` holds the calls and labels, with no figures.
 - **Routes:** unchanged from Phase 8 (`/:role/courses/:courseId/assignments/:assignmentId/submissions[/:learnerId]`); the grading panel and results join those pages.
+- **Step 9.1:** `grading_queue()` and `my_grades()` (migration 30, pgTAP 21) behind `/lecturer/to-grade` (`ToGradePage`, and the dashboard's To grade tile) and `/learner/grades` (`LearnerGradesPage`), the navigation pages promised for Phase 9; `LearnerCell` is shared with the results; `CourseCover` keeps every course cover at 16:9 (an aspect-ratio box that does not clip grows to fit a tall photo).
 
 ## 12. Grades, gradebook and charts
 

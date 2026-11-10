@@ -114,6 +114,65 @@ export async function fetchMyGrade(assignmentId) {
 }
 
 /**
+ * @typedef {object} QueueRow  an answer waiting to be graded, or a draft grade not yet released (Step 9.1)
+ * @property {string} course_id
+ * @property {string} course_title
+ * @property {string} course_code
+ * @property {string} assignment_id
+ * @property {string} assignment_title
+ * @property {string} due_at
+ * @property {number} max_marks
+ * @property {string} learner_id
+ * @property {string} first_name
+ * @property {string} second_name
+ * @property {number | null} id_number
+ * @property {string | null} branch_name
+ * @property {string | null} profile_image_path
+ * @property {'UNGRADED' | 'DRAFT'} state
+ * @property {'SUBMITTED' | 'GRADED' | 'REOPENED'} status
+ * @property {number} current_version
+ * @property {string | null} submitted_at
+ * @property {boolean} is_late
+ * @property {number | null} score
+ */
+
+/** The work waiting in the courses the signed-in lecturer (or AAL2 administrator) manages, oldest first. */
+export async function fetchGradingQueue() {
+  const { data, error } = await getSupabase().rpc('grading_queue');
+  if (error) throw error;
+  return /** @type {QueueRow[]} */ (data ?? []);
+}
+
+/**
+ * @typedef {object} MyGradeRow  one of the learner's answered assignments (Step 9.1)
+ * @property {string} course_id
+ * @property {string} course_title
+ * @property {string} course_code
+ * @property {string} assignment_id
+ * @property {string} assignment_title
+ * @property {string} due_at
+ * @property {number} max_marks
+ * @property {'RELEASED' | 'AWAITING'} state
+ * @property {number | null} score
+ * @property {number | null} percentage
+ * @property {string | null} letter_grade
+ * @property {string | null} band
+ * @property {boolean | null} passed
+ * @property {string | null} feedback
+ * @property {string | null} released_at
+ * @property {boolean} updated
+ * @property {string | null} submitted_at
+ * @property {number} current_version
+ */
+
+/** The signed-in learner's answered assignments, released or awaiting, course by course. */
+export async function fetchMyGrades() {
+  const { data, error } = await getSupabase().rpc('my_grades');
+  if (error) throw error;
+  return /** @type {MyGradeRow[]} */ (data ?? []);
+}
+
+/**
  * @typedef {object} GradeNotification
  * @property {string} id
  * @property {'GRADE_RELEASED' | 'GRADE_UPDATED'} notification_type

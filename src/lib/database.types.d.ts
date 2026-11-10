@@ -744,6 +744,11 @@ isOneToOne: false
               "changed": boolean,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"submission_id": string
             }[]
                            },
+"grading_queue":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "assignment_id": string,"assignment_title": string,"branch_name": string,"course_code": string,"course_id": string,"course_title": string,"current_version": number,"due_at": string,"first_name": string,"id_number": number,"is_late": boolean,"learner_id": string,"max_marks": number,"profile_image_path": string,"score": number,"second_name": string,"state": string,"status": Database["public"]['Enums']["submission_status"],"submitted_at": string
+            }[]
+                           },
 "idle_settings":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
@@ -787,6 +792,11 @@ isOneToOne: false
                            },
 "my_grade":
 { Args: { "p_assignment": string }; Returns: Json
+                           },
+"my_grades":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "assignment_id": string,"assignment_title": string,"band": string,"course_code": string,"course_id": string,"course_title": string,"current_version": number,"due_at": string,"feedback": string,"letter_grade": string,"max_marks": number,"passed": boolean,"percentage": number,"released_at": string,"score": number,"state": string,"submitted_at": string,"updated": boolean
+            }[]
                            },
 "my_submission":
 { Args: { "p_assignment": string }; Returns: Json

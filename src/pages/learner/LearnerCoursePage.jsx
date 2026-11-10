@@ -1,5 +1,6 @@
 import { BookOpen, CircleCheck, Circle, ClipboardList, Library } from 'lucide-react';
 import { Link, useParams } from 'react-router';
+import { CourseCover } from '@/components/courses/CourseCover.jsx';
 import { CourseWorkspaceSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
@@ -60,7 +61,7 @@ export default function LearnerCoursePage() {
           ) : null}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <Card className="flex flex-col gap-4 lg:col-span-2">
-              {covers[course.id] ? <img src={covers[course.id]} alt="" className="aspect-video w-full rounded-md object-cover" /> : null}
+              {covers[course.id] ? <CourseCover url={covers[course.id]} className="rounded-md" /> : null}
               <CardTitle>About this course</CardTitle>
               <p className="m-0 whitespace-pre-line text-reading text-ink">{course.description || 'No description yet.'}</p>
               {course.learning_objectives ? (
