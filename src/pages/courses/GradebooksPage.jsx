@@ -67,14 +67,13 @@ export default function GradebooksPage({ role }) {
       <PageHeader
         title={admin ? 'Gradebook oversight' : 'Gradebooks'}
         description={admin ? 'Results by course. Each course has its own gradebook.' : 'Each course you teach has its own gradebook.'}
-        actions={
-          <Button variant="outline" onClick={() => setExporting(true)} disabled={rows.length === 0}>
-            <Download aria-hidden="true" />
-            Export
-          </Button>
-        }
         className="pb-0"
       />
+      {/* Always visible (a header action hides below desktop width, and Export is not a FAB). */}
+      <Button variant="outline" className="self-start" onClick={() => setExporting(true)} disabled={rows.length === 0}>
+        <Download aria-hidden="true" />
+        Export
+      </Button>
       {state === 'error' ? (
         <ErrorState title="The courses could not be loaded" onRetry={reload} />
       ) : (

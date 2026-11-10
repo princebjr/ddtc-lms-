@@ -47,18 +47,16 @@ export default function LearnerCoursePage() {
     <LoadingRegion loading={state === 'loading'} skeleton={<CourseWorkspaceSkeleton />} onRetry={reload}>
       {course ? (
         <div className="flex flex-col gap-6">
-          <PageHeader
-            title={course.title}
-            description={course.category ? `${course.course_code} · ${course.category}` : course.course_code}
-            actions={
-              <Button asChild variant="outline">
-                <Link to={`/learner/courses/${course.id}/grades`}>
-                  <ClipboardCheck aria-hidden="true" />
-                  My grades
-                </Link>
-              </Button>
-            }
-          />
+          <div className="flex flex-col gap-3">
+            <PageHeader title={course.title} description={course.category ? `${course.course_code} · ${course.category}` : course.course_code} className="pb-0" />
+            {/* Always visible (not a header action, which hides below desktop width): the course's own gradebook. */}
+            <Button asChild variant="outline" className="self-start">
+              <Link to={`/learner/courses/${course.id}/grades`}>
+                <ClipboardCheck aria-hidden="true" />
+                My grades
+              </Link>
+            </Button>
+          </div>
           {readOnly ? (
             <div className="flex flex-col gap-3">
               <span>
