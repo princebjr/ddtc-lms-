@@ -104,7 +104,7 @@ function Editor({ role, course, assignment, categories, lessons, onChanged }) {
     title: assignment?.title ?? '',
     description: assignment?.description ?? '',
     lessonId: assignment?.lesson_id ?? '',
-    categoryId: assignment?.category_id ?? categories[0]?.id ?? '',
+    categoryId: assignment?.category_id ?? categories.find((c) => c.part === 'ASSIGNMENTS')?.id ?? categories[0]?.id ?? '',
     contentType: /** @type {'TEXT' | 'AUDIO' | 'TEXT_AND_AUDIO'} */ (assignment?.content_type ?? 'TEXT'),
     textInstructions: assignment?.text_instructions ?? '',
     dueAt: assignment ? toGhanaInput(assignment.due_at) : defaultDue(),
@@ -304,7 +304,11 @@ function Editor({ role, course, assignment, categories, lessons, onChanged }) {
           <Card className="flex flex-col gap-4" aria-labelledby="details-title">
             <CardTitle id="details-title">Details</CardTitle>
             <PickField label="Category" id="category" value={categoryId} onChange={setCategoryId} disabled={readOnly} error={errors.categoryId}
-              options={categories.map((c) => ({ value: c.id, label: `${c.name} (${c.weight}%)` }))} placeholder="Choose a category" />
+              options={categories
+                // Examinations are set in the Examinations tab (ADR-016); a practical is marked in person.
+                .filter((c) => c.part !== 'EXAMINATIONS')
+                .map((c) => ({ value: c.id, label: c.part === 'PRACTICALS' ? `${c.name} (${c.weight}%, marked in person)` : `${c.name} (${c.weight}%)` }))}
+              placeholder="Choose a category" />
             <PickField label="Lesson (optional)" id="lesson" value={lessonId || 'none'} onChange={(v) => setLessonId(v === 'none' ? '' : v)} disabled={readOnly}
               options={[{ value: 'none', label: 'Not linked to a lesson' }, ...lessons.map((l) => ({ value: l.id, label: l.title }))]} />
             <FormField label="Due date and time" name="dueAt" type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} disabled={readOnly} error={errors.dueAt} hint="Ghana time (GMT)." />

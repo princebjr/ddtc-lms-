@@ -96,9 +96,10 @@ const learner = (over) => ({
   ...over,
 });
 
+/** @type {import('@/lib/gradebook/gradebook.js').GradebookColumn[]} */
 const columns = [
-  { assignment_id: 'a1', title: 'Covenant essay', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-01-20T23:59:00Z', published: true },
-  { assignment_id: 'a2', title: 'Reflection on Genesis 1', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-02-20T23:59:00Z', published: true },
+  { assignment_id: 'a1', title: 'Covenant essay', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-01-20T23:59:00Z', published: true , part: 'ASSIGNMENTS' },
+  { assignment_id: 'a2', title: 'Reflection on Genesis 1', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-02-20T23:59:00Z', published: true , part: 'ASSIGNMENTS' },
 ];
 
 const DISTRIBUTION = [

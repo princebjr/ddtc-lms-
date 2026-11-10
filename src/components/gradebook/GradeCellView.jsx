@@ -8,11 +8,11 @@ import { cellState } from '@/lib/gradebook/gradebook.js';
 // late work carries a Late chip. The figures are the database's (D30).
 
 /**
- * @param {{ cell: import('@/lib/gradebook/gradebook.js').GradeCell | undefined, audience?: 'staff' | 'learner' }} props
+ * @param {{ cell: import('@/lib/gradebook/gradebook.js').GradeCell | undefined, audience?: 'staff' | 'learner', practical?: boolean }} props
  */
-export function GradeCellView({ cell, audience = 'staff' }) {
+export function GradeCellView({ cell, audience = 'staff', practical = false }) {
   if (!cell) return <span className="text-ink-secondary">—</span>;
-  const s = cellState(cell.state, audience);
+  const s = cellState(cell.state, audience, practical);
   const scored = cell.state === 'RELEASED' || cell.state === 'DRAFT' || cell.state === 'COUNTED_ZERO';
   return (
     <span className="flex flex-col items-start gap-1" data-state={cell.state}>

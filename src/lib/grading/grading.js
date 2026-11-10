@@ -235,3 +235,20 @@ export function formatPercentage(percentage) {
 function trimNumber(n) {
   return String(Number(n));
 }
+
+/**
+ * The practical mark sheet (Phase 10.1, ADR-016): several learners' marks in one request, saved as
+ * drafts; an empty score is skipped. A released mark changes only with a reason. Returns how many saved.
+ * @param {{ assignmentId: string, marks: Array<{ learnerId: string, score: number | null, feedback: string }>, reason?: string }} r
+ * @returns {Promise<{ saved: number }>}
+ */
+export function savePracticalMarks({ assignmentId, marks, reason }) {
+  return callFunction('grade-submission', { action: 'save-practical-marks', assignmentId, marks, ...(reason ? { reason } : {}) });
+}
+
+/** The practical mark sheet's current marks and comments, by learner. @param {string} assignmentId */
+export async function fetchPracticalMarks(assignmentId) {
+  const { data, error } = await getSupabase().rpc('practical_marks', { p_assignment: assignmentId });
+  if (error) throw error;
+  return /** @type {Array<{ learner_id: string, score: number | null, feedback: string | null }>} */ (data ?? []);
+}

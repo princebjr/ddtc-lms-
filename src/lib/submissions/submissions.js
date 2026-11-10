@@ -35,7 +35,7 @@ export const MAX_TEXT_ANSWER = 20000;
  * @property {string} text_answer
  * @property {AnswerFile[]} files
  */
-/** @typedef {'not_found' | 'not_allowed' | 'not_enrolled' | 'read_only' | 'not_open' | 'graded' | 'past_due' | 'past_due_resubmit'} BlockedReason */
+/** @typedef {'not_found' | 'not_allowed' | 'not_enrolled' | 'read_only' | 'not_open' | 'in_person' | 'graded' | 'past_due' | 'past_due_resubmit'} BlockedReason */
 /**
  * @typedef {object} MySubmission
  * @property {string} assignment_id
@@ -93,6 +93,9 @@ export function blockedMessage(reason) {
       return 'This course is read-only for you, so answers can no longer be sent.';
     case 'not_open':
       return 'This assignment is not open for answers.';
+    case 'in_person':
+      // Phase 10.1 (ADR-016): a Local Assembly practical is done in person; the lecturer types the mark.
+      return 'This practical is marked in person at your local assembly. Your lecturer enters your mark, and it appears here once released.';
     case 'graded':
       return 'Your answer has been graded, so it cannot be sent again.';
     case 'past_due':

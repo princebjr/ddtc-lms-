@@ -50,7 +50,7 @@ export function GradebookMatrix({ columns, learners }) {
                 {columns.map((c) => (
                   <li key={c.assignment_id} className="flex min-h-11 items-start justify-between gap-3 py-2">
                     <span className="min-w-0 break-words text-body text-ink">{c.title}</span>
-                    <GradeCellView cell={cellOf(l, c.assignment_id)} />
+                    <GradeCellView cell={cellOf(l, c.assignment_id)} practical={c.part === 'PRACTICALS'} />
                   </li>
                 ))}
               </ul>
@@ -91,7 +91,7 @@ export function GradebookMatrix({ columns, learners }) {
                 </th>
                 {columns.map((c) => (
                   <td key={c.assignment_id} className="border-b border-hairline px-3 py-3 align-top">
-                    <GradeCellView cell={cellOf(l, c.assignment_id)} />
+                    <GradeCellView cell={cellOf(l, c.assignment_id)} practical={c.part === 'PRACTICALS'} />
                   </td>
                 ))}
                 <td className="border-b border-hairline px-3 py-3 align-top">

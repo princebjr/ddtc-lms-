@@ -666,3 +666,19 @@ as $$
                   where e.course_id = c.id and e.learner_id = s.learner_id and e.enrolment_status in ('ACTIVE', 'COMPLETED'))
    order by c.title, a.due_at, a.title;
 $$;
+
+/** The practical mark sheet's current marks and comments (the course's lecturers and AAL2 administrators only). */
+create function public.practical_marks(p_assignment uuid)
+returns table (learner_id uuid, score numeric, feedback text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select s.learner_id, s.score, s.feedback
+    from public.submissions s
+    join public.assignments a on a.id = s.assignment_id
+   where s.assignment_id = p_assignment and s.marked_in_person and private.can_manage_course(a.course_id);
+$$;
+revoke execute on function public.practical_marks(uuid) from public, anon;
+grant execute on function public.practical_marks(uuid) to authenticated, service_role;

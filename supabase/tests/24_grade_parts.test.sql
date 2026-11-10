@@ -16,7 +16,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(37);
+select plan(39);
 
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.t1', tests.create_user('t1@example.test', 'Ama', 'Boateng', 'LECTURER')::text, true);
@@ -127,6 +127,11 @@ select is((select (c ->> 'counted')::boolean from public.calculate_course_grades
             where g.first_name = 'Yaw' and (c ->> 'assignment_id')::uuid = tests.id('P1')), false, 'and it is not counted');
 select is((select part from public.gradebook_assignments(tests.id('c1')) where assignment_id = tests.id('P1')), 'PRACTICALS',
   'gradebook columns say which part they belong to');
+select results_eq($$ select score, feedback from public.practical_marks(tests.id('P1')) order by score desc $$,
+  $$ values (25.00::numeric, 'Led with confidence.'), (18.00::numeric, null) $$, 'the mark sheet reads the current marks and comments');
+select tests.reset(); select tests.authenticate_as(tests.uid('t2'));
+select is((select count(*)::int from public.practical_marks(tests.id('P1'))), 0, 'another course''s lecturer reads nothing');
+select tests.reset(); select tests.authenticate_as(tests.uid('t1'));
 
 -- A changed released mark needs a reason, as for any grade.
 select tests.as_service();

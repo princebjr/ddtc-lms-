@@ -251,14 +251,14 @@ isOneToOne: false
                   ]
                 },"grade_categories": {
                   Row: {
-                    "archived_at": string | null,"course_id": string,"created_at": string,"id": string,"name": string,"position": number,"updated_at": string,"weight": number
+                    "archived_at": string | null,"course_id": string,"created_at": string,"id": string,"name": string,"part": Database["public"]['Enums']["grade_part"],"position": number,"updated_at": string,"weight": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"course_id": string,"created_at"?: string,"id"?: string,"name": string,"position": number,"updated_at"?: string,"weight": number
+                    "archived_at"?: string | null,"course_id": string,"created_at"?: string,"id"?: string,"name": string,"part"?: Database["public"]['Enums']["grade_part"],"position": number,"updated_at"?: string,"weight": number
                   }
                   Update: {
-                    "archived_at"?: string | null,"course_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"position"?: number,"updated_at"?: string,"weight"?: number
+                    "archived_at"?: string | null,"course_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"part"?: Database["public"]['Enums']["grade_part"],"position"?: number,"updated_at"?: string,"weight"?: number
                   }
                   Relationships: [
                     {
@@ -575,14 +575,14 @@ isOneToOne: false
                   ]
                 },"submissions": {
                   Row: {
-                    "assignment_id": string,"created_at": string,"current_version": number,"feedback": string | null,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"graded_at": string | null,"graded_by": string | null,"id": string,"is_late": boolean,"learner_id": string,"released_at": string | null,"released_by": string | null,"released_feedback": string | null,"released_score": number | null,"score": number | null,"status": Database["public"]['Enums']["submission_status"],"updated_at": string
+                    "assignment_id": string,"created_at": string,"current_version": number,"feedback": string | null,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"graded_at": string | null,"graded_by": string | null,"id": string,"is_late": boolean,"learner_id": string,"marked_in_person": boolean,"released_at": string | null,"released_by": string | null,"released_feedback": string | null,"released_score": number | null,"score": number | null,"status": Database["public"]['Enums']["submission_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assignment_id": string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id": string,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
+                    "assignment_id": string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id": string,"marked_in_person"?: boolean,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
                   }
                   Update: {
-                    "assignment_id"?: string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id"?: string,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
+                    "assignment_id"?: string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id"?: string,"marked_in_person"?: boolean,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -648,6 +648,9 @@ isOneToOne: false
                            },
 "am_i_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"apply_standard_parts":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string,"p_reason": string }; Returns: undefined
                            },
 "assignment_audio_activate":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string }; Returns: Json
@@ -736,6 +739,9 @@ isOneToOne: false
 "course_transition":
 { Args: { "p_action": string,"p_actor": string,"p_as_admin": boolean,"p_course": string,"p_grant_direct"?: boolean,"p_reason"?: string }; Returns: Json
                            },
+"course_uses_standard_parts":
+{ Args: { "p_course": string }; Returns: boolean
+                           },
 "course_weight_total":
 { Args: { "p_course": string }; Returns: number
                            },
@@ -772,7 +778,7 @@ isOneToOne: false
                            },
 "gradebook_assignments":
 { Args: { "p_course": string }; Returns: {
-              "assignment_id": string,"category_id": string,"category_name": string,"due_at": string,"max_marks": number,"published": boolean,"title": string
+              "assignment_id": string,"category_id": string,"category_name": string,"due_at": string,"max_marks": number,"part": string,"published": boolean,"title": string
             }[]
                            },
 "grading_queue":
@@ -835,11 +841,24 @@ isOneToOne: false
 "my_submission":
 { Args: { "p_assignment": string }; Returns: Json
                            },
+"practical_marks":
+{ Args: { "p_assignment": string }; Returns: {
+              "feedback": string,"learner_id": string,"score": number
+            }[]
+                           },
+"practical_marks_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_marks": Json,"p_reason"?: string }; Returns: number
+                           },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "record_export":
 { Args: { "p_actor": string,"p_entity_id": string,"p_entity_type": string,"p_kind": string,"p_metadata": Json }; Returns: undefined
+                           },
+"standard_parts_preview":
+{ Args: { "p_course": string }; Returns: {
+              "current_overall": number,"first_name": string,"learner_id": string,"new_overall": number,"second_name": string
+            }[]
                            },
 "submission_draft_file_remove":
 { Args: { "p_actor": string,"p_file": string }; Returns: {
@@ -872,7 +891,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -988,7 +1007,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const
