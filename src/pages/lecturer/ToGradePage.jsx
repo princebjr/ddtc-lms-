@@ -12,6 +12,7 @@ import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { formatDueShort } from '@/lib/assignments/due.js';
 import { fetchGradingQueue } from '@/lib/grading/grading.js';
+import { ExamMarkingList } from '@/components/exams/ExamPanels.jsx';
 
 // To grade (Step 9.1; navigation page promised for Phase 9; prototype dashboard "To grade"): the
 // answers waiting for marks and feedback in the courses the lecturer teaches, oldest first, with the
@@ -97,7 +98,11 @@ export default function ToGradePage() {
       ) : (
         <LoadingRegion loading={state === 'loading'} skeleton={<ListSkeleton rows={6} columns={4} />} onRetry={reload}>
           {rows.length === 0 ? (
-            <EmptyState icon={ClipboardList} title="Nothing to grade" description="Answers appear here when learners send them." />
+            <div className="flex flex-col gap-6">
+              {/* Examination scripts can wait even when no assignment answers do (Phase 10.1). */}
+              <ExamMarkingList role="lecturer" />
+              <EmptyState icon={ClipboardList} title="Nothing to grade" description="Answers appear here when learners send them." />
+            </div>
           ) : (
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -113,6 +118,7 @@ export default function ToGradePage() {
               {waiting.length ? (
                 <ResponsiveTable caption="Answers waiting to be graded" cardsBelow="lg" columns={columns} rows={waiting} getRowKey={(r) => `${r.assignment_id}:${r.learner_id}`} />
               ) : null}
+              <ExamMarkingList role="lecturer" />
               {drafts.length ? (
                 <section aria-labelledby="drafts-title" className="flex flex-col gap-3">
                   <h2 id="drafts-title" className="m-0 text-title-3 text-ink">

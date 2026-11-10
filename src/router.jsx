@@ -17,7 +17,8 @@ import RouteErrorPage from '@/pages/RouteErrorPage.jsx';
 const page = (load) => async () => ({ Component: (await load()).default });
 
 /** @param {'AdminNewCourse' | 'AdminCourse' | 'LecturerNewCourse' | 'LecturerCourse' | 'LearnerCourse' | 'AdminLesson' | 'LecturerLesson' | 'LearnerLesson' | 'AdminAssignment' | 'LecturerAssignment' | 'LearnerAssignment'
- *   | 'AdminSubmissions' | 'LecturerSubmissions' | 'AdminSubmission' | 'LecturerSubmission' | 'LearnerCourseGrades'} name */
+ *   | 'AdminSubmissions' | 'LecturerSubmissions' | 'AdminSubmission' | 'LecturerSubmission' | 'LearnerCourseGrades'
+ *   | 'AdminExam' | 'LecturerExam' | 'AdminExamResults' | 'LecturerExamResults' | 'AdminExamScript' | 'LecturerExamScript' | 'LearnerExam'} name */
 const coursePage = (name) => async () => ({ Component: (await import('@/pages/courses/CourseRoutes.jsx'))[name] });
 
 /** @param {'AdminPage' | 'LecturerPage' | 'LearnerPage'} name */
@@ -56,6 +57,9 @@ const roleRoutes = [
       { path: 'courses/:courseId/assignments/:assignmentId/submissions/:learnerId', lazy: coursePage('AdminSubmission') },
       { path: 'courses/:courseId/assignments/:assignmentId/submissions', lazy: coursePage('AdminSubmissions') },
       { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('AdminAssignment') },
+      { path: 'courses/:courseId/exams/:examId/results/:learnerId', lazy: coursePage('AdminExamScript') },
+      { path: 'courses/:courseId/exams/:examId/results', lazy: coursePage('AdminExamResults') },
+      { path: 'courses/:courseId/exams/:examId', lazy: coursePage('AdminExam') },
       { path: 'courses/:courseId/:tab?', lazy: coursePage('AdminCourse') },
       { path: ':slug?', lazy: rolePage('AdminPage') },
     ],
@@ -69,6 +73,9 @@ const roleRoutes = [
       { path: 'courses/:courseId/assignments/:assignmentId/submissions/:learnerId', lazy: coursePage('LecturerSubmission') },
       { path: 'courses/:courseId/assignments/:assignmentId/submissions', lazy: coursePage('LecturerSubmissions') },
       { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LecturerAssignment') },
+      { path: 'courses/:courseId/exams/:examId/results/:learnerId', lazy: coursePage('LecturerExamScript') },
+      { path: 'courses/:courseId/exams/:examId/results', lazy: coursePage('LecturerExamResults') },
+      { path: 'courses/:courseId/exams/:examId', lazy: coursePage('LecturerExam') },
       { path: 'courses/:courseId/:tab?', lazy: coursePage('LecturerCourse') },
       { path: ':slug?', lazy: rolePage('LecturerPage') },
     ],
@@ -80,6 +87,7 @@ const roleRoutes = [
       { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LearnerLesson') },
       { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LearnerAssignment') },
       { path: 'courses/:courseId/grades', lazy: coursePage('LearnerCourseGrades') },
+      { path: 'courses/:courseId/exams/:examId', lazy: coursePage('LearnerExam') },
       { path: 'courses/:courseId', lazy: coursePage('LearnerCourse') },
       { path: ':slug?', lazy: rolePage('LearnerPage') },
     ],

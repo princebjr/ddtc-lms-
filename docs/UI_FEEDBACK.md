@@ -80,11 +80,17 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer | Score out of range | "Score must be between 0 and maximum" (E) | none |
 | Lecturer | Submission reopened | "Submission reopened" (S) | none |
 | Lecturer | Gradebook export ready | "Export ready" (S) | Download |
+| Lecturer or administrator | Examination saved (Phase 10.1, ADR-016) | "Examination saved" (S) | none |
+| Lecturer or administrator | Examination published or unpublished (Phase 10.1) | "Examination published" or "Examination unpublished" (S) | none |
+| Lecturer or administrator | Examination closed early, or its deadline changed (Phase 10.1) | "Examination closed" or "Deadline changed" (S) | none |
+| Lecturer or administrator | Examination archived, never deleted (Phase 10.1) | "Examination archived" (S) | none |
+| Lecturer or administrator | Retake authorised (Phase 10.1) | "Retake authorised" (S) | none |
 | Learner | Lesson marked complete or incomplete | "Lesson completed" or "Marked not complete" (S) | Undo |
 | Learner | Audio download starts | "Downloading audio (size)" (I) | none |
 | Learner or lecturer (lesson audio, ADR-007) | Recording saved or discarded | "Recording saved" or "Recording discarded" (S) | none |
 | Learner or lecturer (lesson audio, ADR-007) | Microphone blocked | "Microphone blocked. Upload a file instead" (W) | Upload file |
 | Learner | Submission received | "Submission received" (S) | none |
+| Learner | Examination submitted (Phase 10.1, ADR-016) | "Examination submitted" (S) | none |
 | Learner | Late submission received | "Submitted late" (W) | none |
 | Learner | Resubmitted | "Resubmitted as version N" (S) | none |
 | Learner | File rejected | "File not accepted: reason" (E) | Try again |

@@ -13,7 +13,8 @@ import { useLoad } from '@/hooks/use-load.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { fetchCourse, fetchMyEnrolment, fetchTeachers } from '@/lib/courses/courses.js';
 import { CONTENT_TYPE_LABEL, fetchMyAssignments } from '@/lib/assignments/assignments.js';
-import { dueStatus } from '@/lib/assignments/due.js';
+import { fetchMyExams, LEARNER_STATE } from '@/lib/exams/exams.js';
+import { dueStatus, formatDue } from '@/lib/assignments/due.js';
 import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 
 // A course as a learner sees it (Phase 5 overview; Phase 6 lessons with progress; Phase 7 its
@@ -24,15 +25,16 @@ import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 export default function LearnerCoursePage() {
   const { courseId = '' } = useParams();
   const { state, data, reload } = useLoad(async () => {
-    const [course, teachers, enrolment, lessons, progress, assignments] = await Promise.all([
+    const [course, teachers, enrolment, lessons, progress, assignments, exams] = await Promise.all([
       fetchCourse(courseId),
       fetchTeachers(courseId),
       fetchMyEnrolment(courseId),
       fetchLessons(courseId),
       fetchMyProgress(courseId),
       fetchMyAssignments(),
+      fetchMyExams(courseId),
     ]);
-    return { course, teachers, enrolment, lessons, progress, assignments: assignments.filter((a) => a.course_id === courseId) };
+    return { course, teachers, enrolment, lessons, progress, assignments: assignments.filter((a) => a.course_id === courseId), exams };
   }, [courseId]);
   const covers = useCourseCovers(data?.course?.cover_image_file_id ? [courseId] : []);
 
@@ -105,6 +107,7 @@ export default function LearnerCoursePage() {
           </div>
           <Lessons courseId={course.id} lessons={data?.lessons ?? []} progress={data?.progress ?? {}} />
           <Assignments courseId={course.id} assignments={data?.assignments ?? []} />
+          <Examinations courseId={course.id} exams={data?.exams ?? []} />
         </div>
       ) : null}
     </LoadingRegion>
@@ -195,6 +198,47 @@ function Assignments({ courseId, assignments }) {
       ) : (
         <EmptyState icon={ClipboardList} title="No assignments yet" description="Your lecturer has not published any assignments in this course yet." />
       )}
+    </section>
+  );
+}
+
+/**
+ * The course's examinations (Phase 10.1, ADR-016): each with where the learner stands and its deadline
+ * in Ghana time (no countdown), and the released result. Each opens the examination page.
+ * @param {{ courseId: string, exams: import('@/lib/exams/exams.js').MyExamSummary[] }} props
+ */
+function Examinations({ courseId, exams }) {
+  if (!exams.length) return null;
+  return (
+    <section aria-labelledby="exams-heading" className="flex flex-col gap-3">
+      <h2 id="exams-heading" className="m-0 text-title-3 text-ink">
+        Examinations
+      </h2>
+      <ul className="m-0 flex list-none flex-col divide-y divide-hairline rounded-md border border-hairline bg-card p-0">
+        {exams.map((x) => (
+          <li key={x.id}>
+            <Link
+              to={`/learner/courses/${courseId}/exams/${x.id}`}
+              className="flex min-h-14 flex-col gap-1 px-4 py-2 hover:bg-fill focus-visible:focus-ring sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              data-slot="course-exam"
+            >
+              <span className="flex min-w-0 flex-col">
+                <span className="text-label text-ink">{x.title}</span>
+                <span className="text-caption text-ink-secondary tabular-nums">
+                  {x.state === 'UPCOMING' ? `Opens ${formatDue(x.opens_at)}` : `Submit by ${formatDue(x.closes_at)}`} (Ghana time)
+                </span>
+              </span>
+              <span className="flex flex-wrap gap-2">
+                {x.released && x.total_score !== null ? (
+                  <StatusChip tone={x.passed ? 'success' : 'warning'}>{`${Number(x.total_score)} / ${Number(x.total_marks)} · ${x.passed ? 'Pass' : 'Not passed'}`}</StatusChip>
+                ) : (
+                  <StatusChip tone={LEARNER_STATE[x.state].tone}>{LEARNER_STATE[x.state].label}</StatusChip>
+                )}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

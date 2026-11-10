@@ -17,9 +17,9 @@ import { getSupabase } from '@/lib/supabase.js';
 
 /**
  * @param {{ role: 'admin' | 'lecturer', courseId?: string, courses?: Array<{ id: string, title: string, course_code: string }>,
- *   initialAssignmentId?: string, onClose: () => void }} props
+ *   initialAssignmentId?: string, examId?: string, onClose: () => void }} props  examId (Phase 10.1): that examination's results only
  */
-export function ExportDialog({ role, courseId: fixedCourse, courses = [], initialAssignmentId, onClose }) {
+export function ExportDialog({ role, courseId: fixedCourse, courses = [], initialAssignmentId, examId, onClose }) {
   const toast = useToast();
   const [courseId, setCourseId] = useState(fixedCourse ?? courses[0]?.id ?? '');
   const [kind, setKind] = useState(/** @type {'gradebook' | 'assignment'} */ (initialAssignmentId ? 'assignment' : 'gradebook'));
@@ -38,11 +38,13 @@ export function ExportDialog({ role, courseId: fixedCourse, courses = [], initia
 
   const run = async () => {
     if (!courseId) return setMessage('Choose a course');
-    if (kind === 'assignment' && !chosenAssignment) return setMessage('This course has no assignments to report on');
+    if (!examId && kind === 'assignment' && !chosenAssignment) return setMessage('This course has no assignments to report on');
     setBusy(true);
     setMessage(null);
     try {
-      const file = await exportGrades(kind === 'gradebook' ? { kind, courseId, format } : { kind, assignmentId: chosenAssignment, format });
+      const file = await exportGrades(
+        examId ? { kind: 'examination', examId, format } : kind === 'gradebook' ? { kind, courseId, format } : { kind, assignmentId: chosenAssignment, format },
+      );
       downloadFile(file);
       toast.show(role === 'admin' ? 'admin.export-ready' : 'lecturer.gradebook-export-ready', { onAction: () => downloadFile(file) });
       onClose();
@@ -73,6 +75,7 @@ export function ExportDialog({ role, courseId: fixedCourse, courses = [], initia
               </NativeSelect>
             </div>
           )}
+          {examId ? null : (
           <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
             <legend className="mb-1 text-label text-ink">What to export</legend>
             <RadioGroup value={kind} onValueChange={(v) => setKind(/** @type {'gradebook' | 'assignment'} */ (v))}>
@@ -86,7 +89,8 @@ export function ExportDialog({ role, courseId: fixedCourse, courses = [], initia
               </div>
             </RadioGroup>
           </fieldset>
-          {kind === 'assignment' ? (
+          )}
+          {!examId && kind === 'assignment' ? (
             <div className="flex flex-col gap-1">
               <Label htmlFor="export-assignment">Assignment</Label>
               <NativeSelect

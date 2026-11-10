@@ -10,6 +10,7 @@ import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { fetchMyEnrolledCourses } from '@/lib/courses/courses.js';
 import { greeting } from '@/lib/greeting.js';
+import { ExamDeadlines } from '@/components/exams/ExamPanels.jsx';
 
 // Learner dashboard (Phase 5): the courses the learner is enrolled in. Assignments, due dates and
 // grades join it in later phases.
@@ -46,6 +47,7 @@ export default function LearnerDashboardPage() {
               </li>
             ))}
           </ul>
+          <ExamDeadlines />
           <section aria-labelledby="my-courses-heading" className="mt-6 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 id="my-courses-heading" className="m-0 text-title-3 text-ink">

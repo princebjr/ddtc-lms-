@@ -183,7 +183,8 @@ export function releaseCourseGrades(courseId) {
 /**
  * Exports the course gradebook, or one assignment's performance report, as CSV or Excel (the
  * export is built and audited by export-gradebook).
- * @param {{ kind: 'gradebook', courseId: string, format: 'csv' | 'xlsx' } | { kind: 'assignment', assignmentId: string, format: 'csv' | 'xlsx' }} request
+ * @param {{ kind: 'gradebook', courseId: string, format: 'csv' | 'xlsx' } | { kind: 'assignment', assignmentId: string, format: 'csv' | 'xlsx' }
+ *   | { kind: 'examination', examId: string, format: 'csv' | 'xlsx' }} request  (examination: Phase 10.1)
  * @returns {Promise<{ filename: string, contentType: string, content: string }>}
  */
 export function exportGrades(request) {

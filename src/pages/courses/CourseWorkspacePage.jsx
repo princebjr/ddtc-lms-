@@ -46,6 +46,7 @@ import { formatIdNumber } from '@/lib/id-number.js';
 import { getStorage } from '@/lib/storage.js';
 import { TextArea } from './CourseEditorPage.jsx';
 import { AssignmentsTab } from './AssignmentsTab.jsx';
+import { ExaminationsTab } from './ExaminationsTab.jsx';
 import { AnalyticsTab, GradebookTab } from './GradebookTab.jsx';
 import { LessonsTab } from './LessonsTab.jsx';
 
@@ -60,6 +61,7 @@ const TABS = /** @type {const} */ ([
   { slug: 'overview', label: 'Overview' },
   { slug: 'lessons', label: 'Lessons' },
   { slug: 'assignments', label: 'Assignments' },
+  { slug: 'examinations', label: 'Examinations' },
   { slug: 'learners', label: 'Learners' },
   { slug: 'gradebook', label: 'Gradebook' },
   { slug: 'analytics', label: 'Analytics' },
@@ -120,6 +122,7 @@ export default function CourseWorkspacePage({ role }) {
               {current === 'assignments' ? <AssignmentsTab role={role} courseId={c.id} archived={archived} isLecturer={myPermission !== null} /> : null}
               {current === 'learners' ? <LearnersTab course={c} admin={admin} /> : null}
               {current === 'settings' ? <SettingsTab course={c} teachers={teachers} admin={admin} isOwner={isOwner} reload={course.reload} /> : null}
+              {current === 'examinations' ? <ExaminationsTab role={role} courseId={c.id} archived={archived} /> : null}
               {current === 'gradebook' ? <GradebookTab role={role} courseId={c.id} archived={archived} /> : null}
               {current === 'analytics' ? <AnalyticsTab role={role} courseId={c.id} /> : null}
             </TabsContent>

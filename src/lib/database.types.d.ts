@@ -1012,6 +1012,11 @@ isOneToOne: false
 "exam_feedback_save":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_feedback": string,"p_learner": string,"p_reason": string }; Returns: undefined
                            },
+"exam_marking_queue":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "course_code": string,"course_id": string,"course_title": string,"exam_id": string,"title": string,"to_mark": number,"to_release": number
+            }[]
+                           },
 "exam_prepare_upload":
 { Args: { "p_actor": string,"p_exam": string,"p_question": string }; Returns: string
                            },
@@ -1133,6 +1138,11 @@ isOneToOne: false
                            },
 "my_exam":
 { Args: { "p_exam": string }; Returns: Json
+                           },
+"my_exam_deadlines":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "closes_at": string,"course_code": string,"course_id": string,"course_title": string,"exam_id": string,"opens_at": string,"state": string,"title": string
+            }[]
                            },
 "my_exams":
 { Args: { "p_course": string }; Returns: {
