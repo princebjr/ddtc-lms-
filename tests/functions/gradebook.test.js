@@ -42,7 +42,9 @@ beforeAll(async () => {
   for (const l of [kwame, abena, yaw]) await enrolFixture(courseId, l.userId, lecturer.userId);
   ({ id: essay } = await createAssignmentFixture({ courseId, ownerId: lecturer.userId, title: 'Covenant essay', dueAt: in7days() }));
   ({ id: journal } = await createAssignmentFixture({ courseId, ownerId: lecturer.userId, title: 'Prayer journal', dueAt: in7days() }));
-  for (const [l, a] of [[kwame, essay], [abena, essay], [kwame, journal]]) expect((await send(l, a)).status).toBe(200);
+  /** @type {Array<[{ token: string }, string]>} */
+  const answers = [[kwame, essay], [abena, essay], [kwame, journal]];
+  for (const [l, a] of answers) expect((await send(l, a)).status).toBe(200);
   expect((await grade(essay, kwame.userId, 15)).status).toBe(200);
   expect((await grade(essay, abena.userId, 12)).status).toBe(200);
   expect((await grade(journal, kwame.userId, 18)).status).toBe(200);
@@ -86,7 +88,8 @@ describe('export-gradebook', () => {
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body.filename).toMatch(/\.csv$/);
     const text = Buffer.from(res.body.content, 'base64').toString('utf8');
-    const [header, ...rows] = text.replace(/^﻿/, '').trim().split('\r\n');
+    expect(text.charCodeAt(0)).toBe(0xfeff); // Excel opens UTF-8 CSV cleanly with the byte-order mark
+    const [header, ...rows] = text.replace(new RegExp('^' + String.fromCharCode(0xfeff)), '').trim().split('\r\n');
     expect(header).toContain('Learner,ID number,Branch,Covenant essay (20),Prayer journal (20),Overall %,Grade,Status');
     expect(rows).toHaveLength(3);
     expect(rows.find((r) => r.startsWith('Kwame Mensah'))).toContain(',15,18,82.5,A,Final');

@@ -53,7 +53,7 @@ function csv(rows: Cell[][]): Uint8Array {
     const s = v === null ? '' : String(v);
     return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  return new TextEncoder().encode('﻿' + rows.map((r) => r.map(field).join(',')).join('\r\n') + '\r\n');
+  return new TextEncoder().encode(String.fromCharCode(0xfeff) + rows.map((r) => r.map(field).join(',')).join('\r\n') + '\r\n');
 }
 
 function xlsx(title: string, heading: string[], header: Cell[], rows: Cell[][], footer: Cell[][]): Uint8Array {
