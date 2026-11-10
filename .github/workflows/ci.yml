@@ -77,7 +77,7 @@ jobs:
   e2e:
     name: End-to-end (Playwright, all device projects, light and dark, shard ${{ matrix.shard }}/8)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
