@@ -1,7 +1,7 @@
 # Step 10.2 acceptance evidence: letter grades only on the course grade
 
 - Request: the owner, 2026-11-10: "each assignment should not show a grade (A, B...), the final grade should show on the subject or course tag". Plan approved the same day, examinations included. Decision: ADR-017.
-- Branch and pull request: `step-10-2-course-letter`, PR link added when opened.
+- Branch and pull request: `step-10-2-course-letter`, https://github.com/princebjr/ddtc-lms-/pull/18.
 - Reviewer (O2): Prince Boateng.
 
 ## 1. What changed
