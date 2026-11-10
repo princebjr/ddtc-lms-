@@ -229,6 +229,244 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"exam_answers": {
+                  Row: {
+                    "attempt_id": string,"audio_file_id": string | null,"auto_marked": boolean,"created_at": string,"feedback": string | null,"id": string,"marked_at": string | null,"marked_by": string | null,"question_id": string,"score": number | null,"selected_option": string | null,"text_answer": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempt_id": string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id": string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "attempt_id"?: string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id"?: string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exam_answers_attempt_id_fkey"
+      columns: ["attempt_id"]
+isOneToOne: false
+      referencedRelation: "exam_attempts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_answers_audio_file_id_fkey"
+      columns: ["audio_file_id"]
+isOneToOne: false
+      referencedRelation: "file_objects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_answers_marked_by_fkey"
+      columns: ["marked_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_answers_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: false
+      referencedRelation: "exam_questions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exam_attempts": {
+                  Row: {
+                    "attempt_number": number,"created_at": string,"exam_id": string,"feedback": string | null,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"id": string,"learner_id": string,"released_answers": Json | null,"released_at": string | null,"released_by": string | null,"released_feedback": string | null,"released_score": number | null,"retake_authorised_by": string | null,"retake_reason": string | null,"started_at": string | null,"status": Database["public"]['Enums']["exam_attempt_status"],"submitted_at": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempt_number": number,"created_at"?: string,"exam_id": string,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"id"?: string,"learner_id": string,"released_answers"?: Json | null,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"retake_authorised_by"?: string | null,"retake_reason"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["exam_attempt_status"],"submitted_at"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "attempt_number"?: number,"created_at"?: string,"exam_id"?: string,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"id"?: string,"learner_id"?: string,"released_answers"?: Json | null,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"retake_authorised_by"?: string | null,"retake_reason"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["exam_attempt_status"],"submitted_at"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exam_attempts_exam_id_fkey"
+      columns: ["exam_id"]
+isOneToOne: false
+      referencedRelation: "examinations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_attempts_learner_id_fkey"
+      columns: ["learner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_attempts_released_by_fkey"
+      columns: ["released_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_attempts_retake_authorised_by_fkey"
+      columns: ["retake_authorised_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exam_extensions": {
+                  Row: {
+                    "closes_at": string,"created_at": string,"exam_id": string,"granted_by": string,"id": string,"learner_id": string,"reason": string | null,"revoked_at": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "closes_at": string,"created_at"?: string,"exam_id": string,"granted_by": string,"id"?: string,"learner_id": string,"reason"?: string | null,"revoked_at"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "closes_at"?: string,"created_at"?: string,"exam_id"?: string,"granted_by"?: string,"id"?: string,"learner_id"?: string,"reason"?: string | null,"revoked_at"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exam_extensions_exam_id_fkey"
+      columns: ["exam_id"]
+isOneToOne: false
+      referencedRelation: "examinations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_extensions_granted_by_fkey"
+      columns: ["granted_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_extensions_learner_id_fkey"
+      columns: ["learner_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exam_grade_history": {
+                  Row: {
+                    "attempt_id": string,"changed_at": string,"changed_by": string,"event": Database["public"]['Enums']["exam_event"],"id": string,"new_score": number | null,"previous_score": number | null,"question_id": string | null,"reason": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempt_id": string,"changed_at"?: string,"changed_by": string,"event": Database["public"]['Enums']["exam_event"],"id"?: string,"new_score"?: number | null,"previous_score"?: number | null,"question_id"?: string | null,"reason"?: string | null
+                  }
+                  Update: {
+                    "attempt_id"?: string,"changed_at"?: string,"changed_by"?: string,"event"?: Database["public"]['Enums']["exam_event"],"id"?: string,"new_score"?: number | null,"previous_score"?: number | null,"question_id"?: string | null,"reason"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exam_grade_history_attempt_id_fkey"
+      columns: ["attempt_id"]
+isOneToOne: false
+      referencedRelation: "exam_attempts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_grade_history_changed_by_fkey"
+      columns: ["changed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_grade_history_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: false
+      referencedRelation: "exam_questions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exam_question_keys": {
+                  Row: {
+                    "correct_option": string | null,"created_at": string,"marking_guide": string,"question_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "correct_option"?: string | null,"created_at"?: string,"marking_guide"?: string,"question_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "correct_option"?: string | null,"created_at"?: string,"marking_guide"?: string,"question_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exam_question_keys_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: true
+      referencedRelation: "exam_questions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exam_questions": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"exam_id": string,"id": string,"kind": Database["public"]['Enums']["exam_question_kind"],"marks": number,"option_a": string | null,"option_b": string | null,"option_c": string | null,"option_d": string | null,"position": number,"prompt": string,"section_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"exam_id": string,"id"?: string,"kind": Database["public"]['Enums']["exam_question_kind"],"marks": number,"option_a"?: string | null,"option_b"?: string | null,"option_c"?: string | null,"option_d"?: string | null,"position": number,"prompt": string,"section_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"exam_id"?: string,"id"?: string,"kind"?: Database["public"]['Enums']["exam_question_kind"],"marks"?: number,"option_a"?: string | null,"option_b"?: string | null,"option_c"?: string | null,"option_d"?: string | null,"position"?: number,"prompt"?: string,"section_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exam_questions_exam_id_fkey"
+      columns: ["exam_id"]
+isOneToOne: false
+      referencedRelation: "examinations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_questions_section_id_fkey"
+      columns: ["section_id"]
+isOneToOne: false
+      referencedRelation: "exam_sections"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"exam_sections": {
+                  Row: {
+                    "archived_at": string | null,"created_at": string,"exam_id": string,"id": string,"instructions": string,"position": number,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"created_at"?: string,"exam_id": string,"id"?: string,"instructions"?: string,"position": number,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"created_at"?: string,"exam_id"?: string,"id"?: string,"instructions"?: string,"position"?: number,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "exam_sections_exam_id_fkey"
+      columns: ["exam_id"]
+isOneToOne: false
+      referencedRelation: "examinations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"examinations": {
+                  Row: {
+                    "archived_at": string | null,"category_id": string,"closed_at": string | null,"closes_at": string,"course_id": string,"created_at": string,"created_by": string,"description": string,"id": string,"instructions": string,"opens_at": string,"pass_mark": number,"publication_status": Database["public"]['Enums']["publication_status"],"published_at": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"category_id": string,"closed_at"?: string | null,"closes_at": string,"course_id": string,"created_at"?: string,"created_by": string,"description"?: string,"id"?: string,"instructions"?: string,"opens_at": string,"pass_mark"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"category_id"?: string,"closed_at"?: string | null,"closes_at"?: string,"course_id"?: string,"created_at"?: string,"created_by"?: string,"description"?: string,"id"?: string,"instructions"?: string,"opens_at"?: string,"pass_mark"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "examinations_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "grade_categories"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "examinations_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "courses"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "examinations_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"file_objects": {
                   Row: {
                     "bucket_name": string,"checksum": string | null,"created_at": string,"delete_attempts": number,"deleted_at": string | null,"detected_mime_type": string | null,"duration_seconds": number | null,"file_size": number | null,"id": string,"last_delete_error": string | null,"original_filename": string,"resource_id": string | null,"resource_type": string,"safe_download_filename": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string,"uploaded_at": string,"uploaded_by": string,"validated_at": string | null,"validation_error": string | null,"waveform_peaks": (number)[] | null
@@ -251,14 +489,14 @@ isOneToOne: false
                   ]
                 },"grade_categories": {
                   Row: {
-                    "archived_at": string | null,"course_id": string,"created_at": string,"id": string,"name": string,"position": number,"updated_at": string,"weight": number
+                    "archived_at": string | null,"course_id": string,"created_at": string,"id": string,"name": string,"part": Database["public"]['Enums']["grade_part"],"position": number,"updated_at": string,"weight": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"course_id": string,"created_at"?: string,"id"?: string,"name": string,"position": number,"updated_at"?: string,"weight": number
+                    "archived_at"?: string | null,"course_id": string,"created_at"?: string,"id"?: string,"name": string,"part"?: Database["public"]['Enums']["grade_part"],"position": number,"updated_at"?: string,"weight": number
                   }
                   Update: {
-                    "archived_at"?: string | null,"course_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"position"?: number,"updated_at"?: string,"weight"?: number
+                    "archived_at"?: string | null,"course_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"part"?: Database["public"]['Enums']["grade_part"],"position"?: number,"updated_at"?: string,"weight"?: number
                   }
                   Relationships: [
                     {
@@ -575,14 +813,14 @@ isOneToOne: false
                   ]
                 },"submissions": {
                   Row: {
-                    "assignment_id": string,"created_at": string,"current_version": number,"feedback": string | null,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"graded_at": string | null,"graded_by": string | null,"id": string,"is_late": boolean,"learner_id": string,"released_at": string | null,"released_by": string | null,"released_feedback": string | null,"released_score": number | null,"score": number | null,"status": Database["public"]['Enums']["submission_status"],"updated_at": string
+                    "assignment_id": string,"created_at": string,"current_version": number,"feedback": string | null,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"graded_at": string | null,"graded_by": string | null,"id": string,"is_late": boolean,"learner_id": string,"marked_in_person": boolean,"released_at": string | null,"released_by": string | null,"released_feedback": string | null,"released_score": number | null,"score": number | null,"status": Database["public"]['Enums']["submission_status"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assignment_id": string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id": string,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
+                    "assignment_id": string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id": string,"marked_in_person"?: boolean,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
                   }
                   Update: {
-                    "assignment_id"?: string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id"?: string,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
+                    "assignment_id"?: string,"created_at"?: string,"current_version"?: number,"feedback"?: string | null,"grade_release_status"?: Database["public"]['Enums']["grade_release_status"],"graded_at"?: string | null,"graded_by"?: string | null,"id"?: string,"is_late"?: boolean,"learner_id"?: string,"marked_in_person"?: boolean,"released_at"?: string | null,"released_by"?: string | null,"released_feedback"?: string | null,"released_score"?: number | null,"score"?: number | null,"status"?: Database["public"]['Enums']["submission_status"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -648,6 +886,9 @@ isOneToOne: false
                            },
 "am_i_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"apply_standard_parts":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string,"p_reason": string }; Returns: undefined
                            },
 "assignment_audio_activate":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string }; Returns: Json
@@ -736,6 +977,9 @@ isOneToOne: false
 "course_transition":
 { Args: { "p_action": string,"p_actor": string,"p_as_admin": boolean,"p_course": string,"p_grant_direct"?: boolean,"p_reason"?: string }; Returns: Json
                            },
+"course_uses_standard_parts":
+{ Args: { "p_course": string }; Returns: boolean
+                           },
 "course_weight_total":
 { Args: { "p_course": string }; Returns: number
                            },
@@ -747,6 +991,74 @@ isOneToOne: false
                            },
 "enrolment_set_status":
 { Args: { "p_actor": string,"p_enrolments": (string)[],"p_status": Database["public"]['Enums']["enrolment_status"] }; Returns: Json
+                           },
+"exam_answer_audio":
+{ Args: { "p_exam": string,"p_learner": string }; Returns: {
+              "bucket": string,"duration_seconds": number,"file_id": string,"mime_type": string,"question_id": string,"storage_path": string
+            }[]
+                           },
+"exam_answer_grade":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_feedback": string,"p_learner": string,"p_question": string,"p_reason": string,"p_score": number }; Returns: undefined
+                           },
+"exam_close":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_reason": string }; Returns: undefined
+                           },
+"exam_extension_remove":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_learner": string }; Returns: undefined
+                           },
+"exam_extension_set":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_closes_at": string,"p_exam": string,"p_learner": string,"p_reason": string }; Returns: undefined
+                           },
+"exam_feedback_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_feedback": string,"p_learner": string,"p_reason": string }; Returns: undefined
+                           },
+"exam_marking_queue":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "course_code": string,"course_id": string,"course_title": string,"exam_id": string,"title": string,"to_mark": number,"to_release": number
+            }[]
+                           },
+"exam_prepare_upload":
+{ Args: { "p_actor": string,"p_exam": string,"p_question": string }; Returns: string
+                           },
+"exam_publish":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_publish": boolean }; Returns: undefined
+                           },
+"exam_release":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_learner"?: string }; Returns: number
+                           },
+"exam_results":
+{ Args: { "p_exam": string }; Returns: {
+              "attempt_number": number,"branch_name": string,"changed_since_release": boolean,"closes_at": string,"essay_score": number,"feedback": string,"first_name": string,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"grading_state": string,"id_number": number,"learner_id": string,"mcq_score": number,"passed": boolean,"percentage": number,"profile_image_path": string,"released_at": string,"released_score": number,"second_name": string,"short_score": number,"started_at": string,"state": string,"submitted_at": string,"total_marks": number,"total_score": number
+            }[]
+                           },
+"exam_retake_authorise":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_learner": string,"p_reason": string }; Returns: string
+                           },
+"exam_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string,"p_exam": string,"p_fields": Json }; Returns: string
+                           },
+"exam_save_answers":
+{ Args: { "p_actor": string,"p_answers": Json,"p_exam": string }; Returns: string
+                           },
+"exam_script":
+{ Args: { "p_exam": string,"p_learner": string }; Returns: Json
+                           },
+"exam_set_archived":
+{ Args: { "p_actor": string,"p_archived": boolean,"p_as_admin": boolean,"p_exam": string }; Returns: undefined
+                           },
+"exam_set_deadline":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_closes_at": string,"p_exam": string,"p_reason": string }; Returns: undefined
+                           },
+"exam_start":
+{ Args: { "p_actor": string,"p_exam": string }; Returns: string
+                           },
+"exam_structure_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_exam": string,"p_sections": Json }; Returns: number
+                           },
+"exam_submit":
+{ Args: { "p_actor": string,"p_exam": string }; Returns: {
+              "attempt_id": string,"status": Database["public"]['Enums']["exam_attempt_status"],"submitted_at": string
+            }[]
                            },
 "files_due_for_cleanup":
 { Args: { "p_limit"?: number }; Returns: {
@@ -772,7 +1084,7 @@ isOneToOne: false
                            },
 "gradebook_assignments":
 { Args: { "p_course": string }; Returns: {
-              "assignment_id": string,"category_id": string,"category_name": string,"due_at": string,"max_marks": number,"published": boolean,"title": string
+              "assignment_id": string,"category_id": string,"category_name": string,"due_at": string,"max_marks": number,"part": string,"published": boolean,"title": string
             }[]
                            },
 "grading_queue":
@@ -824,6 +1136,19 @@ isOneToOne: false
 "mark_lesson":
 { Args: { "p_completed": boolean,"p_lesson": string }; Returns: string
                            },
+"my_exam":
+{ Args: { "p_exam": string }; Returns: Json
+                           },
+"my_exam_deadlines":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "closes_at": string,"course_code": string,"course_id": string,"course_title": string,"exam_id": string,"opens_at": string,"state": string,"title": string
+            }[]
+                           },
+"my_exams":
+{ Args: { "p_course": string }; Returns: {
+              "attempt_number": number,"closes_at": string,"description": string,"id": string,"opens_at": string,"pass_mark": number,"passed": boolean,"percentage": number,"released": boolean,"state": string,"submitted_at": string,"title": string,"total_marks": number,"total_score": number
+            }[]
+                           },
 "my_grade":
 { Args: { "p_assignment": string }; Returns: Json
                            },
@@ -835,11 +1160,24 @@ isOneToOne: false
 "my_submission":
 { Args: { "p_assignment": string }; Returns: Json
                            },
+"practical_marks":
+{ Args: { "p_assignment": string }; Returns: {
+              "feedback": string,"learner_id": string,"score": number
+            }[]
+                           },
+"practical_marks_save":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_marks": Json,"p_reason"?: string }; Returns: number
+                           },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "record_export":
 { Args: { "p_actor": string,"p_entity_id": string,"p_entity_type": string,"p_kind": string,"p_metadata": Json }; Returns: undefined
+                           },
+"standard_parts_preview":
+{ Args: { "p_course": string }; Returns: {
+              "current_overall": number,"first_name": string,"learner_id": string,"new_overall": number,"second_name": string
+            }[]
                            },
 "submission_draft_file_remove":
 { Args: { "p_actor": string,"p_file": string }; Returns: {
@@ -872,7 +1210,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","exam_attempt_status": "NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED","exam_event": "SUBMITTED"|"MARKED"|"FEEDBACK"|"RELEASED"|"RETAKE_AUTHORISED","exam_question_kind": "MCQ"|"SHORT"|"ESSAY","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -988,7 +1326,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"exam_attempt_status": ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED"],"exam_event": ["SUBMITTED", "MARKED", "FEEDBACK", "RELEASED", "RETAKE_AUTHORISED"],"exam_question_kind": ["MCQ", "SHORT", "ESSAY"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const

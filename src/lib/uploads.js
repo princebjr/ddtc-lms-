@@ -12,11 +12,13 @@ export const RESUMABLE_OVER = 25 * 1024 * 1024;
 
 /**
  * @typedef {object} UploadRequest
- * @property {'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO' | 'SUBMISSION_FILE'} resourceType
+ * @property {'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO' | 'SUBMISSION_FILE' | 'EXAM_ANSWER_AUDIO'} resourceType
  * @property {File} file
  * @property {string} [courseId]
  * @property {string} [lessonId]
  * @property {string} [assignmentId]  ASSIGNMENT_INSTRUCTION_AUDIO (Phase 7) and SUBMISSION_FILE (Phase 8): the assignment
+ * @property {string} [examId]  EXAM_ANSWER_AUDIO (Phase 10.1): the examination
+ * @property {string} [questionId]  EXAM_ANSWER_AUDIO: the short-answer or essay question
  * @property {string} [replaceAudioId]  LESSON_AUDIO: the lesson audio this file replaces (ADR-007); sent to both steps
  * @property {Record<string, unknown>} [finalize]  extra fields for finalize-upload (peaks, title)
  * @property {Promise<Record<string, unknown>>} [finalizeLater]  fields that are still being prepared (peaks)
@@ -53,6 +55,8 @@ async function upload({
   courseId,
   lessonId,
   assignmentId,
+  examId,
+  questionId,
   replaceAudioId,
   finalize = {},
   finalizeLater,
@@ -69,6 +73,7 @@ async function upload({
       courseId,
       lessonId,
       assignmentId,
+      ...(examId ? { examId, questionId } : {}),
       filename: file.name,
       size: file.size,
       ...replace,

@@ -3,7 +3,14 @@
 // learners' answer files (and in-app recordings of lesson audio). Limits come from
 // system_settings.file_limits (D17).
 
-export type ResourceType = 'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO' | 'SUBMISSION_FILE';
+export type ResourceType =
+  | 'PROFILE_IMAGE'
+  | 'COURSE_COVER'
+  | 'LESSON_AUDIO'
+  | 'LESSON_ATTACHMENT'
+  | 'ASSIGNMENT_INSTRUCTION_AUDIO'
+  | 'SUBMISSION_FILE'
+  | 'EXAM_ANSWER_AUDIO';
 
 const IMAGE_TYPES = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
 /** Uploaded audio of any kind (D17); browsers record WebM, Ogg or MP4 (Phase 8). */
@@ -57,6 +64,12 @@ export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string;
     bucket: 'learner-submissions',
     limitKey: 'submission_audio',
     types: { ...RECORDING_TYPES, ...SUBMISSION_DOCUMENT_TYPES },
+  },
+  // Phase 10.1 (ADR-016): a learner's recorded examination answer, with the submission audio limits (D17).
+  EXAM_ANSWER_AUDIO: {
+    bucket: 'learner-submissions',
+    limitKey: 'submission_audio',
+    types: RECORDING_TYPES,
   },
   // Phase 7: the lecturer's instruction audio for an assignment (25 MB, 10 minutes, D17).
   ASSIGNMENT_INSTRUCTION_AUDIO: {

@@ -61,6 +61,7 @@ import { getSupabase } from '@/lib/supabase.js';
  * @property {number} max_marks
  * @property {string} due_at
  * @property {boolean} published
+ * @property {import('@/lib/assignments/assignments.js').GradePart} part  since Phase 10.1 (ADR-016)
  */
 /**
  * @typedef {object} AssignmentStats
@@ -182,7 +183,8 @@ export function releaseCourseGrades(courseId) {
 /**
  * Exports the course gradebook, or one assignment's performance report, as CSV or Excel (the
  * export is built and audited by export-gradebook).
- * @param {{ kind: 'gradebook', courseId: string, format: 'csv' | 'xlsx' } | { kind: 'assignment', assignmentId: string, format: 'csv' | 'xlsx' }} request
+ * @param {{ kind: 'gradebook', courseId: string, format: 'csv' | 'xlsx' } | { kind: 'assignment', assignmentId: string, format: 'csv' | 'xlsx' }
+ *   | { kind: 'examination', examId: string, format: 'csv' | 'xlsx' }} request  (examination: Phase 10.1)
  * @returns {Promise<{ filename: string, contentType: string, content: string }>}
  */
 export function exportGrades(request) {
@@ -214,9 +216,11 @@ export const STATUS_TONE = Object.freeze({ FINAL: 'success', PROVISIONAL: 'warni
  * their score; a learner never gets a DRAFT cell (the database shows it to them as UNGRADED).
  * @param {CellState} state
  * @param {'staff' | 'learner'} [audience]
+ * @param {boolean} [practical] a practical marked in person (Phase 10.1): waiting means Not marked
  * @returns {{ label: string, tone: 'success' | 'warning' | 'error' | 'info' | 'neutral' }}
  */
-export function cellState(state, audience = 'staff') {
+export function cellState(state, audience = 'staff', practical = false) {
+  if (practical && state === 'UNGRADED') return { label: audience === 'learner' ? 'Not marked yet' : 'Not marked', tone: 'neutral' };
   switch (state) {
     case 'RELEASED':
       return { label: audience === 'learner' ? 'Graded' : 'Released', tone: 'success' };
@@ -245,4 +249,29 @@ export function chartSummary(s, myScore = null) {
   const top = s.distribution.reduce((a, b) => (b.count > a.count ? b : a));
   const mine = s.my_band ? ` Your score${myScore === null ? '' : ` (${Number(myScore)}%)`} is in band ${s.my_band}, highlighted. A band is not a rank.` : '';
   return `${top.count} of ${total} ${total === 1 ? 'learner' : 'learners'} scored ${top.band}, the largest group. ${s.released} graded, ${s.ungraded} ungraded, ${s.missing} missing.${mine}`;
+}
+
+// ---------------------------------------------------------------- the three parts of the course grade (Phase 10.1, ADR-016)
+
+/** Whether the course has the three parts (Weekly assignments, Local Assembly practicals, Final examinations). @param {string} courseId */
+export async function fetchUsesStandardParts(courseId) {
+  const { data, error } = await getSupabase().rpc('course_uses_standard_parts', { p_course: courseId });
+  if (error) throw error;
+  return data === true;
+}
+
+/**
+ * Each learner's overall grade now and once the course switches to the three parts (nothing is kept).
+ * @param {string} courseId
+ * @returns {Promise<Array<{ learner_id: string, first_name: string, second_name: string, current_overall: number | null, new_overall: number | null }>>}
+ */
+export async function previewStandardParts(courseId) {
+  const { data, error } = await getSupabase().rpc('standard_parts_preview', { p_course: courseId });
+  if (error) throw error;
+  return /** @type {any} */ (data ?? []);
+}
+
+/** Switches a course to the three parts (an administrator, with a reason). @param {string} courseId @param {string} reason */
+export function applyStandardParts(courseId, reason) {
+  return callFunction('manage-assignments', { action: 'apply-parts', courseId, reason });
 }

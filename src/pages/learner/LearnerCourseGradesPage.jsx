@@ -81,7 +81,7 @@ export default function LearnerCourseGradesPage() {
       cell: (/** @type {Column} */ c) => {
         const cell = cellOf(c.assignment_id);
         if (!cell) return null;
-        const s = cellState(cell.state, 'learner');
+        const s = cellState(cell.state, 'learner', c.part === 'PRACTICALS');
         return (
           <span className="flex flex-wrap gap-2">
             <StatusChip tone={s.tone}>{cell.letter_grade && cell.state === 'RELEASED' ? `${s.label} · ${cell.letter_grade}` : s.label}</StatusChip>

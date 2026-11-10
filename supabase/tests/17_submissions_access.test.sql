@@ -51,7 +51,7 @@ insert into public.course_enrollments (course_id, learner_id, enrolment_status, 
 insert into public.assignments (id, course_id, category_id, title, content_type, text_instructions, due_at, max_marks, accepted_formats, publication_status, created_by, published_at)
 select tests.id('a1'), tests.id('c1'), g.id, 'Reflection on Genesis 1', 'TEXT', '<p>Read Genesis 1 and reflect.</p>', now() + interval '7 days', 20,
        array['TEXT', 'AUDIO', 'PDF'], 'PUBLISHED', tests.uid('t1'), now()
-  from public.grade_categories g where g.course_id = tests.id('c1');
+  from public.grade_categories g where g.course_id = tests.id('c1') and g.part = 'ASSIGNMENTS' and g.archived_at is null;
 
 -- s1: Kwame submitted version 1 (audio f1) and is preparing version 2 (PDF f2 validated, f3 pending).
 -- s2: Abena has only a draft (f4). s4: the suspended learner submitted version 1 (f5).

@@ -18,13 +18,15 @@ async function rest(path, init = {}) {
 }
 
 /**
- * A published assignment in the course's first category.
+ * A published assignment in one of the course's parts (weekly assignments unless asked; a practical is
+ * marked in person, ADR-016).
  * @param {{ courseId: string, ownerId: string, title: string, dueAt: string, contentType?: 'TEXT' | 'AUDIO' | 'TEXT_AND_AUDIO',
- *   text?: string, withAudio?: boolean, allowLate?: boolean, formats?: string[] }} options
+ *   text?: string, withAudio?: boolean, allowLate?: boolean, formats?: string[], part?: 'ASSIGNMENTS' | 'PRACTICALS', maxMarks?: number }} options
  * @returns {Promise<{ id: string }>}
  */
-export async function createAssignmentFixture({ courseId, ownerId, title, dueAt, contentType = 'TEXT', text = '<p>Read Genesis 1 and reflect.</p>', withAudio = false, allowLate = false, formats = ['TEXT', 'AUDIO'] }) {
-  const [category] = await rest(`grade_categories?select=id&course_id=eq.${courseId}&archived_at=is.null&order=position&limit=1`);
+export async function createAssignmentFixture({ courseId, ownerId, title, dueAt, contentType = 'TEXT', text = '<p>Read Genesis 1 and reflect.</p>', withAudio = false, allowLate = false, formats = ['TEXT', 'AUDIO'], part = 'ASSIGNMENTS', maxMarks = 20 }) {
+  // Since Phase 10.1 (ADR-016) a course has three parts; an assignment goes in weekly assignments unless asked.
+  const [category] = await rest(`grade_categories?select=id&course_id=eq.${courseId}&archived_at=is.null&part=eq.${part}&limit=1`);
   const [assignment] = await rest('assignments', {
     method: 'POST',
     body: JSON.stringify({
@@ -35,7 +37,7 @@ export async function createAssignmentFixture({ courseId, ownerId, title, dueAt,
       text_instructions: contentType === 'AUDIO' ? '' : text,
       due_at: dueAt,
       allow_late: allowLate,
-      max_marks: 20,
+      max_marks: maxMarks,
       accepted_formats: formats,
       created_by: ownerId,
     }),

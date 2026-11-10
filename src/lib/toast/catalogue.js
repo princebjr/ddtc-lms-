@@ -101,6 +101,14 @@ export const TOASTS = Object.freeze({
   'lecturer.score-out-of-range': { type: 'error', text: fixed('Score must be between 0 and maximum') },
   'lecturer.submission-reopened': { type: 'success', text: fixed('Submission reopened') },
   'lecturer.gradebook-export-ready': { type: 'success', text: fixed('Export ready'), action: 'Download' },
+  // Phase 10.1 (ADR-016): examinations.
+  'lecturer.exam-saved': { type: 'success', text: fixed('Examination saved') },
+  'lecturer.exam-published': { type: 'success', text: fixed('Examination published') },
+  'lecturer.exam-unpublished': { type: 'success', text: fixed('Examination unpublished') },
+  'lecturer.exam-closed': { type: 'success', text: fixed('Examination closed') },
+  'lecturer.exam-deadline-changed': { type: 'success', text: fixed('Deadline changed') },
+  'lecturer.exam-archived': { type: 'success', text: fixed('Examination archived') },
+  'lecturer.retake-authorised': { type: 'success', text: fixed('Retake authorised') },
 
   // Learner
   'learner.lesson-completed': { type: 'success', text: fixed('Lesson completed'), undo: true },
@@ -110,6 +118,7 @@ export const TOASTS = Object.freeze({
   'learner.recording-discarded': { type: 'success', text: fixed('Recording discarded') },
   'learner.microphone-blocked': { type: 'warning', text: fixed('Microphone blocked. Upload a file instead'), action: 'Upload file' },
   'learner.submission-received': { type: 'success', text: fixed('Submission received') },
+  'learner.exam-submitted': { type: 'success', text: fixed('Examination submitted') },
   'learner.submitted-late': { type: 'warning', text: fixed('Submitted late') },
   'learner.resubmitted': { type: 'success', text: (p) => `Resubmitted as version ${str(p, 'n')}`, params: ['n'] },
   'learner.file-rejected': { type: 'error', text: (p) => `File not accepted: ${str(p, 'reason')}`, action: 'Try again', params: ['reason'] },

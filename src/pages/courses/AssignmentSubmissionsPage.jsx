@@ -6,6 +6,7 @@ import { FilterSelect } from '@/components/data/FilterSelect.jsx';
 import { ResponsiveTable } from '@/components/data/ResponsiveTable.jsx';
 import { LoadingRegion, ResultsSkeleton } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
+import { PracticalMarkSheet } from '@/components/gradebook/PracticalMarkSheet.jsx';
 import { LearnerCell } from '@/components/grading/LearnerCell.jsx';
 import { ReleaseAllDialog } from '@/components/grading/ReleaseAllDialog.jsx';
 import { ResultCounts } from '@/components/grading/ResultCounts.jsx';
@@ -19,11 +20,13 @@ import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { TABLET_UP_QUERY, useMediaQuery } from '@/hooks/use-media-query.js';
 import { NO_BRANCH } from '@/lib/admin/users.js';
-import { fetchAssignment } from '@/lib/assignments/assignments.js';
+import { fetchAssignment, fetchAssignmentPart } from '@/lib/assignments/assignments.js';
 import { formatDue, formatDueShort } from '@/lib/assignments/due.js';
 import { fetchBranches } from '@/lib/branches.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
-import { fetchAssignmentResults, formatPercentage, formatScore, gradeState, isSet } from '@/lib/grading/grading.js';
+import { fetchAssignmentResults, fetchPracticalMarks, formatPercentage, formatScore, gradeState, isSet } from '@/lib/grading/grading.js';
+import { BranchGroups, GroupByBranchSwitch } from '@/components/branches/BranchGroups.jsx';
+import { useGroupByBranch } from '@/lib/branch-groups.js';
 
 // An assignment's submissions and results for its course's lecturers and administrators (Phase 8 list,
 // grading and results added in Phase 9; DESIGN.md 13 results table; D13, D16, D42; owner decisions 4
@@ -82,8 +85,15 @@ const byName = (/** @type {Row} */ a, /** @type {Row} */ b) => `${a.first_name} 
 export default function AssignmentSubmissionsPage({ role }) {
   const { courseId = '', assignmentId = '' } = useParams();
   const page = useLoad(async () => {
-    const [course, assignment, results] = await Promise.all([fetchCourse(courseId), fetchAssignment(assignmentId), fetchAssignmentResults(assignmentId)]);
-    return { course, assignment, ...results };
+    const [course, assignment, results, part] = await Promise.all([
+      fetchCourse(courseId),
+      fetchAssignment(assignmentId),
+      fetchAssignmentResults(assignmentId),
+      fetchAssignmentPart(assignmentId),
+    ]);
+    // A practical is marked in person (Phase 10.1, ADR-016): the page is its mark sheet.
+    const marks = part === 'PRACTICALS' ? await fetchPracticalMarks(assignmentId) : [];
+    return { course, assignment, ...results, part, marks };
   }, [courseId, assignmentId]);
   const [extending, setExtending] = useState(/** @type {Row | null} */ (null));
   const [releasing, setReleasing] = useState(false);
@@ -91,6 +101,8 @@ export default function AssignmentSubmissionsPage({ role }) {
   const [filter, setFilter] = useState('');
   const [branch, setBranch] = useState('');
   const [sort, setSort] = useState('name');
+  // Grouped by branch unless switched off (Phase 10.1; owner answer of 2026-11-10).
+  const [grouped, setGrouped] = useGroupByBranch();
   // BranchFilter gives a branch id (or NO_BRANCH); the rows carry the branch name.
   const branches = useLoad(fetchBranches, []);
   const branchName = branch && branch !== NO_BRANCH ? (branches.data?.find((b) => b.id === branch)?.name ?? null) : null;
@@ -222,6 +234,25 @@ export default function AssignmentSubmissionsPage({ role }) {
             <ArrowLeft className="size-4" aria-hidden="true" />
             {d.course.title}
           </Link>
+          {d.part === 'PRACTICALS' ? (
+            <>
+              <PageHeader
+                title={`Marks: ${a.title}`}
+                description={`Local Assembly practical, marked in person on ${formatDue(a.due_at)} (Ghana time). Out of ${Number(a.max_marks)} marks.`}
+                className="pb-0"
+              />
+              <PracticalMarkSheet
+                key={JSON.stringify(d.marks)}
+                assignmentId={a.id}
+                maxMarks={Number(a.max_marks)}
+                rows={d.rows}
+                current={d.marks}
+                readOnly={archived}
+                onSaved={page.reload}
+              />
+            </>
+          ) : (
+            <>
           <PageHeader
             title={`Submissions: ${a.title}`}
             description={`Due ${formatDue(a.due_at)} (Ghana time). Out of ${Number(a.max_marks)} marks.`}
@@ -242,12 +273,15 @@ export default function AssignmentSubmissionsPage({ role }) {
             </p>
           ) : null}
           <Filters search={search} onSearch={setSearch} filter={filter} onFilter={setFilter} branch={branch} onBranch={setBranch} sort={sort} onSort={setSort} />
+          <GroupByBranchSwitch on={grouped} onChange={setGrouped} />
+          <BranchGroups rows={rows} on={grouped && rows.length > 0}>
+            {(group, branchName) => (
           <ResponsiveTable
-            caption={`Submissions for ${a.title}`}
+            caption={branchName ? `Submissions for ${a.title}, ${branchName}` : `Submissions for ${a.title}`}
             // Five columns with stacked actions do not fit a tablet: cards up to 1024 px.
             cardsBelow="lg"
             columns={columns}
-            rows={rows}
+            rows={group}
             getRowKey={(r) => r.learner_id}
             empty={
               filtered ? (
@@ -257,6 +291,8 @@ export default function AssignmentSubmissionsPage({ role }) {
               )
             }
           />
+            )}
+          </BranchGroups>
           {extending ? (
             <ExtensionDialog
               assignmentId={assignmentId}
@@ -268,6 +304,8 @@ export default function AssignmentSubmissionsPage({ role }) {
             />
           ) : null}
           {releasing ? <ReleaseAllDialog assignmentId={assignmentId} drafts={drafts} onClose={() => setReleasing(false)} onReleased={page.reload} /> : null}
+            </>
+          )}
         </div>
       ) : null}
     </LoadingRegion>

@@ -38,6 +38,7 @@ Claude Code builds the system one phase at a time. A phase is finished only when
 | 8 | Submissions and file validation | `phases/phase-08-submissions-file-validation.md` |
 | 9 | Grading, feedback and history | `phases/phase-09-grading-feedback-history.md` |
 | 10 | Gradebook, distribution charts and exports | `phases/phase-10-gradebook-charts-exports.md` |
+| 10.1 | Examinations, practical marks and branch groups (owner requests of 2026-11-10, ADR-016) | `phases/phase-10-1-examinations-practicals-branches.md` |
 | 11 | Notifications, reports, audit viewer and settings | `phases/phase-11-notifications-reports-settings.md` |
 | 12 | Assignment-audio retention | `phases/phase-12-audio-retention.md` |
 | 13 | Hardening, accessibility, performance and recovery | `phases/phase-13-hardening-accessibility-performance.md` |
@@ -58,6 +59,7 @@ Tracker (tick after sign-off):
 - [x] Phase 9: Grading, feedback and history (`phase-9-done`)
 - [x] Step 9.1: To grade, Grades and feedback, and 16:9 course covers (`phase-9-1-done`)
 - [x] Phase 10: Gradebook, distribution charts and exports (`phase-10-done`)
+- [x] Phase 10.1: Examinations, practical marks and branch groups (`phase-10-1-done`)
 - [ ] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)
 - [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
@@ -66,7 +68,7 @@ Tracker (tick after sign-off):
 ### Owner requests waiting to be scheduled
 
 - 2026-11-06: assignment performance reports (built in Phase 10, `export-gradebook`) and a live presence directory (planned for Phase 11). Open questions first: `docs/requests/2026-11-06-presence-and-assignment-reports.md`.
-- 2026-11-10: end-of-course examinations (MCQ, short answer, essay; text and audio answers; no countdown timer; course grade weekly assignments 40%, Local Assembly practicals 30%, final examinations 30%), practical marks entered by the lecturer, and learners grouped by branch. All questions answered; a phase plan comes for approval after Phase 10: `docs/requests/2026-11-10-examinations.md` and `docs/requests/2026-11-10-practical-marks-and-branch-groups.md`.
+- 2026-11-10: end-of-course examinations (MCQ, short answer, essay; text and audio answers; no countdown timer; course grade weekly assignments 40%, Local Assembly practicals 30%, final examinations 30%), practical marks entered by the lecturer, and learners grouped by branch. Built in Phase 10.1 (ADR-016): `docs/requests/2026-11-10-examinations.md` and `docs/requests/2026-11-10-practical-marks-and-branch-groups.md`.
 
 ## Session prompt for each phase
 

@@ -2,7 +2,8 @@
 // AAL2 administrators save a grade for a sent answer (a score from 0 to the maximum marks with up to
 // two decimals, and plain-text feedback up to 10,000 characters), change a released grade with a reason
 // (the change waits to be released), and reopen a graded answer with a reason. The database functions
-// re-check the actor and the course, keep the score in range, record the history and audit.
+// re-check the actor and the course, keep the score in range, record the history and audit. Since
+// Phase 10.1 (ADR-016) also the practical mark sheet: many learners' marks at once.
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
@@ -25,6 +26,26 @@ const Body = z.discriminatedUnion('action', [
       .string()
       .default('')
       .refine((s) => codePoints(s) <= 10000, 'Keep the feedback to 10,000 characters'),
+    reason: z.string().trim().max(1000, 'Keep the reason to 1,000 characters').optional(),
+  }),
+  // Phase 10.1 (ADR-016; owner request 2026-11-10): the practical mark sheet, many learners at once; an
+  // empty score is skipped. The database checks the practical, the course, each learner and each score.
+  z.object({
+    action: z.literal('save-practical-marks'),
+    assignmentId: z.uuid(),
+    marks: z
+      .array(
+        z.object({
+          learnerId: z.uuid(),
+          score: Score.nullable(),
+          feedback: z
+            .string()
+            .default('')
+            .refine((s) => codePoints(s) <= 10000, 'Keep the feedback to 10,000 characters'),
+        }),
+      )
+      .min(1, 'Enter at least one mark')
+      .max(1000, 'Send at most 1,000 marks at once'),
     reason: z.string().trim().max(1000, 'Keep the reason to 1,000 characters').optional(),
   }),
   z.object({
@@ -55,6 +76,17 @@ serve(async (req) => {
     if (error) throw fromDbError(error);
     const row = Array.isArray(data) ? data[0] : data;
     return json(req, 200, { submissionId: row.submission_id, changed: row.changed, gradeReleaseStatus: row.grade_release_status });
+  }
+
+  if (b.action === 'save-practical-marks') {
+    const { data, error } = await admin.rpc('practical_marks_save', {
+      ...actor,
+      p_assignment: b.assignmentId,
+      p_marks: b.marks.map((m) => ({ learner_id: m.learnerId, score: m.score, feedback: m.feedback })),
+      p_reason: b.reason ?? null,
+    });
+    if (error) throw fromDbError(error);
+    return json(req, 200, { saved: data as number });
   }
 
   const { error } = await admin.rpc('grade_reopen', { ...actor, p_assignment: b.assignmentId, p_learner: b.learnerId, p_reason: b.reason });

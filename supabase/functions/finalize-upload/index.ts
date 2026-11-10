@@ -140,6 +140,21 @@ serve(async (req) => {
     return json(req, 200, { fileId: file.id, status: 'VALIDATED', role, mimeType: mime, size: reader.size });
   }
 
+  // Phase 10.1 (ADR-016): an examination answer's recording, checked like an answer's audio.
+  if (type === 'EXAM_ANSWER_AUDIO') {
+    const facts = await inspectAudio(reader);
+    if (!facts || !(facts.mime in rule.types)) await reject('The file is not an audio file we can play (MP3, M4A, WAV, WebM or Ogg).');
+    if (!AUDIO_EXTENSIONS[facts!.mime].includes(ext)) await reject('The file content does not match its name. Use the original audio file.');
+    if (maxSeconds && facts!.durationSeconds > maxSeconds) await reject(`The audio is longer than ${Math.round(maxSeconds / 60)} minutes.`);
+    await validate({
+      detected_mime_type: facts!.mime,
+      file_size: reader.size,
+      duration_seconds: Math.round(facts!.durationSeconds * 100) / 100,
+      waveform_peaks: cleanPeaks(parsed.data.peaks),
+    });
+    return json(req, 200, { fileId: file.id, status: 'VALIDATED', role: 'AUDIO', mimeType: facts!.mime, size: reader.size, durationSeconds: facts!.durationSeconds });
+  }
+
   if (type === 'LESSON_AUDIO' || type === 'ASSIGNMENT_INSTRUCTION_AUDIO') {
     const facts = await inspectAudio(reader);
     if (!facts || !(facts.mime in rule.types)) {

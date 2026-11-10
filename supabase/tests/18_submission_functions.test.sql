@@ -58,7 +58,7 @@ select tests.id(x.id), tests.id(x.course), g.id, x.title, 'TEXT', '<p>Respond in
     ('aA', 'c1', 'Old exercise', interval '7 days', false, array['TEXT', 'AUDIO'], 'PUBLISHED', true),
     ('aZ', 'c9', 'Archived course work', interval '7 days', false, array['TEXT', 'AUDIO'], 'PUBLISHED', false)
   ) as x(id, course, title, due, late, formats, pub, archived)
-  join public.grade_categories g on g.course_id = tests.id(x.course);
+  join public.grade_categories g on g.course_id = tests.id(x.course) and g.part = 'ASSIGNMENTS' and g.archived_at is null;
 insert into public.submission_extensions (assignment_id, learner_id, extended_due_at, granted_by) values
   (tests.id('aX'), tests.uid('l1'), now() + interval '2 days', tests.uid('t1')),
   (tests.id('aX'), tests.uid('l3'), now() - interval '1 hour', tests.uid('t1'));

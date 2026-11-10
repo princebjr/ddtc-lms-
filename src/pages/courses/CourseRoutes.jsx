@@ -15,6 +15,10 @@ const LearnerLessonPage = lazy(() => import('../learner/LearnerLessonPage.jsx'))
 const AssignmentEditorPage = lazy(() => import('./AssignmentEditorPage.jsx'));
 const LearnerAssignmentPage = lazy(() => import('../learner/LearnerAssignmentPage.jsx'));
 const LearnerCourseGradesPage = lazy(() => import('../learner/LearnerCourseGradesPage.jsx'));
+const ExamEditorPage = lazy(() => import('./ExamEditorPage.jsx'));
+const ExamResultsPage = lazy(() => import('./ExamResultsPage.jsx'));
+const ExamScriptPage = lazy(() => import('./ExamScriptPage.jsx'));
+const LearnerExamPage = lazy(() => import('../learner/LearnerExamPage.jsx'));
 const AssignmentSubmissionsPage = lazy(() => import('./AssignmentSubmissionsPage.jsx'));
 const SubmissionViewPage = lazy(() => import('./SubmissionViewPage.jsx'));
 
@@ -98,5 +102,42 @@ export const LecturerSubmission = () => (
 export const LearnerCourseGrades = () => (
   <RoleShell role="learner" slug="grades">
     <LearnerCourseGradesPage />
+  </RoleShell>
+);
+// Phase 10.1 (ADR-016): examinations: the editor, the results and a learner's script for the course's
+// lecturers and administrators; the learner's examination page.
+export const AdminExam = () => (
+  <RoleShell role="admin" slug="courses">
+    <ExamEditorPage role="admin" />
+  </RoleShell>
+);
+export const AdminExamResults = () => (
+  <RoleShell role="admin" slug="courses">
+    <ExamResultsPage role="admin" />
+  </RoleShell>
+);
+export const AdminExamScript = () => (
+  <RoleShell role="admin" slug="courses">
+    <ExamScriptPage role="admin" />
+  </RoleShell>
+);
+export const LecturerExam = () => (
+  <RoleShell role="lecturer" slug="my-courses">
+    <ExamEditorPage role="lecturer" />
+  </RoleShell>
+);
+export const LecturerExamResults = () => (
+  <RoleShell role="lecturer" slug="my-courses">
+    <ExamResultsPage role="lecturer" />
+  </RoleShell>
+);
+export const LecturerExamScript = () => (
+  <RoleShell role="lecturer" slug="my-courses">
+    <ExamScriptPage role="lecturer" />
+  </RoleShell>
+);
+export const LearnerExam = () => (
+  <RoleShell role="learner" slug="my-courses">
+    <LearnerExamPage />
   </RoleShell>
 );

@@ -96,9 +96,10 @@ const learner = (over) => ({
   ...over,
 });
 
+/** @type {import('@/lib/gradebook/gradebook.js').GradebookColumn[]} */
 const columns = [
-  { assignment_id: 'a1', title: 'Covenant essay', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-01-20T23:59:00Z', published: true },
-  { assignment_id: 'a2', title: 'Reflection on Genesis 1', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-02-20T23:59:00Z', published: true },
+  { assignment_id: 'a1', title: 'Covenant essay', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-01-20T23:59:00Z', published: true , part: 'ASSIGNMENTS' },
+  { assignment_id: 'a2', title: 'Reflection on Genesis 1', category_id: 'k1', category_name: 'Assignments', max_marks: 20, due_at: '2030-02-20T23:59:00Z', published: true , part: 'ASSIGNMENTS' },
 ];
 
 const DISTRIBUTION = [
@@ -360,5 +361,23 @@ describe('Export (owner request 2026-11-06)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     await waitFor(() => expect(api.exportGrades).toHaveBeenCalledWith({ kind: 'assignment', assignmentId: 'a2', format: 'csv' }));
     expect(toast.show).toHaveBeenCalledWith('admin.export-ready', expect.anything());
+  });
+});
+
+describe('the gradebook grouped by branch (Phase 10.1; owner answer of 2026-11-10)', () => {
+  it('puts each branch under its heading, "No branch" last, on phones and in the matrix', () => {
+    const learners = [
+      learner({ learner_id: 'l1', first_name: 'Kwame', branch_name: 'Sampa' }),
+      learner({ learner_id: 'l2', first_name: 'Abena', branch_name: null }),
+      learner({ learner_id: 'l3', first_name: 'Yaw', branch_name: 'Kasoa C.P' }),
+    ];
+    const { container } = render(<GradebookMatrix columns={columns} learners={learners} grouped />);
+    expect(screen.getAllByRole('region').map((r) => r.getAttribute('aria-label')).filter((l) => l && / learners?$/.test(l))).toEqual([
+      'Kasoa C.P, 1 learner',
+      'Sampa, 1 learner',
+      'No branch, 1 learner',
+    ]);
+    expect([...container.querySelectorAll('tbody[data-branch]')].map((b) => b.getAttribute('data-branch'))).toEqual(['Kasoa C.P', 'Sampa', 'No branch']);
+    expect(screen.getAllByRole('columnheader').some((h) => h.getAttribute('scope') === 'colgroup')).toBe(true);
   });
 });

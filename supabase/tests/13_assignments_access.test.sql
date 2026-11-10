@@ -88,8 +88,9 @@ select is(
     where contype = 'f' and confdeltype <> 'r'
       and conrelid in ('public.grade_categories'::regclass, 'public.assignments'::regclass, 'public.assignment_versions'::regclass, 'public.submission_extensions'::regclass)),
   0, 'every foreign key on the assignment tables is ON DELETE RESTRICT (D25)');
-select results_eq($$ select name, weight from public.grade_categories where course_id = tests.id('c1') $$, $$ values ('Assignments', 100) $$,
-  'a new course gets one category, Assignments, weighted 100 (D12)');
+select results_eq($$ select name, weight from public.grade_categories where course_id = tests.id('c1') order by position $$,
+  $$ values ('Weekly assignments', 40), ('Local Assembly practicals', 30), ('Final examinations', 30) $$,
+  'a new course gets the three parts of the course grade (D12; ADR-016 since Phase 10.1: it was one category, Assignments 100)');
 
 -- ---------------------------------------------------------------- the instruction types (published assignments)
 select throws_ok($$ insert into public.assignments (course_id, category_id, title, content_type, text_instructions, due_at, max_marks, publication_status, created_by, published_at)
@@ -130,7 +131,7 @@ select throws_ok($$ update public.assignments set course_id = tests.id('c2') whe
   '22023', NULL, 'an assignment never moves to another course');
 select throws_ok($$ insert into public.grade_categories (course_id, name, weight, position) values (tests.id('c1'), 'Late', 101, 9) $$,
   '23514', NULL, 'a category weight lies between 0 and 100');
-select throws_ok($$ insert into public.grade_categories (course_id, name, weight, position) values (tests.id('c1'), 'assignments', 0, 9) $$,
+select throws_ok($$ insert into public.grade_categories (course_id, name, weight, position) values (tests.id('c1'), 'weekly ASSIGNMENTS', 0, 9) $$,
   '23P01', NULL, 'two categories of a course cannot share a name (capital letters aside)');
 
 -- ---------------------------------------------------------------- exit gate: weights must total 100 before any release

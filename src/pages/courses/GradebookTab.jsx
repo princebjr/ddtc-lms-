@@ -7,10 +7,12 @@ import { DistributionChart } from '@/components/gradebook/DistributionChart.jsx'
 import { ExportDialog } from '@/components/gradebook/ExportDialog.jsx';
 import { GradebookMatrix } from '@/components/gradebook/GradebookMatrix.jsx';
 import { ReviewReleaseDialog } from '@/components/gradebook/ReviewReleaseDialog.jsx';
+import { GroupByBranchSwitch } from '@/components/branches/BranchGroups.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useLoad } from '@/hooks/use-load.js';
+import { useGroupByBranch } from '@/lib/branch-groups.js';
 import { chartSummary, fetchCourseGradebook } from '@/lib/gradebook/gradebook.js';
 
 // The course's own gradebook and analytics (Phase 10; D11 to D15, D30; owner request of 2026-11-10:
@@ -24,6 +26,7 @@ import { chartSummary, fetchCourseGradebook } from '@/lib/gradebook/gradebook.js
 export function GradebookTab({ role, courseId, archived }) {
   const book = useLoad(() => fetchCourseGradebook(courseId), [courseId]);
   const [reviewing, setReviewing] = useState(false);
+  const [grouped, setGrouped] = useGroupByBranch();
   const [exporting, setExporting] = useState(false);
   const columns = book.data?.columns ?? [];
   const learners = book.data?.learners ?? [];
@@ -38,7 +41,8 @@ export function GradebookTab({ role, courseId, archived }) {
             {learners.length} {learners.length === 1 ? 'learner' : 'learners'} · {columns.length} {columns.length === 1 ? 'assignment' : 'assignments'}
             {drafts ? ` · ${drafts} draft ${drafts === 1 ? 'grade' : 'grades'} not released` : ''}
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <GroupByBranchSwitch on={grouped} onChange={setGrouped} />
             {archived ? null : (
               <Button onClick={() => setReviewing(true)} disabled={drafts === 0}>
                 <Send aria-hidden="true" />
@@ -53,7 +57,7 @@ export function GradebookTab({ role, courseId, archived }) {
         </div>
         {learners.length && columns.length ? (
           <>
-            <GradebookMatrix columns={columns} learners={learners} />
+            <GradebookMatrix columns={columns} learners={learners} grouped={grouped} />
             <StateKey />
           </>
         ) : (

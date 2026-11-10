@@ -28,7 +28,8 @@ import { getSupabase } from '@/lib/supabase.js';
  * @property {string | null} published_at
  * @property {string | null} archived_at
  */
-/** @typedef {{ id: string, name: string, weight: number, position: number }} Category */
+/** @typedef {'ASSIGNMENTS' | 'PRACTICALS' | 'EXAMINATIONS'} GradePart */
+/** @typedef {{ id: string, name: string, weight: number, position: number, part: GradePart }} Category */
 /**
  * @typedef {object} InstructionAudio
  * @property {string} file_object_id
@@ -51,7 +52,7 @@ const DETAIL =
 export async function fetchCategories(courseId) {
   const { data, error } = await getSupabase()
     .from('grade_categories')
-    .select('id, name, weight, position')
+    .select('id, name, weight, position, part')
     .eq('course_id', courseId)
     .is('archived_at', null)
     .order('position');
@@ -61,7 +62,7 @@ export async function fetchCategories(courseId) {
 
 /**
  * @param {string} courseId
- * @param {Array<{ id?: string, name: string, weight: number }>} categories the full list, in order
+ * @param {Array<{ id?: string, name?: string, weight: number }>} categories the three parts' weights (names stay; ADR-016)
  * @param {string} [reason] required after the first release (an administrator only; Phase 10, owner decision 4)
  * @returns {Promise<{ total: number, ready: boolean }>}
  */
@@ -128,13 +129,13 @@ export async function setAssignmentArchived(id, archived) {
 /**
  * The signed-in learner's assignments across their courses, each with their own extension (D13) and,
  * since Phase 8, their own submission (sent answers only; a draft is not an answer) and, since Phase 10,
- * their released grade (never a draft).
- * @returns {Promise<Array<Pick<Assignment, 'id' | 'course_id' | 'title' | 'content_type' | 'due_at' | 'allow_late'> & { course: { title: string, course_code: string } | null, extended_to: string | null, submission: { status: string, current_version: number, is_late: boolean } | null, grade: import('@/lib/grading/grading.js').MyGradeRow | null }>>}
+ * their released grade (never a draft); since Phase 10.1 the part, so a practical (marked in person) shows as such.
+ * @returns {Promise<Array<Pick<Assignment, 'id' | 'course_id' | 'title' | 'content_type' | 'due_at' | 'allow_late'> & { course: { title: string, course_code: string } | null, category: { part: GradePart } | null, extended_to: string | null, submission: { status: string, current_version: number, is_late: boolean } | null, grade: import('@/lib/grading/grading.js').MyGradeRow | null }>>}
  */
 export async function fetchMyAssignments() {
   const supabase = getSupabase();
   const [assignments, extensions, submissions, grades] = await Promise.all([
-    supabase.from('assignments').select('id, course_id, title, content_type, due_at, allow_late, course:courses(title, course_code)').order('due_at'),
+    supabase.from('assignments').select('id, course_id, title, content_type, due_at, allow_late, course:courses(title, course_code), category:grade_categories(part)').order('due_at'),
     supabase.from('submission_extensions').select('assignment_id, extended_due_at'),
     supabase.from('submissions').select('assignment_id, status, current_version, is_late').neq('status', 'DRAFT'),
     // Released grades only (my_grades never shows a draft): the list says Graded once a grade is released.
@@ -162,4 +163,11 @@ export async function fetchAllAssignments() {
     .limit(300);
   if (error) throw error;
   return /** @type {any} */ (data ?? []);
+}
+
+/** Which part of the course grade an assignment belongs to (Phase 10.1, ADR-016). @param {string} id @returns {Promise<GradePart | null>} */
+export async function fetchAssignmentPart(id) {
+  const { data, error } = await getSupabase().from('assignments').select('grade_categories(part)').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return /** @type {any} */ (data)?.grade_categories?.part ?? null;
 }

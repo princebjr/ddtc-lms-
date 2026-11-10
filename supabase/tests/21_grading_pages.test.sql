@@ -50,7 +50,7 @@ select tests.id(x.id), tests.id(x.course), g.id, x.title, 'TEXT', '<p>Respond in
     ('aC', 'c2', 'Prayer journal'),
     ('aZ', 'c9', 'Archived course work')
   ) as x(id, course, title)
-  join public.grade_categories g on g.course_id = tests.id(x.course);
+  join public.grade_categories g on g.course_id = tests.id(x.course) and g.part = 'ASSIGNMENTS' and g.archived_at is null;
 
 /** An answer sent (as submit-assignment leaves it). */
 create function tests.sent(p_learner text, p_assignment text) returns void language plpgsql as $$

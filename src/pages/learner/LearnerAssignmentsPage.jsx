@@ -26,10 +26,20 @@ export default function LearnerAssignmentsPage() {
   const list = useLoad(fetchMyAssignments, []);
   const [segment, setSegment] = useState(/** @type {'todo' | 'sent' | 'past'} */ ('todo'));
   const now = new Date();
-  const rows = (list.data ?? []).map((a) => ({ ...a, due: dueStatus({ dueAt: a.due_at, allowLate: a.allow_late, extendedTo: a.extended_to }, now) }));
-  const open = rows.filter((a) => !a.submission && (!a.due.overdue || a.allow_late)).sort((x, y) => Date.parse(x.due.effective) - Date.parse(y.due.effective));
-  const sent = rows.filter((a) => a.submission).sort((x, y) => Date.parse(y.due.effective) - Date.parse(x.due.effective));
-  const past = rows.filter((a) => !a.submission && a.due.overdue && !a.allow_late).sort((x, y) => Date.parse(y.due.effective) - Date.parse(x.due.effective));
+  const rows = (list.data ?? []).map((a) => ({
+    ...a,
+    // A Local Assembly practical is marked in person (Phase 10.1, ADR-016): nothing to send; it counts as done once its mark is released.
+    practical: a.category?.part === 'PRACTICALS',
+    due: dueStatus({ dueAt: a.due_at, allowLate: a.allow_late, extendedTo: a.extended_to }, now),
+  }));
+  const done = (/** @type {(typeof rows)[number]} */ a) => (a.practical ? Boolean(a.grade) : Boolean(a.submission));
+  const open = rows
+    .filter((a) => !done(a) && (!a.due.overdue || (a.allow_late && !a.practical)))
+    .sort((x, y) => Date.parse(x.due.effective) - Date.parse(y.due.effective));
+  const sent = rows.filter(done).sort((x, y) => Date.parse(y.due.effective) - Date.parse(x.due.effective));
+  const past = rows
+    .filter((a) => !done(a) && a.due.overdue && (!a.allow_late || a.practical))
+    .sort((x, y) => Date.parse(y.due.effective) - Date.parse(x.due.effective));
   const lists = { todo: open, sent, past };
   const shown = lists[segment];
 
@@ -72,11 +82,13 @@ export default function LearnerAssignmentsPage() {
                     <span className="flex min-w-0 flex-col">
                       <span className="truncate text-label text-ink">{a.title}</span>
                       <span className="truncate text-body-sm text-ink-secondary">
-                        {a.course?.title ?? ''} · {CONTENT_TYPE_LABEL[a.content_type]} instructions
+                        {a.course?.title ?? ''} · {a.practical ? 'Local Assembly practical' : `${CONTENT_TYPE_LABEL[a.content_type]} instructions`}
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-wrap gap-2">
-                      {a.submission ? (
+                      {a.practical && !a.grade ? (
+                        <StatusChip tone={a.due.overdue ? 'neutral' : 'info'}>{a.due.overdue ? 'Not marked yet' : 'Marked in person'}</StatusChip>
+                      ) : a.submission ? (
                         <>
                           {a.grade ? (
                             <StatusChip tone={a.grade.passed ? 'success' : 'warning'}>

@@ -115,12 +115,12 @@ test('a lecturer reviews and releases every draft grade of a course from its own
   expect(download.suggestedFilename()).toMatch(/^gradebook-.+\.xlsx$/);
   await expect(toast(page, 'Export ready')).toBeVisible();
 
-  // After the first release the weights are locked for lecturers (owner decision 4).
+  // Lecturers never change the weights (owner decision 4; since Phase 10.1, ADR-016, administrators only).
   await page.getByRole('tab', { name: 'Assignments' }).click();
   const categories = page.locator('[aria-labelledby="categories-title"]');
   await expect(categories.getByText('Locked', { exact: true })).toBeVisible();
-  await expect(categories.getByText(/An administrator can change them/)).toBeVisible();
-  await expect(categories.getByRole('button', { name: 'Edit categories' })).toHaveCount(0);
+  await expect(categories.getByText('Only an administrator can change the weights.')).toBeVisible();
+  await expect(categories.getByRole('button', { name: 'Change weights' })).toHaveCount(0);
 });
 
 test("a learner sees each course's grades on that course's own page", async ({ browser }) => {
@@ -190,18 +190,20 @@ test('an administrator changes locked weights only with a reason, after previewi
   const categories = page.locator('[aria-labelledby="categories-title"]');
   await expect(categories.getByText('Locked', { exact: true })).toBeVisible();
   await dismissToasts(page);
-  await categories.getByRole('button', { name: 'Edit categories' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Grade categories' });
-  await dialog.getByLabel('Category 1').fill('Written work');
-  await dialog.getByRole('button', { name: 'Save categories' }).click();
-  await expect(dialog.getByText('Give a reason for changing weights after grades were released')).toBeVisible();
-  await dialog.getByLabel('Reason').fill('Renaming the category to match the handbook');
-  await dialog.getByRole('button', { name: 'Save categories' }).click();
+  // Since Phase 10.1 (ADR-016) the three parts keep their names; an administrator changes their weights.
+  await categories.getByRole('button', { name: 'Change weights' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Change weights' });
+  await dialog.getByLabel('Weekly assignments').fill('50');
+  await dialog.getByLabel('Final examinations').fill('20');
+  await dialog.getByRole('button', { name: 'Save weights' }).click();
+  await expect(dialog.getByText('Give a reason for changing the grade weights')).toBeVisible();
+  await dialog.getByLabel('Reason').fill('Fewer examination marks in this course');
+  await dialog.getByRole('button', { name: 'Save weights' }).click();
   await expect(dialog.getByText('Preview the effect on overall grades first')).toBeVisible();
   await dialog.getByRole('button', { name: 'Preview the effect' }).click();
   await expect(dialog.getByText("No learner's overall grade would change.")).toBeVisible();
   await expectNoAxeViolations(page);
-  await dialog.getByRole('button', { name: 'Save categories' }).click();
+  await dialog.getByRole('button', { name: 'Save weights' }).click();
   await expect(toast(page, 'Categories saved')).toBeVisible();
-  await expect(categories.getByText('Written work')).toBeVisible();
+  await expect(categories.getByText('50%')).toBeVisible();
 });

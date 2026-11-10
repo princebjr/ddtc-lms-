@@ -11,6 +11,7 @@ import { useLoad } from '@/hooks/use-load.js';
 import { COURSE_STATUS_LABEL, COURSE_STATUS_TONE, fetchCourses } from '@/lib/courses/courses.js';
 import { fetchGradingQueue } from '@/lib/grading/grading.js';
 import { greeting } from '@/lib/greeting.js';
+import { ExamMarkingList } from '@/components/exams/ExamPanels.jsx';
 
 // Lecturer dashboard (Phase 5): courses taught at a glance and the most recently changed courses.
 // Step 9.1 adds To grade: the answers waiting for marks and feedback, opening the To grade page.
@@ -76,6 +77,9 @@ export default function LecturerDashboardPage() {
               );
             })}
           </ul>
+          <div className="mt-6">
+            <ExamMarkingList role="lecturer" />
+          </div>
           <section aria-labelledby="recent-courses" className="mt-6 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 id="recent-courses" className="m-0 text-title-3 text-ink">

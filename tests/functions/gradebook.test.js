@@ -66,17 +66,18 @@ describe('release-grades for a whole course (owner request)', () => {
   });
 });
 
-describe('weights after the first release (owner decision 4)', () => {
+describe('weights after the first release (owner decision 4; since Phase 10.1 administrators only, ADR-016)', () => {
   it('a lecturer is refused; an administrator changes them with a reason', async () => {
-    const [category] = await serviceGet(`grade_categories?select=id,name&course_id=eq.${courseId}&archived_at=is.null`);
-    const categories = [{ id: category.id, name: category.name, weight: 100 }];
-    const lect = await call('manage-assignments', lecturer.token, { action: 'save-categories', courseId, categories });
+    const parts = await serviceGet(`grade_categories?select=id,weight&course_id=eq.${courseId}&archived_at=is.null&order=position`);
+    const categories = parts.map((/** @type {{ id: string, weight: number }} */ p) => ({ id: p.id, weight: p.weight }));
+    expect(categories).toHaveLength(3);
+    const lect = await call('manage-assignments', lecturer.token, { action: 'save-categories', courseId, categories, reason: 'Mine' });
     expect(lect.status).toBe(403);
-    expect(lect.body.message).toBe('Category weights are locked after the first grade release. An administrator can change them');
+    expect(lect.body.message).toBe('Only an administrator can change the grade weights');
     const admin = await signedInAdmin();
     const noReason = await call('manage-assignments', admin.token, { action: 'save-categories', courseId, categories });
     expect(noReason.status).toBe(400);
-    expect(noReason.body.message).toBe('Give a reason for changing weights after grades were released');
+    expect(noReason.body.message).toBe('Give a reason for changing the grade weights');
     const ok = await call('manage-assignments', admin.token, { action: 'save-categories', courseId, categories, reason: 'Confirming the weights' });
     expect(ok.status, JSON.stringify(ok.body)).toBe(200);
   });
