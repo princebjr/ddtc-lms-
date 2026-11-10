@@ -101,7 +101,9 @@ export default function ExamResultsPage({ role }) {
       align: /** @type {const} */ ('end'),
       cell: (/** @type {Row} */ r) => (
         <span className="flex flex-col items-end">
-          <span className="whitespace-nowrap tabular-nums">{r.total_score === null ? '—' : `${num(r.total_score)} / ${num(r.total_marks)}`}</span>
+          <span className="whitespace-nowrap tabular-nums">
+            {r.total_score === null ? '—' : `${num(r.total_score)} / ${num(r.total_marks)}${r.grading_state === 'GRADED' ? '' : ' so far'}`}
+          </span>
           {r.percentage === null ? null : (
             <span className="whitespace-nowrap text-caption text-ink-secondary">{`${formatPercentage(r.percentage)} · ${r.passed ? 'Pass' : 'Fail'}`}</span>
           )}

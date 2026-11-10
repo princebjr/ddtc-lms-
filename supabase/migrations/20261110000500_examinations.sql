@@ -941,7 +941,9 @@ as $$
          end,
          a.started_at, a.submitted_at, private.exam_close_for(x.id, p.id),
          sc.mcq, sc.short, sc.essay, sc.total, private.exam_total(x.id),
-         f.percentage, case when f.percentage is not null then f.percentage >= x.pass_mark end,
+         -- a percentage and pass or fail only once every answer is marked (never for a part-marked script)
+         case when sc.unmarked = 0 then f.percentage end,
+         case when sc.unmarked = 0 and f.percentage is not null then f.percentage >= x.pass_mark end,
          a.feedback,
          case
            when sc.total is null then null

@@ -18,7 +18,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(62);
+select plan(63);
 
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.t1', tests.create_user('t1@example.test', 'Ama', 'Boateng', 'LECTURER')::text, true);
@@ -189,6 +189,8 @@ select results_eq($$ select mcq_score, short_score, essay_score, total_score, to
                      from public.exam_results(tests.id('E1')) where first_name = 'Kwame' $$,
   $$ values (2::numeric, 4::numeric, 9::numeric, 15::numeric, 20.00::numeric, 75.0::numeric, true, 'GRADED') $$,
   'Kwame: MCQ 2, short 4, essay 9, total 15 of 20, 75.0%, passed (pass mark 50%)');
+select results_eq($$ select grading_state, percentage, passed from public.exam_results(tests.id('E1')) where first_name = 'Abena' $$,
+  $$ values ('UNGRADED', null::numeric, null::boolean) $$, 'a script not fully marked shows no percentage and no pass or fail');
 
 -- ---------------------------------------------------------------- release
 select tests.reset(); select tests.as_service();

@@ -199,3 +199,35 @@ audio, attachments or submission files.
 - An administrator's look at a gradebook of a course they do not teach is recorded (`gradebook.viewed`).
 - If an export fails with "The export could not be recorded", nothing was handed out: try again; if it
   persists, check the function logs for `export-gradebook` in the Supabase dashboard.
+
+## Written in Phase 10.1
+
+### Examinations, practical marks, the 40/30/30 course grade and branch groups (ADR-016)
+
+- **Course grade parts:** every course has Weekly assignments 40%, Local Assembly practicals 30% and
+  Final examinations 30%. Only an administrator (two-step verification) changes a course's split:
+  Assignments tab, Parts of the course grade, Change weights, reason, Preview the effect, Save. Audit:
+  `grade_categories.weights_changed` (or `grade_categories.changed_after_release`). A course that still has
+  its own categories shows "Switch to the three parts" to administrators (audit
+  `grade_categories.standard_parts_applied`). The migration switched every course with no released grade;
+  to list the courses still waiting: `select c.title, c.course_code from public.courses c where not
+  public.course_uses_standard_parts(c.id);`
+- **Practicals:** create an assignment in "Local Assembly practicals"; learners cannot send an answer. Its
+  Submissions page is the mark sheet: type the marks, Save marks, then Release marks. A changed released
+  mark needs a reason. Marks are ordinary grades (history, audit `grade.saved`, `grade.released`).
+- **Examinations:** the course's Examinations tab. The deadline is enforced by the database clock (UTC,
+  shown in Ghana time); there is no timer. To give everyone more time: Change deadline (reopens one
+  closed early). One learner: on their script, Authorise retake (reason and new deadline), or ask the
+  developer to call `exam_extension_set`. Once anyone has started, the questions cannot change; fix a
+  wrong question by archiving the examination and setting a new one. Multiple choice is marked on
+  submission and is final. Release results releases only fully marked scripts. Audit actions all start
+  with `exam.` (created, updated, questions_saved, published, unpublished, archived, restored,
+  deadline_changed, closed, extension_set, extension_removed, started, submitted, marked, feedback_saved,
+  released, retake_authorised); every mark, release and retake is also in `exam_grade_history`, which
+  cannot be changed.
+- **Learner support:** "The deadline for this examination has passed" means their deadline is over; saved
+  answers are kept for the lecturer, who can mark them. An answer saved while offline stays on that
+  device and is sent when it reconnects; if the device is lost before reconnecting, only what reached the
+  server counts (the indicator says "All answers saved" once it has).
+- **Exports:** Results, Export gives the examination's results (Excel or CSV), sorted by branch; audit
+  `export.exam_results`. Every export is now sorted by branch, "No branch" last.

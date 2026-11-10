@@ -76,7 +76,7 @@ export default function ExamScriptPage({ role }) {
               {released ? <StatusChip tone={row.changed_since_release ? 'warning' : 'success'}>{row.changed_since_release ? 'Changed, not released' : 'Released'}</StatusChip> : null}
             </span>
             <span className="text-headline tabular-nums text-ink" data-testid="script-total">
-              {row.total_score === null ? '—' : `${Number(row.total_score)} / ${Number(row.total_marks)}`}
+              {row.total_score === null ? '—' : `${Number(row.total_score)} / ${Number(row.total_marks)}${row.grading_state === 'GRADED' ? '' : ' so far'}`}
               {row.percentage === null ? '' : ` · ${formatPercentage(row.percentage)} · ${row.passed ? 'Pass' : 'Fail'}`}
             </span>
           </Card>
