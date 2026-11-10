@@ -240,6 +240,12 @@ test("To grade lists the answers waiting and opens the grading screen; the learn
   await expect(kwamePage.locator('[data-slot="my-grade-row"]').filter({ hasText: 'Prayer journal' }).getByText('Awaiting grade')).toBeVisible();
   await expectNoAxeViolations(kwamePage);
   expect(await horizontalOverflow(kwamePage)).toBeLessThanOrEqual(0);
+  // Assignments > Submitted says Graded with the released score; an answer not yet released still awaits.
+  await kwamePage.goto('/learner/assignments');
+  await kwamePage.getByRole('tab', { name: /^Submitted/ }).click();
+  await expect(kwamePage.getByRole('link', { name: /Reformation essay/ }).getByText('Graded · 15 / 20 · B')).toBeVisible();
+  await expect(kwamePage.getByRole('link', { name: /Prayer journal/ }).getByText(/^Awaiting grade/)).toBeVisible();
+  await kwamePage.goto('/learner/grades');
   await dismissToasts(kwamePage);
   await essayRow.click();
   await expect(kwamePage).toHaveURL(new RegExp(`/learner/courses/${course.id}/assignments/${essay.id}$`));
