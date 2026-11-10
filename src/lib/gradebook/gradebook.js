@@ -275,3 +275,26 @@ export async function previewStandardParts(courseId) {
 export function applyStandardParts(courseId, reason) {
   return callFunction('manage-assignments', { action: 'apply-parts', courseId, reason });
 }
+
+/**
+ * The signed-in learner's grade for one course (their own row of calculate_course_grades), or null.
+ * @param {string} courseId
+ */
+export async function fetchMyCourseGrade(courseId) {
+  const { data, error } = await getSupabase().rpc('calculate_course_grades', { p_course: courseId });
+  if (error) throw error;
+  return /** @type {LearnerGrades | null} */ ((data ?? [])[0] ?? null);
+}
+
+/**
+ * The course grade tag (Step 10.2, owner request 2026-11-10: the letter grade belongs to the course,
+ * shown on its tag, never on a single piece of work): "Course grade 77.5% · B", toned by its status
+ * (Final, Provisional). Null before any grade counts.
+ * @param {LearnerGrades | null | undefined} g
+ * @returns {{ label: string, tone: 'success' | 'warning' | 'neutral' } | null}
+ */
+export function courseGradeTag(g) {
+  if (!g || g.overall_percentage === null || g.overall_percentage === undefined) return null;
+  const letter = g.letter_grade ? ` · ${g.letter_grade}` : '';
+  return { label: `Course grade ${Number(g.overall_percentage)}%${letter}${g.status === 'PROVISIONAL' ? ' (provisional)' : ''}`, tone: STATUS_TONE[g.status] };
+}

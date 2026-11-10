@@ -347,6 +347,7 @@ The phone bar is a floating pill (blurred `card` at 85%, hairline border, overla
     - Afterwards: the Submitted or Not submitted message, the result card (score, %, letter, Pass or Not passed, feedback, release date) and each answer with its mark and feedback.
   - **Dashboards:** the learner dashboard's Examinations list (title, course, "Submit by …" or "Opens …", a state chip). The lecturer dashboard and To grade show "Examination scripts" ("N to mark", "N to release").
   - **Branch groups:** the gradebook matrix has a heading row per branch, and phones show sections. Assignment results, the Learners tab and To grade get the same switch.
+- **Letter grades as built (Step 10.2, ADR-017):** single pieces of work show score, percentage and band only (no "Grade B" chip, no "· B"); the course grade carries the letter, and a course grade tag (a status chip, success when Final, warning when provisional) sits on each learner My Courses card and under the course page title.
 
 ## 14. Responsive behaviour
 

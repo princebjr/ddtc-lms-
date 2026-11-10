@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils.js';
 // The grading panel (Phase 9; DESIGN.md 13 grading screen; D14, D16, D30; owner decisions 2, 3, 6, 7):
 // marks out of the assignment's maximum (up to two decimals) and plain-text feedback, Save draft and
 // Release grade in a bar that sticks above the phone navigation (two panes from tablet width, where
-// the panel itself stays in view). Percentage, letter grade and band are shown as the database
+// the panel itself stays in view). Percentage and band (no letter grade on one piece of work since Step 10.2) are shown as the database
 // computed them after saving (D30: no grade formulas here). A released grade changes only with a
 // reason, and the learner keeps seeing the released one until the change is released; Reopen grade
 // takes a reason too.
@@ -167,7 +167,6 @@ export function GradingPanel({ assignmentId, learnerId, learnerName, review, rea
             <>
               {' · '}
               <span className="tabular-nums">{formatPercentage(grade.percentage)}</span>
-              {grade.letter_grade ? ` · ${grade.letter_grade}` : ''}
               {grade.band ? ` · band ${grade.band}` : ''}
             </>
           ) : null}

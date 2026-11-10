@@ -165,6 +165,8 @@ test("a learner sees each course's grades on that course's own page", async ({ b
   // From the course page too.
   await page.goto(`/learner/courses/${bible.id}`);
   await dismissToasts(page);
+  // The course page's tag carries the course grade with its letter (Step 10.2, owner request 2026-11-10).
+  await expect(page.getByTestId('course-grade-tag')).toHaveText('Course grade 75% · B');
   await page.getByRole('link', { name: 'My grades' }).click();
   await expect(page).toHaveURL(new RegExp(`/learner/courses/${bible.id}/grades$`));
   await expect(page.getByTestId('course-grade')).toHaveText('75% · B');

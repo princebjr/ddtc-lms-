@@ -165,7 +165,7 @@ describe("the learner's examination", () => {
       }),
     );
     learnerPage();
-    await waitFor(() => expect(screen.getByTestId('exam-result').textContent).toBe('11 / 13 · 84.6% · A'));
+    await waitFor(() => expect(screen.getByTestId('exam-result').textContent).toBe('11 / 13 · 84.6%')); // no letter on one examination (Step 10.2)
     expect(screen.getByText('Pass')).toBeTruthy();
     expect(screen.getByText('Well done.')).toBeTruthy();
     expect(screen.getByText('Feedback: Thoughtful.')).toBeTruthy();

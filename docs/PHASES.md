@@ -60,6 +60,7 @@ Tracker (tick after sign-off):
 - [x] Step 9.1: To grade, Grades and feedback, and 16:9 course covers (`phase-9-1-done`)
 - [x] Phase 10: Gradebook, distribution charts and exports (`phase-10-done`)
 - [x] Phase 10.1: Examinations, practical marks and branch groups (`phase-10-1-done`)
+- [ ] Step 10.2: Letter grades only on the course grade (`phase-10-2-done`)
 - [ ] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)
 - [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)

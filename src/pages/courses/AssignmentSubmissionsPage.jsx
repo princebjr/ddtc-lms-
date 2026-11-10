@@ -174,7 +174,6 @@ export default function AssignmentSubmissionsPage({ role }) {
           <span className="whitespace-nowrap tabular-nums text-ink">
             {formatScore(r.score, r.max_marks)}
             {isSet(r.percentage) ? <span className="text-ink-secondary"> · {formatPercentage(r.percentage)}</span> : null}
-            {r.letter_grade ? <span className="text-ink-secondary"> · {r.letter_grade}</span> : null}
           </span>
         );
       },

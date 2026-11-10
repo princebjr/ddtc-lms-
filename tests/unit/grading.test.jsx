@@ -161,9 +161,10 @@ describe('the grading panel', () => {
     expect(toast.show).toHaveBeenCalledWith('lecturer.grades-released', { params: { n: '1' } });
   });
 
-  it('shows the percentage, letter grade and band the database computed, and what the learner sees', () => {
+  // Step 10.2 (owner request 2026-11-10): no letter grade on a single piece of work; the letter belongs to the course grade.
+  it('shows the percentage and band the database computed (no letter grade), and what the learner sees', () => {
     renderPanel(review({ ...released, score: 17, percentage: 85, grade_release_status: 'DRAFT', changed_since_release: true }));
-    expect(screen.getByTestId('grade-facts').textContent).toBe('Saved: 17 / 20 · 85% · A · band 80-89%');
+    expect(screen.getByTestId('grade-facts').textContent).toBe('Saved: 17 / 20 · 85% · band 80-89%');
     expect(screen.getByText(/The learner sees/).textContent).toContain('16 / 20');
     expect(screen.getByText('Changed, not released')).toBeTruthy();
   });
@@ -237,7 +238,7 @@ describe('counts and the learner\'s grade', () => {
     );
     expect(screen.getByText('17 / 20')).toBeTruthy();
     expect(screen.getByText('85%')).toBeTruthy();
-    expect(screen.getByText('Grade A')).toBeTruthy();
+    expect(screen.queryByText('Grade A')).toBeNull(); // no letter on one piece of work (Step 10.2)
     expect(screen.getByText('Band 80-89%')).toBeTruthy();
     expect(screen.getByText('Well argued.')).toBeTruthy();
     expect(screen.getByText('Updated')).toBeTruthy();
