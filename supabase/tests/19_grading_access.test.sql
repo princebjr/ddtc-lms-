@@ -38,7 +38,7 @@ select tests.id('c1'), tests.uid(l), 'ACTIVE', tests.uid('a1') from unnest(array
 insert into public.assignments (id, course_id, category_id, title, content_type, text_instructions, due_at, max_marks, accepted_formats, publication_status, created_by, published_at)
 select tests.id('a1'), tests.id('c1'), g.id, 'Reflection on Genesis 1', 'TEXT', '<p>Read Genesis 1 and reflect.</p>', now() + interval '7 days', 20,
        array['TEXT', 'AUDIO'], 'PUBLISHED', tests.uid('t1'), now()
-  from public.grade_categories g where g.course_id = tests.id('c1');
+  from public.grade_categories g where g.course_id = tests.id('c1') and g.part = 'ASSIGNMENTS' and g.archived_at is null;
 
 -- s1: Kwame's answer, graded 16 and released. s2: Abena's answer, graded 12 as a draft (not released).
 -- Yaw has sent nothing. The grades are written here directly (as the trusted functions would).

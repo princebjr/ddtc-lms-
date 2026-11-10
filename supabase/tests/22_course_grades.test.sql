@@ -41,9 +41,12 @@ insert into public.course_enrollments (course_id, learner_id, enrolment_status, 
 select tests.id('c1'), tests.uid(l), 'ACTIVE', tests.uid('a1') from unnest(array['l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8']) l;
 insert into public.course_enrollments (course_id, learner_id, enrolment_status, enrolled_by)
 select tests.id('cB'), tests.uid(l), 'ACTIVE', tests.uid('a1') from unnest(array['l1', 'l2', 'l3', 'l4', 'l5']) l;
--- Categories: Assignments 70 (the default, renamed weight) and Practical 30 (D13 worked example).
-update public.grade_categories set weight = 70 where course_id = tests.id('c1');
-insert into public.grade_categories (id, course_id, name, weight, position) values (tests.id('gP'), tests.id('c1'), 'Practical', 30, 2);
+-- Categories: Assignments 70 and Practical 30 (D13 worked example). Since Phase 10.1 a new course starts
+-- with three parts (ADR-016); this course keeps the worked example's own two categories (both ordinary
+-- assignment categories) to test the formula, so the three defaults are archived first.
+update public.grade_categories set archived_at = now() where course_id = tests.id('c1');
+insert into public.grade_categories (id, course_id, name, weight, position) values
+  (tests.id('gA'), tests.id('c1'), 'Assignments', 70, 1), (tests.id('gP'), tests.id('c1'), 'Practical', 30, 2);
 
 -- A1 (20) and A2 (50) Assignments, due yesterday; P1 (40) Practical, due in 7 days; F1 (10) Assignments,
 -- due in 7 days; U1 (10) Assignments, due yesterday (unpublished after release); U2 (10) never published.
@@ -61,7 +64,7 @@ select tests.id(x.id), tests.id('c1'), case when x.cat = 'P' then tests.id('gP')
 -- Band boundaries: one 1000-mark assignment.
 insert into public.assignments (id, course_id, category_id, title, content_type, text_instructions, due_at, max_marks, accepted_formats, publication_status, created_by, published_at)
 select tests.id('B1'), tests.id('cB'), g.id, 'Boundaries', 'TEXT', '<p>Respond.</p>', now() - interval '1 day', 1000, array['TEXT', 'AUDIO'], 'PUBLISHED', tests.uid('t1'), now()
-  from public.grade_categories g where g.course_id = tests.id('cB');
+  from public.grade_categories g where g.course_id = tests.id('cB') and g.part = 'ASSIGNMENTS' and g.archived_at is null;
 -- l4 has an extension on A1 into the future.
 insert into public.submission_extensions (assignment_id, learner_id, extended_due_at, granted_by) values (tests.id('A1'), tests.uid('l4'), now() + interval '2 days', tests.uid('t1'));
 

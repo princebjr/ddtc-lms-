@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { requireSupabase } from '../e2e/support/local-supabase.js';
 import { mp3, pdf, wav } from '../fixtures/media.js';
-import { call, serviceGet, signedInAs } from './support.js';
+import { call, serviceGet, signedInAdmin, signedInAs } from './support.js';
 
 /** @type {Awaited<ReturnType<typeof signedInAs>>} */
 let owner;
@@ -24,7 +24,7 @@ beforeAll(async () => {
   learner = await signedInAs();
   const course = await call('create-course', owner.token, { title: 'Introduction to Biblical Studies', courseCode: `A${randomUUID().replace(/-/g, '').slice(0, 7).toUpperCase()}` });
   courseId = course.body.courseId;
-  [{ id: categoryId }] = await serviceGet(`grade_categories?select=id&course_id=eq.${courseId}`);
+  [{ id: categoryId }] = await serviceGet(`grade_categories?select=id&course_id=eq.${courseId}&part=eq.ASSIGNMENTS&archived_at=is.null`);
 });
 
 /** @param {Record<string, unknown>} [over] */
@@ -101,18 +101,18 @@ describe('manage-assignments', () => {
     expect((await call('manage-assignments', owner.token, { action: 'archive', assignmentId: id, archived: false })).status).toBe(200);
   });
 
-  it('saves the categories and reports their total', async () => {
-    const res = await call('manage-assignments', owner.token, {
-      action: 'save-categories',
-      courseId,
-      categories: [
-        { id: categoryId, name: 'Assignments', weight: 70 },
-        { name: 'Participation', weight: 20 },
-      ],
-    });
+  // Since Phase 10.1 (ADR-016) a course has three fixed parts whose weights only an administrator changes, with a reason.
+  it('saves the weights of the three parts (administrators only, with a reason) and reports their total', async () => {
+    const parts = await serviceGet(`grade_categories?select=id&course_id=eq.${courseId}&archived_at=is.null&order=position`);
+    const categories = parts.map((/** @type {{ id: string }} */ p, /** @type {number} */ i) => ({ id: p.id, weight: [50, 30, 20][i] }));
+    const byOwner = await call('manage-assignments', owner.token, { action: 'save-categories', courseId, categories, reason: 'Mine' });
+    expect(byOwner.status).toBe(403);
+    expect(byOwner.body.message).toBe('Only an administrator can change the grade weights');
+    const admin = await signedInAdmin();
+    const res = await call('manage-assignments', admin.token, { action: 'save-categories', courseId, categories, reason: 'Fewer examination marks' });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
-    expect(res.body).toMatchObject({ total: 90, ready: false });
-    expect((await call('manage-assignments', other.token, { action: 'save-categories', courseId, categories: [{ name: 'Mine', weight: 100 }] })).status).toBe(403);
+    expect(res.body).toMatchObject({ total: 100, ready: true });
+    expect((await call('manage-assignments', other.token, { action: 'save-categories', courseId, categories, reason: 'Mine' })).status).toBe(403);
   });
 });
 

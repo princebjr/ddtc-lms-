@@ -29,8 +29,8 @@ insert into public.course_lecturers (course_id, lecturer_id, permission_level, a
   (tests.id('c3'), tests.uid('t1'), 'OWNER', tests.uid('t1'));
 insert into public.lessons (id, course_id, title, content, position, publication_status, created_by, published_at) values
   (tests.id('e1'), tests.id('c1'), 'The Creation Account', '<p>Genesis 1</p>', 1, 'PUBLISHED', tests.uid('t1'), now());
-select set_config('t.cat1', (select id::text from public.grade_categories where course_id = tests.id('c1')), true);
-select set_config('t.cat2', (select id::text from public.grade_categories where course_id = tests.id('c2')), true);
+select set_config('t.cat1', (select id::text from public.grade_categories where course_id = tests.id('c1') and part = 'ASSIGNMENTS' and archived_at is null), true);
+select set_config('t.cat2', (select id::text from public.grade_categories where course_id = tests.id('c2') and part = 'ASSIGNMENTS' and archived_at is null), true);
 
 /** The fields of an assignment, as the server sends them. */
 create function tests.fields(p_title text, p_type text, p_text text, p_category uuid, p_formats text[] default array['TEXT', 'AUDIO']) returns jsonb language sql immutable as $$
@@ -56,27 +56,33 @@ select is(
     where has_function_privilege('authenticated', f, 'execute') or has_function_privilege('anon', f, 'execute')),
   0, 'no signed-in client or visitor can call the trusted assignment functions');
 
--- ---------------------------------------------------------------- categories (D12)
+-- ---------------------------------------------------------------- categories (D12; since Phase 10.1, ADR-016: three fixed parts,
+-- weights changed only by an AAL2 administrator with a reason)
+create function tests.parts14(p_course text) returns jsonb language sql stable as $f$
+  select jsonb_agg(jsonb_build_object('id', g.id, 'name', g.name, 'weight', g.weight) order by g.position)
+    from public.grade_categories g where g.course_id = tests.id(p_course) and g.archived_at is null
+$f$;
+grant execute on function tests.parts14(text) to service_role;
 select tests.as_service();
-select is((public.grade_categories_save(tests.uid('t1'), false, tests.id('c1'),
-  jsonb_build_array(jsonb_build_object('id', current_setting('t.cat1'), 'name', 'Assignments', 'weight', 60), jsonb_build_object('name', 'Participation', 'weight', 40))) ->> 'total')::int, 100,
-  'the owner saves two categories totalling 100');
-select throws_ok($$ select public.grade_categories_save(tests.uid('t2'), false, tests.id('c1'), '[{"name": "Mine", "weight": 100}]') $$, '42501', NULL,
+select throws_ok($$ select public.grade_categories_save(tests.uid('t1'), false, tests.id('c1'), tests.parts14('c1'), 'Mine') $$, '42501',
+  'Only an administrator can change the grade weights', 'the course''s own lecturer cannot change the weights (ADR-016)');
+select throws_ok($$ select public.grade_categories_save(tests.uid('t2'), false, tests.id('c1'), tests.parts14('c1'), 'Mine') $$, '42501', NULL,
   'a lecturer who does not teach the course cannot change its categories');
-select throws_ok($$ select public.grade_categories_save(tests.uid('l1'), false, tests.id('c1'), '[{"name": "Mine", "weight": 100}]') $$, '42501', NULL,
+select throws_ok($$ select public.grade_categories_save(tests.uid('l1'), false, tests.id('c1'), tests.parts14('c1'), 'Mine') $$, '42501', NULL,
   'a learner cannot change categories');
-select throws_ok($$ select public.grade_categories_save(tests.uid('t1'), false, tests.id('c1'), '[{"name": "Work", "weight": 50}, {"name": "work", "weight": 50}]') $$, '22023', NULL,
-  'two categories cannot share a name');
-select throws_ok($$ select public.grade_categories_save(tests.uid('t1'), false, tests.id('c1'), '[{"name": "Work", "weight": 120}]') $$, '22023', NULL,
+select throws_ok($$ select public.grade_categories_save(tests.uid('a1'), true, tests.id('c1'), jsonb_build_array(tests.parts14('c1') -> 0), 'One part') $$, '22023', NULL,
+  'the three parts cannot be reduced to one');
+select throws_ok($$ select public.grade_categories_save(tests.uid('a1'), true, tests.id('c1'),
+    jsonb_build_array(jsonb_set(tests.parts14('c1') -> 0, '{weight}', '120'), tests.parts14('c1') -> 1, tests.parts14('c1') -> 2), 'Too much') $$, '22023', NULL,
   'a weight above 100 is refused');
-select lives_ok($$ select public.grade_categories_save(tests.uid('t3'), false, tests.id('c1'),
-  jsonb_build_array(jsonb_build_object('id', current_setting('t.cat1'), 'name', 'Assignments', 'weight', 70),
-                    jsonb_build_object('id', (select id from public.grade_categories where course_id = tests.id('c1') and name = 'Participation'), 'name', 'Participation', 'weight', 30))) $$,
-  'a co-lecturer changes the weights');
+select lives_ok($$ select public.grade_categories_save(tests.uid('a1'), true, tests.id('c1'),
+    jsonb_build_array(jsonb_set(tests.parts14('c1') -> 0, '{weight}', '50'), tests.parts14('c1') -> 1, jsonb_set(tests.parts14('c1') -> 2, '{weight}', '20')),
+    'Fewer examination marks in this course') $$,
+  'an administrator changes the weights with a reason');
 select tests.reset();
 select results_eq($$ select name, weight, position from public.grade_categories where course_id = tests.id('c1') and archived_at is null order by position $$,
-  $$ values ('Assignments', 70, 1), ('Participation', 30, 2) $$, 'the categories, weights and order are saved');
-select is((select count(*)::int from public.audit_logs where action = 'course.categories_saved' and entity_id = tests.id('c1')::text), 2, 'saving categories is audited');
+  $$ values ('Weekly assignments', 50, 1), ('Local Assembly practicals', 30, 2), ('Final examinations', 20, 3) $$, 'the weights are saved; names and order stay');
+select is((select count(*)::int from public.audit_logs where action = 'grade_categories.weights_changed' and entity_id = tests.id('c1')::text), 1, 'saving categories is audited');
 
 -- ---------------------------------------------------------------- saving assignments
 select tests.as_service();
@@ -129,8 +135,8 @@ select lives_ok($$ select public.assignment_set_archived(tests.uid('t1'), false,
 select throws_ok($$ select public.assignment_save(tests.uid('t1'), false, tests.id('c1'), current_setting('t.g3')::uuid, tests.fields('Edit', 'TEXT', '<p>x</p>', current_setting('t.cat1')::uuid), null) $$,
   '22023', NULL, 'an archived assignment cannot be edited');
 select lives_ok($$ select public.assignment_set_archived(tests.uid('t1'), false, current_setting('t.g3')::uuid, false) $$, 'and it can be restored');
-select throws_ok($$ select public.grade_categories_save(tests.uid('t1'), false, tests.id('c1'), jsonb_build_array(jsonb_build_object('name', 'Everything', 'weight', 100))) $$,
-  '22023', NULL, 'a category that assignments use cannot be removed');
+select throws_ok($$ select public.grade_categories_save(tests.uid('a1'), true, tests.id('c1'), jsonb_build_array(jsonb_build_object('name', 'Everything', 'weight', 100)), 'One category') $$,
+  '22023', NULL, 'the parts that assignments use cannot be replaced by another category');
 
 -- ---------------------------------------------------------------- instruction audio
 insert into public.file_objects (id, bucket_name, storage_path, original_filename, safe_download_filename, uploaded_by, status, resource_type, resource_id, detected_mime_type, file_size, duration_seconds, validated_at) values
@@ -150,7 +156,7 @@ select is((select status::text from public.file_objects where id = tests.id('f1'
 update public.courses set status = 'ARCHIVED', archived_at = now() where id = tests.id('c3');
 select tests.as_service();
 select throws_ok($$ select public.assignment_save(tests.uid('t1'), false, tests.id('c3'), null,
-  tests.fields('After archive', 'TEXT', '<p>x</p>', (select id from public.grade_categories where course_id = tests.id('c3'))), null) $$,
+  tests.fields('After archive', 'TEXT', '<p>x</p>', (select id from public.grade_categories where course_id = tests.id('c3') and part = 'ASSIGNMENTS' and archived_at is null)), null) $$,
   '22023', NULL, 'an archived course gets no new assignments');
 select tests.reset();
 select is((select count(*)::int from public.assignments where course_id = tests.id('c1')), 4, 'no assignment was deleted');
