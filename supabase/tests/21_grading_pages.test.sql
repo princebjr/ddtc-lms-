@@ -90,7 +90,9 @@ select is((select count(*)::int from public.grading_queue()), 0, 'a learner sees
 select tests.reset(); select tests.authenticate_as(tests.uid('a1'), 'aal1');
 select is((select count(*)::int from public.grading_queue()), 0, 'an administrator without two-step verification sees nothing');
 select tests.reset(); select tests.authenticate_as(tests.uid('a1'), 'aal2');
-select is((select count(*)::int from public.grading_queue()), 5, 'an AAL2 administrator sees every course''s queue (archived courses aside)');
+-- Counted on this test's courses only: a local database may hold other courses from earlier runs.
+select is((select count(*)::int from public.grading_queue() where course_id in (tests.id('c1'), tests.id('c2'), tests.id('c9'))), 5,
+  'an AAL2 administrator sees every course''s queue (archived courses aside)');
 select tests.reset(); select tests.as_anon();
 select throws_ok($$ select * from public.grading_queue() $$, '42501', null, 'someone signed out cannot call it');
 
