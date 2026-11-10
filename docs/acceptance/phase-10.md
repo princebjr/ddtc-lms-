@@ -68,6 +68,7 @@ Fixture-based exact numbers (phase file "Tests required"), in pgTAP 22:
 - axe `scrollable-region-focusable` on the 320 px phone: the scrolling lists in Review and release and in the weights preview now take keyboard focus.
 - My grades (learner course page) and Export (Gradebooks) were in the page header's action slot, which shows only on desktop; the 320 px run could not find My grades. Both now sit in the page at every width.
 - Phone gradebook cards cut long names short beside the overall grade; the grade now sits under the learner. The learner's score column no longer wraps "18 / 20".
+- The greeting change (d7227fe) missed one end-to-end assertion, which still expected "Good morning/afternoon/evening". CI caught it once a run fell in the evening; the test now expects the new greetings.
 - Under heavy load the skeleton can take over for its 300 ms just after a first paint; three new unit assertions and one Step 9.1 assertion now wait until the content has settled (the checks themselves are unchanged).
 
 ## 5. Known issues and deferred items
