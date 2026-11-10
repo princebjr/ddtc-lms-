@@ -45,7 +45,7 @@ They were captured with a check for sideways scrolling and console errors; none 
 
 ## 4. Owner steps
 
-Staging, before merging: `npx supabase db push --linked` (adds `20261110000100`). No functions changed.
+Staging, before merging: `npx supabase db push --linked` (adds `20261110000100`). No functions changed. Done by the owner and checked read-only on 2026-11-10 (`supabase migration list --linked` shows `20261110000100` applied on `ddtc-lms-staging`). The owner approved the merge on 2026-11-10.
 
 ## 5. Known issues
 
