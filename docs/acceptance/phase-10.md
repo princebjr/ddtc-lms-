@@ -86,6 +86,8 @@ Staging, before merging:
 
 I then check read-only (`supabase migration list --linked`, `supabase functions list`). Then open one Excel export of each kind in Excel on staging.
 
+Done by the owner on 2026-11-10 and checked read-only the same day: `20261110000200` and `20261110000300` applied on `ddtc-lms-staging`; `export-gradebook` (new), `release-grades` and `manage-assignments` deployed. CI green on the pull request (14 of 14 checks).
+
 ## 7. Screenshots
 
 `docs/acceptance/phase-10/screens/`, 48 images at 375, 768 and 1280 px in light and dark:
