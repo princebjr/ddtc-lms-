@@ -37,7 +37,8 @@ export function GradebookMatrix({ columns, learners }) {
       <ul className="m-0 flex list-none flex-col gap-3 p-0 sm:hidden" aria-label="Gradebook">
         {learners.map((l) => (
           <li key={l.learner_id} className="flex flex-col gap-3 rounded-md border border-hairline bg-card p-4" data-slot="gradebook-card">
-            <div className="flex items-start justify-between gap-3">
+            {/* Stacked, so a long name is never cut short by the grade beside it on a narrow phone. */}
+            <div className="flex flex-col gap-3">
               <LearnerCell row={l} />
               <Overall row={l} />
             </div>

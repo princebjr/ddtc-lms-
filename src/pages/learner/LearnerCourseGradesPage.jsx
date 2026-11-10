@@ -61,7 +61,11 @@ export default function LearnerCourseGradesPage() {
       card: /** @type {const} */ ('value'),
       cell: (/** @type {Column} */ c) => {
         const cell = cellOf(c.assignment_id);
-        return cell && (cell.state === 'RELEASED' || cell.state === 'COUNTED_ZERO') ? formatScore(cell.score, c.max_marks) : `— / ${Number(c.max_marks)}`;
+        return (
+          <span className="whitespace-nowrap tabular-nums">
+            {cell && (cell.state === 'RELEASED' || cell.state === 'COUNTED_ZERO') ? formatScore(cell.score, c.max_marks) : `— / ${Number(c.max_marks)}`}
+          </span>
+        );
       },
     },
     {
