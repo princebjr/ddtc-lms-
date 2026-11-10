@@ -110,6 +110,12 @@ Nothing was skipped or loosened.
 
 ## 6. Owner steps
 
+The owner approved the merge on 2026-11-10, and both staging steps were done before merging. Claude Code checked read-only on `ddtc-lms-staging`:
+- `supabase functions list` shows `grade-submission` and `release-grades` active (version 1, deployed 2026-11-10 05:06 UTC). No function changed after that.
+- `supabase migration list --linked` shows `20261109000100` and `20261109000200` applied. At first they were missing; the owner pushed them when asked.
+
+The short check on the preview (step 3) was offered; its result was not reported.
+
 Staging, after approval and before merging (as before, the owner runs these; they change the hosted project):
 
 1. Apply the migrations: `npx supabase db push --linked` (adds `20261109000100` and `20261109000200`).
