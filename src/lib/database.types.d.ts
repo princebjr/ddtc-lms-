@@ -657,6 +657,11 @@ isOneToOne: false
               "bucket_name": string,"duration_seconds": number,"file_object_id": string,"file_size": number,"mime_type": string,"safe_download_filename": string,"storage_path": string,"waveform_peaks": (number)[]
             }[]
                            },
+"assignment_report_summary":
+{ Args: { "p_assignment": string }; Returns: {
+              "average": number,"enrolled": number,"graded": number,"highest": number,"lowest": number,"max_marks": number,"not_submitted": number,"submitted": number
+            }[]
+                           },
 "assignment_result_counts":
 { Args: { "p_assignment": string }; Returns: {
               "enrolled": number,"graded": number,"missing": number,"not_yet_due": number,"released": number,"submitted": number,"ungraded": number,"withdrawn_submitted": number
@@ -676,6 +681,11 @@ isOneToOne: false
 "assignment_set_publication":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_publish": boolean }; Returns: Json
                            },
+"assignment_statistics":
+{ Args: { "p_course": string }; Returns: {
+              "assignment_id": string,"average": number,"chart_visible": boolean,"distribution": Json,"highest": number,"lowest": number,"missing": number,"my_band": string,"released": number,"ungraded": number
+            }[]
+                           },
 "assignment_submissions":
 { Args: { "p_assignment": string }; Returns: {
               "branch_name": string,"current_version": number,"effective_due_at": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"extended_due_at": string,"first_name": string,"id_number": number,"is_late": boolean,"learner_id": string,"profile_image_path": string,"second_name": string,"status": Database["public"]['Enums']["submission_status"],"submission_id": string,"submitted_at": string
@@ -683,6 +693,11 @@ isOneToOne: false
                            },
 "bootstrap_first_admin":
 { Args: { "p_user": string }; Returns: undefined
+                           },
+"calculate_course_grades":
+{ Args: { "p_course": string }; Returns: {
+              "band": string,"branch_name": string,"categories": Json,"cells": Json,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"first_name": string,"id_number": number,"learner_id": string,"letter_grade": string,"overall_percentage": number,"profile_image_path": string,"second_name": string,"status": string
+            }[]
                            },
 "cleanup_failures":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -703,6 +718,11 @@ isOneToOne: false
 "course_lecturer_change":
 { Args: { "p_action": string,"p_actor": string,"p_as_admin": boolean,"p_course": string,"p_lecturer": string }; Returns: Json
                            },
+"course_release_preview":
+{ Args: { "p_course": string }; Returns: {
+              "assignment_id": string,"assignment_title": string,"branch_name": string,"changed": boolean,"first_name": string,"id_number": number,"learner_id": string,"letter_grade": string,"max_marks": number,"percentage": number,"released_score": number,"score": number,"second_name": string
+            }[]
+                           },
 "course_roster":
 { Args: { "p_course": string }; Returns: {
               "branch_name": string,"enrolled_at": string,"enrolment_id": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"first_name": string,"id_number": number,"learner_id": string,"profile_image_path": string,"second_name": string
@@ -719,6 +739,9 @@ isOneToOne: false
 "course_weight_total":
 { Args: { "p_course": string }; Returns: number
                            },
+"course_weights_locked":
+{ Args: { "p_course": string }; Returns: boolean
+                           },
 "enrolment_add":
 { Args: { "p_actor": string,"p_course": string,"p_learners": (string)[] }; Returns: Json
                            },
@@ -731,10 +754,13 @@ isOneToOne: false
             }[]
                            },
 "grade_categories_save":
-{ Args: { "p_actor": string,"p_as_admin": boolean,"p_categories": Json,"p_course": string }; Returns: Json
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_categories": Json,"p_course": string,"p_reason"?: string }; Returns: Json
                            },
 "grade_release":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_learner"?: string }; Returns: number
+                           },
+"grade_release_course":
+{ Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string }; Returns: number
                            },
 "grade_reopen":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_learner": string,"p_reason": string }; Returns: undefined
@@ -742,6 +768,11 @@ isOneToOne: false
 "grade_save":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_feedback": string,"p_learner": string,"p_reason"?: string,"p_score": number }; Returns: {
               "changed": boolean,"grade_release_status": Database["public"]['Enums']["grade_release_status"],"submission_id": string
+            }[]
+                           },
+"gradebook_assignments":
+{ Args: { "p_course": string }; Returns: {
+              "assignment_id": string,"category_id": string,"category_name": string,"due_at": string,"max_marks": number,"published": boolean,"title": string
             }[]
                            },
 "grading_queue":
@@ -826,6 +857,11 @@ isOneToOne: false
 "submission_submit":
 { Args: { "p_actor": string,"p_assignment": string,"p_files": (string)[],"p_request": string,"p_text": string }; Returns: {
               "is_late": boolean,"replayed": boolean,"resubmitted": boolean,"submission_id": string,"version_number": number
+            }[]
+                           },
+"weights_impact_preview":
+{ Args: { "p_categories": Json,"p_course": string }; Returns: {
+              "current_overall": number,"first_name": string,"learner_id": string,"new_overall": number,"second_name": string
             }[]
                            }
           }
