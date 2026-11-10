@@ -63,7 +63,9 @@ export default function LearnerGradesPage() {
                                   {r.updated ? <StatusChip tone="info">Updated</StatusChip> : null}
                                 </span>
                               ) : (
-                                <StatusChip tone="info">Awaiting grade</StatusChip>
+                                <StatusChip tone="info" className="self-start sm:self-auto">
+                                  Awaiting grade
+                                </StatusChip>
                               )}
                             </span>
                             {r.state === 'RELEASED' && r.feedback ? (
