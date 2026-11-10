@@ -16,12 +16,31 @@ import { buildXlsx } from '../_shared/xlsx.ts';
 const Body = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('gradebook'), courseId: z.uuid(), format: z.enum(['csv', 'xlsx']) }),
   z.object({ kind: z.literal('assignment'), assignmentId: z.uuid(), format: z.enum(['csv', 'xlsx']) }),
+  // Phase 10.1 (ADR-016): one examination's results.
+  z.object({ kind: z.literal('examination'), examId: z.uuid(), format: z.enum(['csv', 'xlsx']) }),
 ]);
 
 type Cell = string | number | null;
 const INSTITUTION = 'Dynamic Discipleship Training Centre (HOJ)';
 const STATUS: Record<string, string> = { FINAL: 'Final', PROVISIONAL: 'Provisional', NOT_AVAILABLE: 'Not yet available' };
 const RESULT: Record<string, string> = { GRADED: 'Graded', UNGRADED: 'Ungraded', MISSING: 'Not Submitted', NOT_YET_DUE: 'Not Submitted' };
+const EXAM_STATE: Record<string, string> = { SUBMITTED: 'Submitted', NOT_SUBMITTED: 'Not Submitted', NOT_STARTED: 'Not Submitted', IN_PROGRESS: 'In progress' };
+const MARKING: Record<string, string> = { GRADED: 'Marked', PARTLY: 'Partly marked', UNGRADED: 'Not marked' };
+
+/** Rows branch by branch (owner answer of 2026-11-10), "No branch" last; names keep their order within a branch. */
+function byBranch(rows: Cell[][], column: number): Cell[][] {
+  const key = (r: Cell[]) => String(r[column] ?? '').trim();
+  return rows
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      const [x, y] = [key(a.r), key(b.r)];
+      if (x === y) return a.i - b.i;
+      if (!x) return 1;
+      if (!y) return -1;
+      return x.localeCompare(y, 'en-GB');
+    })
+    .map((x) => x.r);
+}
 
 /** 15.00 -> 15, 82.50 -> 82.5; null stays empty. */
 const num = (n: unknown): Cell => (n === null || n === undefined ? null : Number(n));
@@ -88,8 +107,14 @@ serve(async (req) => {
   // Which course, and is the caller one of its managers?
   let courseId: string;
   let assignment: { id: string; title: string; max_marks: number; due_at: string } | null = null;
+  let exam: { id: string; title: string; pass_mark: number } | null = null;
   if (b.kind === 'gradebook') {
     courseId = b.courseId;
+  } else if (b.kind === 'examination') {
+    const { data } = await serviceClient().from('examinations').select('id, course_id, title, pass_mark').eq('id', b.examId).maybeSingle();
+    if (!data) throw new HttpError(404, 'not_found', 'Examination not found');
+    courseId = data.course_id;
+    exam = data;
   } else {
     const { data } = await serviceClient().from('assignments').select('id, course_id, title, max_marks, due_at').eq('id', b.assignmentId).maybeSingle();
     if (!data) throw new HttpError(404, 'not_found', 'Assignment not found');
@@ -127,8 +152,48 @@ serve(async (req) => {
         STATUS[g.status as string] ?? '',
       ];
     });
+    rows = byBranch(rows, 2);
     heading = [courseLine, 'Gradebook', `Exported ${today()} (Ghana time)`];
     base = `gradebook-${safeName(course?.course_code ?? 'course')}`;
+  } else if (b.kind === 'examination') {
+    const x = exam!;
+    const [results, stats] = await Promise.all([db.rpc('exam_results', { p_exam: x.id }), db.rpc('assignment_statistics', { p_course: courseId })]);
+    if (results.error || stats.error) throw new HttpError(500, 'server_error', 'The results could not be read');
+    const list = (results.data ?? []) as Array<Record<string, unknown>>;
+    const total = num(list[0]?.total_marks);
+    header = ['Name', 'ID number', 'Branch', 'Examination', 'Submission date', 'Multiple choice', 'Short answer', 'Essay', 'Total', 'Maximum', 'Percentage', 'Result', 'Status', 'Marking', 'Feedback'];
+    rows = byBranch(
+      list.map((r) => [
+        `${r.first_name} ${r.second_name}`,
+        num(r.id_number),
+        (r.branch_name as string) ?? '',
+        x.title,
+        ghanaDate(r.submitted_at as string | null),
+        num(r.mcq_score),
+        num(r.short_score),
+        num(r.essay_score),
+        num(r.total_score),
+        num(r.total_marks),
+        num(r.percentage),
+        r.passed === true ? 'Pass' : r.passed === false ? 'Fail' : '',
+        EXAM_STATE[r.state as string] ?? '',
+        `${MARKING[r.grading_state as string] ?? ''}${r.released_at ? ' · released' : ''}`.replace(/^ · /, ''),
+        (r.feedback as string) ?? '',
+      ]),
+      2,
+    );
+    const s = ((stats.data ?? []) as Array<Record<string, unknown>>).find((r) => r.assignment_id === x.id) ?? {};
+    footer = [
+      ['Learners', list.length],
+      ['Submitted', list.filter((r) => r.state === 'SUBMITTED').length],
+      ['Not submitted', list.filter((r) => r.state !== 'SUBMITTED').length],
+      ['Released results', num(s.released)],
+      ['Class average (%)', num(s.average)],
+      ['Highest (%)', num(s.highest)],
+      ['Lowest (%)', num(s.lowest)],
+    ];
+    heading = [courseLine, `Examination: ${x.title} (out of ${total ?? ''}, pass mark ${x.pass_mark}%)`, `Exported ${today()} (Ghana time)`];
+    base = `exam-${safeName(x.title)}`;
   } else {
     const a = assignment!;
     const [results, summary] = await Promise.all([
@@ -150,6 +215,7 @@ serve(async (req) => {
         num(r.percentage),
         RESULT[r.result as string] ?? '',
       ]);
+    rows = byBranch(rows, 2);
     const s = ((summary.data ?? []) as Array<Record<string, unknown>>)[0] ?? {};
     footer = [
       ['Enrolled', num(s.enrolled)],
@@ -164,12 +230,12 @@ serve(async (req) => {
     base = `report-${safeName(a.title)}`;
   }
 
-  const bytes = b.format === 'csv' ? csv([header, ...rows, ...(footer.length ? [[], ...footer] : [])]) : xlsx(b.kind === 'gradebook' ? 'Gradebook' : 'Report', heading, header, rows, footer);
+  const bytes = b.format === 'csv' ? csv([header, ...rows, ...(footer.length ? [[], ...footer] : [])]) : xlsx(b.kind === 'gradebook' ? 'Gradebook' : b.kind === 'examination' ? 'Examination' : 'Report', heading, header, rows, footer);
   const { error: auditError } = await serviceClient().rpc('record_export', {
     p_actor: caller.id,
-    p_kind: b.kind === 'gradebook' ? 'gradebook' : 'assignment_report',
-    p_entity_type: b.kind === 'gradebook' ? 'course' : 'assignment',
-    p_entity_id: b.kind === 'gradebook' ? courseId : assignment!.id,
+    p_kind: b.kind === 'gradebook' ? 'gradebook' : b.kind === 'examination' ? 'exam_results' : 'assignment_report',
+    p_entity_type: b.kind === 'gradebook' ? 'course' : b.kind === 'examination' ? 'examination' : 'assignment',
+    p_entity_id: b.kind === 'gradebook' ? courseId : b.kind === 'examination' ? exam!.id : assignment!.id,
     p_metadata: { course_id: courseId, format: b.format, rows: rows.length },
   });
   if (auditError) throw new HttpError(500, 'server_error', 'The export could not be recorded');

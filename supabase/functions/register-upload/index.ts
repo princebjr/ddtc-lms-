@@ -24,10 +24,12 @@ import { contentTypeFor, extensionOf, MAX_LESSON_AUDIO, RESOURCES, safeName, sub
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
 
 const Body = z.object({
-  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT', 'ASSIGNMENT_INSTRUCTION_AUDIO', 'SUBMISSION_FILE']),
+  resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT', 'ASSIGNMENT_INSTRUCTION_AUDIO', 'SUBMISSION_FILE', 'EXAM_ANSWER_AUDIO']),
   courseId: z.uuid().optional(),
   lessonId: z.uuid().optional(),
   assignmentId: z.uuid().optional(),
+  examId: z.uuid().optional(),
+  questionId: z.uuid().optional(),
   filename: z.string().min(1).max(255),
   size: z.number().int().positive(),
   replaceAudioId: z.uuid().optional(),
@@ -57,6 +59,14 @@ serve(async (req) => {
     version = row.version_number;
     folder = `${b.assignmentId}/${caller.id}/${version}`;
     limitKey = submissionLimitKey(role);
+  }
+  // Phase 10.1 (ADR-016): an examination answer's recording, for the learner's open attempt (exam_prepare_upload).
+  if (b.resourceType === 'EXAM_ANSWER_AUDIO') {
+    if (!b.examId || !b.questionId) throw new HttpError(400, 'invalid', 'Choose the question first');
+    const { data, error } = await admin.rpc('exam_prepare_upload', { p_actor: caller.id, p_exam: b.examId, p_question: b.questionId });
+    if (error) throw fromDbError(error);
+    resourceId = data as string;
+    folder = `exams/${b.examId}/${caller.id}/${resourceId}`;
   }
   if (b.resourceType === 'COURSE_COVER') {
     if (!b.courseId) throw new HttpError(400, 'invalid', 'Choose the course first');
