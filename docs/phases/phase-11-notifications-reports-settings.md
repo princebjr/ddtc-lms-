@@ -11,6 +11,7 @@
 **Build**
 
 - From Phase 9 (ADR-014): the `notifications` table exists with GRADE_RELEASED and GRADE_UPDATED rows (deduplication key `grade-release:{submission}:{n}`, `link_path` for View); add the other D21 types and `notification_deliveries`, send grade emails from these rows, and replace the learner's "New grade available" check (`GradeNotices`, once per tab) with the notification centre and its unread count, keeping the toast.
+- From Phase 10 (ADR-015): the setting `missing_as_zero` (D11, default false) exists in `system_settings` and `calculate_course_grades` already obeys it (pgTAP 22). Add it to the administrator Settings screen (owner decision 5 of 2026-11-10) with a plain explanation (off: overdue work with nothing sent is Missing and not counted; on: it counts as 0 until a late answer is sent), audited like the other settings. The per-assignment performance report export (owner request 2026-11-06) is built in `export-gradebook`; the Reports page may link to it rather than build a second one.
 - From Phase 8 (ADR-013): an administrator alert for files that keep failing to be removed (`public.cleanup_failures()`, 3 failures or more; until then the runbook shows the SQL), and notifications for extensions granted, changed and taken back (the audit log already records them).
 
 - Notification centre and preferences; emails through `send-notification-email` for the events in D21. Implement the delivery worker, retry schedule, reminder scheduler and deduplication in D31 and Section 8, using `notification_deliveries`.

@@ -395,6 +395,8 @@ Nothing is stored as a total. One database function, `calculate_course_grades`, 
 
 **Gradebook:** one per course. Lecturers see all learners of their courses with score, maximum, percentage, status and overall grade; learners see only their own row; administrators see all. Exports (CSV, Excel) are limited to authorised roles and audited.
 
+**As built (Phase 10, ADR-015):** `calculate_course_grades` (migration 31, on `private.course_grade_cells` and `private.course_grade_summary`, built on Phase 9's `private.grade_facts`), `assignment_statistics`, `gradebook_assignments`, `course_weights_locked` with the `grade_categories_lock` trigger, `weights_impact_preview`, `course_release_preview` and `grade_release_course` (pgTAP 22 and 23); migration 32 adds `i_manage_course` and `record_export`. Edge Functions: `export-gradebook` (CSV with a byte-order mark, or Excel through `_shared/xlsx.ts` and fflate; reads with the caller's token; audited), `release-grades {courseId}`, and `manage-assignments` save-categories with a reason after release. Screens: the course workspace's Gradebook and Analytics tabs (`GradebookTab.jsx`, `src/components/gradebook/`), Gradebooks and Gradebook oversight (`GradebooksPage.jsx`), and for learners Grades and feedback (one card per course) opening `/learner/courses/:courseId/grades` (`LearnerCourseGradesPage.jsx`). Charts are plain SVG with tokens (`DistributionChart.jsx`); no chart library. `src/lib/gradebook/gradebook.js` fetches and labels; it computes nothing.
+
 ## 13. Background jobs
 
 | Job | Runs | Purpose |

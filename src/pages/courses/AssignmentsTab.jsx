@@ -13,11 +13,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
+import { Textarea } from '@/components/ui/textarea.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { DESKTOP_QUERY, useMediaQuery } from '@/hooks/use-media-query.js';
 import { CONTENT_TYPE_LABEL, fetchCategories, fetchCourseAssignments, saveCategories } from '@/lib/assignments/assignments.js';
 import { categoriesProblem, weightTotal } from '@/lib/assignments/categories.js';
 import { formatDue } from '@/lib/assignments/due.js';
+import { fetchWeightsLocked, previewWeightsImpact } from '@/lib/gradebook/gradebook.js';
+import { formatPercentage } from '@/lib/grading/grading.js';
 
 // The course's Assignments tab for its lecturers and administrators (prototype `lasg`; Phase 7):
 // the assignments by due date with their instruction type and status, New assignment (a FAB on
@@ -129,19 +132,23 @@ export function AssignmentsTab({ role, courseId, archived, isLecturer }) {
           />
         </LoadingRegion>
       )}
-      <CategoriesCard courseId={courseId} archived={archived} />
+      <CategoriesCard courseId={courseId} archived={archived} admin={role === 'admin'} />
       <Fab label="New assignment" onClick={() => navigate(`${base}/new`)} allowed={isLecturer} archived={archived} />
     </div>
   );
 }
 
 /**
- * The course's grade categories and their weights (D12), with Edit.
- * @param {{ courseId: string, archived: boolean }} props
+ * The course's grade categories and their weights (D12), with Edit. After the first grade release the
+ * weights are locked (D12, D13; Phase 10, owner decision 4): a lecturer sees them read-only, and only an
+ * administrator changes them, with a reason, after seeing the effect on each learner's overall grade.
+ * @param {{ courseId: string, archived: boolean, admin: boolean }} props
  */
-function CategoriesCard({ courseId, archived }) {
+function CategoriesCard({ courseId, archived, admin }) {
   const toast = useToast();
   const categories = useLoad(() => fetchCategories(courseId), [courseId]);
+  const locked = useLoad(() => fetchWeightsLocked(courseId), [courseId]);
+  const isLocked = locked.data === true;
   const [editing, setEditing] = useState(false);
   const rows = categories.data ?? [];
   const total = rows.reduce((sum, c) => sum + c.weight, 0);
@@ -150,7 +157,10 @@ function CategoriesCard({ courseId, archived }) {
     <Card className="flex flex-col gap-3" aria-labelledby="categories-title">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle id="categories-title">Grade categories</CardTitle>
-        {categories.state === 'ready' ? <StatusChip tone={total === 100 ? 'success' : 'warning'}>Total {total}%</StatusChip> : null}
+        <span className="flex flex-wrap gap-2">
+          {isLocked ? <StatusChip tone="info">Locked</StatusChip> : null}
+          {categories.state === 'ready' ? <StatusChip tone={total === 100 ? 'success' : 'warning'}>Total {total}%</StatusChip> : null}
+        </span>
       </div>
       <LoadingRegion loading={categories.state === 'loading'} skeleton={<ListSkeleton rows={2} columns={2} />} onRetry={categories.reload}>
         <ul className="m-0 flex list-none flex-col divide-y divide-hairline p-0">
@@ -163,9 +173,13 @@ function CategoriesCard({ courseId, archived }) {
         </ul>
       </LoadingRegion>
       <CardDescription>
-        {total === 100 ? 'Each assignment counts within its category.' : 'The weights must total 100% before any grade can be released.'}
+        {isLocked
+          ? `The weights are locked because grades have been released.${admin ? ' Changing them needs a reason and is recorded.' : ' An administrator can change them.'}`
+          : total === 100
+            ? 'Each assignment counts within its category.'
+            : 'The weights must total 100% before any grade can be released.'}
       </CardDescription>
-      {archived ? null : (
+      {archived || locked.state !== 'ready' || (isLocked && !admin) ? null : (
         <Button variant="outline" className="self-start" onClick={() => setEditing(true)} disabled={categories.state !== 'ready'}>
           Edit categories
         </Button>
@@ -174,6 +188,7 @@ function CategoriesCard({ courseId, archived }) {
         <CategoriesDialog
           courseId={courseId}
           initial={rows}
+          locked={isLocked}
           onClose={() => setEditing(false)}
           onSaved={() => {
             setEditing(false);
@@ -187,28 +202,54 @@ function CategoriesCard({ courseId, archived }) {
 }
 
 /**
- * @param {{ courseId: string, initial: import('@/lib/assignments/assignments.js').Category[], onClose: () => void, onSaved: () => void }} props
+ * @param {{ courseId: string, initial: import('@/lib/assignments/assignments.js').Category[], locked: boolean, onClose: () => void, onSaved: () => void }} props
  */
-function CategoriesDialog({ courseId, initial, onClose, onSaved }) {
+function CategoriesDialog({ courseId, initial, locked, onClose, onSaved }) {
   const [rows, setRows] = useState(() =>
     initial.map((c) => /** @type {{ id?: string, name: string, weight: string }} */ ({ id: c.id, name: c.name, weight: String(c.weight) })),
   );
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const [saving, setSaving] = useState(false);
+  const [reason, setReason] = useState('');
+  const [impact, setImpact] = useState(/** @type {Awaited<ReturnType<typeof previewWeightsImpact>> | null} */ (null));
+  const [previewing, setPreviewing] = useState(false);
   const total = weightTotal(rows);
+  const changes = impact ? impact.filter((l) => l.current_overall !== l.new_overall) : [];
+
+  // After release (owner decision 4): the effect of the new weights on each learner's overall grade,
+  // computed by the database with the weights in the form (nothing is saved).
+  const preview = async () => {
+    const problem = categoriesProblem(rows);
+    if (problem) return setMessage(problem);
+    setPreviewing(true);
+    setMessage(null);
+    try {
+      setImpact(await previewWeightsImpact(courseId, rows.filter((r) => r.id).map((r) => ({ id: /** @type {string} */ (r.id), weight: Number(r.weight) }))));
+    } catch (error) {
+      setMessage(/** @type {Error} */ (error).message);
+    } finally {
+      setPreviewing(false);
+    }
+  };
 
   /** @param {number} index @param {Partial<{ name: string, weight: string }>} change */
-  const update = (index, change) => setRows((r) => r.map((row, i) => (i === index ? { ...row, ...change } : row)));
+  const update = (index, change) => {
+    setImpact(null);
+    setRows((r) => r.map((row, i) => (i === index ? { ...row, ...change } : row)));
+  };
 
   const save = async () => {
     const problem = categoriesProblem(rows);
     if (problem) return setMessage(problem);
+    if (locked && !reason.trim()) return setMessage('Give a reason for changing weights after grades were released');
+    if (locked && !impact) return setMessage('Preview the effect on overall grades first');
     setSaving(true);
     setMessage(null);
     try {
       await saveCategories(
         courseId,
         rows.map((r) => ({ ...(r.id ? { id: r.id } : {}), name: r.name.trim(), weight: Number(r.weight) })),
+        locked ? reason.trim() : undefined,
       );
       onSaved();
     } catch (error) {
@@ -247,7 +288,10 @@ function CategoriesDialog({ courseId, initial, onClose, onSaved }) {
                 variant="ghost"
                 size="icon"
                 className="text-error"
-                onClick={() => setRows((r) => r.filter((_, j) => j !== i))}
+                onClick={() => {
+                  setImpact(null);
+                  setRows((r) => r.filter((_, j) => j !== i));
+                }}
                 disabled={rows.length === 1}
                 aria-label={`Remove ${row.name || `category ${i + 1}`}`}
               >
@@ -257,7 +301,10 @@ function CategoriesDialog({ courseId, initial, onClose, onSaved }) {
           ))}
         </ul>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Button variant="outline" onClick={() => setRows((r) => [...r, { id: undefined, name: '', weight: '0' }])} disabled={rows.length >= 10}>
+          <Button variant="outline" onClick={() => {
+              setImpact(null);
+              setRows((r) => [...r, { id: undefined, name: '', weight: '0' }]);
+            }} disabled={rows.length >= 10}>
             <Plus aria-hidden="true" />
             Add category
           </Button>
@@ -265,6 +312,40 @@ function CategoriesDialog({ courseId, initial, onClose, onSaved }) {
             Total {total}%
           </span>
         </div>
+        {locked ? (
+          <div className="flex flex-col gap-3 rounded-md bg-fill p-3" data-slot="weights-locked">
+            <p className="m-0 text-body-sm text-ink">
+              Grades have been released, so changing the weights changes learners&apos; overall grades. Give a reason (it is recorded) and preview the effect first.
+            </p>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="weights-reason">Reason</Label>
+              <Textarea id="weights-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} rows={2} />
+            </div>
+            <Button variant="outline" className="self-start" onClick={() => void preview()} loading={previewing} loadingLabel="Working it out">
+              Preview the effect
+            </Button>
+            {impact ? (
+              changes.length ? (
+                <ul className="m-0 flex max-h-48 list-none flex-col divide-y divide-hairline overflow-y-auto p-0 focus-visible:focus-ring" aria-label="Overall grades that would change" tabIndex={0}>
+                  {changes.map((l) => (
+                    <li key={l.learner_id} className="flex min-h-11 items-center justify-between gap-3 py-1 text-body-sm">
+                      <span className="min-w-0 truncate text-ink">
+                        {l.first_name} {l.second_name}
+                      </span>
+                      <span className="whitespace-nowrap tabular-nums text-ink">
+                        {formatPercentage(l.current_overall) || '—'} → {formatPercentage(l.new_overall) || '—'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p role="status" className="m-0 text-body-sm text-ink-secondary">
+                  No learner&apos;s overall grade would change.
+                </p>
+              )
+            ) : null}
+          </div>
+        ) : null}
         <FormMessage>{message}</FormMessage>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose} disabled={saving}>

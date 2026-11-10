@@ -8,10 +8,11 @@ import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { CONTENT_TYPE_LABEL, fetchMyAssignments } from '@/lib/assignments/assignments.js';
 import { dueStatus } from '@/lib/assignments/due.js';
+import { formatScore } from '@/lib/grading/grading.js';
 
 // The learner's Assignments (prototype `nasg`; Phases 7 and 8): published assignments of the courses
 // they are enrolled in, To do (not answered and still open, soonest first), Submitted (answered,
-// awaiting a grade; Graded arrives in Phase 9) and Past due (not answered, closed), each with its
+// awaiting a grade, or Graded with the released score once the grade is released: never a draft) and Past due (not answered, closed), each with its
 // course, how the instructions are given, and a chip: the due date in Ghana time with their own
 // extension (D13), or the answer's version and lateness.
 
@@ -77,7 +78,13 @@ export default function LearnerAssignmentsPage() {
                     <span className="flex shrink-0 flex-wrap gap-2">
                       {a.submission ? (
                         <>
-                          <StatusChip tone="info">{`Awaiting grade · version ${a.submission.current_version}`}</StatusChip>
+                          {a.grade ? (
+                            <StatusChip tone={a.grade.passed ? 'success' : 'warning'}>
+                              {`Graded · ${formatScore(a.grade.score, a.grade.max_marks)}${a.grade.letter_grade ? ` · ${a.grade.letter_grade}` : ''}`}
+                            </StatusChip>
+                          ) : (
+                            <StatusChip tone="info">{`Awaiting grade · version ${a.submission.current_version}`}</StatusChip>
+                          )}
                           {a.submission.is_late ? <StatusChip tone="warning">Late</StatusChip> : null}
                         </>
                       ) : (

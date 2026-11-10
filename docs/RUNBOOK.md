@@ -165,3 +165,37 @@ audio, attachments or submission files.
 - Notifications: since Phase 9 a release writes a row in `public.notifications` (one per learner and
   event); the learner sees "New grade available" on their next page and the grade on the assignment
   page, which marks it read. Email and the notification centre arrive in Phase 11.
+
+## Written in Phase 10
+
+### Gradebooks, release of a whole course, exports and locked weights (D11 to D15, D30, ADR-015)
+
+- Each course has its own gradebook: staff open it from the course (Gradebook tab) or from Gradebooks
+  (lecturers) and Gradebook oversight (administrators); learners open Grades and feedback, then a course.
+- "Review and release" on a course's Gradebook tab lists every draft grade of the course and releases
+  them all at once. It is refused while the category weights do not total 100 (fix them on the
+  Assignments tab first). Audit: `grades.released_course` (entity `course`), plus one `grade.released`
+  per grade and one learner notification per grade.
+- A learner's course grade says Provisional while any published assignment is still to come, ungraded
+  or a draft; Final when none is; Not yet available when nothing counts yet. Ungraded work and work not
+  yet due never count. Overdue work with nothing sent is Missing and does not count unless the setting
+  `missing_as_zero` is true (D11; default false; until the Phase 11 settings screen, the owner changes
+  it in the SQL editor: `update public.system_settings set value = 'true' where key = 'missing_as_zero';`).
+  A late answer then lifts the zero, and its grade counts once released.
+- Learners see a class chart only once the assignment has `min_class_size` (default 5) released
+  results; staff always see it. The chart never shows names or ranks.
+- Weights after the first release: lecturers see them locked. An administrator (signed in with two-step
+  verification) opens the course's Assignments tab, Edit categories, gives a reason and presses Preview
+  the effect before saving. Audit: `grade_categories.changed_after_release` with the reason and the
+  categories and weights as saved (the previous weights are in the record before it). Renaming a category after release also needs the reason.
+- Exports: Export on a gradebook (whole gradebook, or one assignment's report) or on Analytics (Export
+  report). Excel files have DDTC's name, the course, the assignment and the export date at the top; CSV
+  files have plain headings and a byte-order mark so Excel opens them with the right characters. Only
+  the course's lecturers and administrators can export; learners cannot. Every export is recorded:
+  `export.gradebook` or `export.assignment_report` (format and row count in the metadata). In the SQL
+  editor: `select a.action, a.created_at, a.metadata, p.first_name || ' ' || p.second_name as by_whom
+  from public.audit_logs a join public.profiles p on p.id = a.actor_id where a.action like 'export.%'
+  order by a.created_at desc limit 50;`
+- An administrator's look at a gradebook of a course they do not teach is recorded (`gradebook.viewed`).
+- If an export fails with "The export could not be recorded", nothing was handed out: try again; if it
+  persists, check the function logs for `export-gradebook` in the Supabase dashboard.

@@ -19,7 +19,8 @@ import { signIn } from './support/ui.js';
 // - Releasing a whole assignment asks first.
 // - Reopening needs a reason, and the learner may then send again before the due date.
 // - Step 9.1: the lecturer's To grade (from the dashboard tile) lists the answers waiting and opens the
-//   grading screen; the learner's Grades and feedback shows the released grade and what awaits a grade.
+//   grading screen; the learner's Grades and feedback lists their courses, and each course's own
+//   gradebook (Phase 10, owner request 2026-11-10) shows the released grade and what awaits a grade.
 
 const expect = baseExpect.configure({ timeout: 30_000 });
 test.describe.configure({ timeout: 180_000 });
@@ -231,16 +232,36 @@ test("To grade lists the answers waiting and opens the grading screen; the learn
   const kwamePage = await (await browser.newContext()).newPage();
   await signIn(kwamePage, kwame.email, kwame.password);
   await expect(kwamePage).toHaveURL(/\/learner\/dashboard$/);
+  // Since Phase 10 (owner request 2026-11-10) Grades and feedback lists the courses, each opening its own
+  // gradebook; the released grade and what awaits a grade are on the course's page.
   await kwamePage.goto('/learner/grades');
   await expect(kwamePage.getByRole('heading', { name: 'Grades and feedback' })).toBeVisible();
-  const essayRow = kwamePage.locator('[data-slot="my-grade-row"]').filter({ hasText: 'Reformation essay' });
-  await expect(essayRow.getByText('15 / 20')).toBeVisible();
-  await expect(essayRow.getByText('Grade B')).toBeVisible();
-  await expect(essayRow.getByText('Clear and well organised.')).toBeVisible();
-  await expect(kwamePage.locator('[data-slot="my-grade-row"]').filter({ hasText: 'Prayer journal' }).getByText('Awaiting grade')).toBeVisible();
+  const courseCard = kwamePage.locator('[data-slot="course-grade-card"]').filter({ hasText: `Church History ${tag}` });
+  await expect(courseCard.getByText('75% · B')).toBeVisible();
+  await expect(courseCard.getByText('Provisional')).toBeVisible();
   await expectNoAxeViolations(kwamePage);
   expect(await horizontalOverflow(kwamePage)).toBeLessThanOrEqual(0);
   await dismissToasts(kwamePage);
-  await essayRow.click();
+  await courseCard.click();
+  await expect(kwamePage).toHaveURL(new RegExp(`/learner/courses/${course.id}/grades$`));
+  await expect(kwamePage.getByTestId('course-grade')).toHaveText('75% · B');
+  const essayRow = kwamePage.getByRole('listitem').filter({ hasText: 'Reformation essay' }).filter({ visible: true });
+  const essayCells = kwamePage.getByRole('row').filter({ hasText: 'Reformation essay' }).filter({ visible: true });
+  const essay$ = (await essayRow.count()) ? essayRow : essayCells;
+  await expect(essay$.getByText('15 / 20')).toBeVisible();
+  await expect(essay$.getByText('Graded · B')).toBeVisible();
+  await expect(essay$.getByText('Clear and well organised.')).toBeVisible();
+  const journal$ = kwamePage.getByRole((await essayRow.count()) ? 'listitem' : 'row').filter({ hasText: 'Prayer journal' }).filter({ visible: true });
+  await expect(journal$.getByText('Awaiting grade')).toBeVisible();
+  await expectNoAxeViolations(kwamePage);
+  expect(await horizontalOverflow(kwamePage)).toBeLessThanOrEqual(0);
+  // Assignments > Submitted says Graded with the released score; an answer not yet released still awaits.
+  await kwamePage.goto('/learner/assignments');
+  await kwamePage.getByRole('tab', { name: /^Submitted/ }).click();
+  await expect(kwamePage.getByRole('link', { name: /Reformation essay/ }).getByText('Graded · 15 / 20 · B')).toBeVisible();
+  await expect(kwamePage.getByRole('link', { name: /Prayer journal/ }).getByText(/^Awaiting grade/)).toBeVisible();
+  await kwamePage.goto(`/learner/courses/${course.id}/grades`);
+  await dismissToasts(kwamePage);
+  await kwamePage.getByRole('link', { name: 'Reformation essay' }).filter({ visible: true }).click();
   await expect(kwamePage).toHaveURL(new RegExp(`/learner/courses/${course.id}/assignments/${essay.id}$`));
 });

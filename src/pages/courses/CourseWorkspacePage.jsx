@@ -1,4 +1,4 @@
-import { BookOpen, ChartColumn, ClipboardCheck, ImageUp, Trash2, UserMinus } from 'lucide-react';
+import { BookOpen, ImageUp, Trash2, UserMinus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { CourseCover } from '@/components/courses/CourseCover.jsx';
@@ -46,12 +46,12 @@ import { formatIdNumber } from '@/lib/id-number.js';
 import { getStorage } from '@/lib/storage.js';
 import { TextArea } from './CourseEditorPage.jsx';
 import { AssignmentsTab } from './AssignmentsTab.jsx';
+import { AnalyticsTab, GradebookTab } from './GradebookTab.jsx';
 import { LessonsTab } from './LessonsTab.jsx';
 
 // The course workspace for lecturers and administrators (prototype `lcw`): course title bar with the
 // lifecycle actions (D04, ADR-005), then the tabs Overview, Lessons, Assignments, Learners,
-// Gradebook, Analytics and Settings. Lessons, Assignments, Gradebook and Analytics arrive in later
-// phases. An ARCHIVED course is read-only (D07): no editing, no FAB, only Restore.
+// Gradebook (the course's own gradebook, Phase 10), Analytics and Settings. An ARCHIVED course is read-only (D07): no editing, no FAB, only Restore.
 
 /** @typedef {import('@/lib/courses/courses.js').Course} Course */
 /** @typedef {import('@/lib/courses/courses.js').Teacher} Teacher */
@@ -65,11 +65,6 @@ const TABS = /** @type {const} */ ([
   { slug: 'analytics', label: 'Analytics' },
   { slug: 'settings', label: 'Settings' },
 ]);
-
-const LATER = {
-  gradebook: { phase: 10, icon: ClipboardCheck, title: 'Gradebook' },
-  analytics: { phase: 10, icon: ChartColumn, title: 'Analytics' },
-};
 
 const COVER_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const COVER_MAX = 2 * 1024 * 1024;
@@ -125,19 +120,14 @@ export default function CourseWorkspacePage({ role }) {
               {current === 'assignments' ? <AssignmentsTab role={role} courseId={c.id} archived={archived} isLecturer={myPermission !== null} /> : null}
               {current === 'learners' ? <LearnersTab course={c} admin={admin} /> : null}
               {current === 'settings' ? <SettingsTab course={c} teachers={teachers} admin={admin} isOwner={isOwner} reload={course.reload} /> : null}
-              {current in LATER ? <Later which={/** @type {keyof typeof LATER} */ (current)} /> : null}
+              {current === 'gradebook' ? <GradebookTab role={role} courseId={c.id} archived={archived} /> : null}
+              {current === 'analytics' ? <AnalyticsTab role={role} courseId={c.id} /> : null}
             </TabsContent>
           </Tabs>
         </div>
       ) : null}
     </LoadingRegion>
   );
-}
-
-/** @param {{ which: keyof typeof LATER }} props */
-function Later({ which }) {
-  const l = LATER[which];
-  return <EmptyState icon={l.icon} title={`${l.title} arrive in Phase ${l.phase}`} description="This part of the course is not built yet." />;
 }
 
 /**

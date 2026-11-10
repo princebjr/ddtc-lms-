@@ -49,6 +49,8 @@ const Body = z.discriminatedUnion('action', [
       )
       .min(1, 'Keep at least one category')
       .max(10, 'Use at most 10 categories'),
+    // Phase 10 (owner decision 4): after the first release only an administrator changes weights, with a reason.
+    reason: z.string().trim().max(1000, 'Keep the reason to 1,000 characters').optional(),
   }),
   // Phase 8 (D13, owner decision 6): one learner's extension, set or changed (undo restores a
   // previous date), or taken back.
@@ -109,7 +111,12 @@ serve(async (req) => {
       return json(req, 200, { assignment: data });
     }
     case 'save-categories': {
-      const { data, error } = await admin.rpc('grade_categories_save', { ...actor, p_course: b.courseId, p_categories: b.categories });
+      const { data, error } = await admin.rpc('grade_categories_save', {
+        ...actor,
+        p_course: b.courseId,
+        p_categories: b.categories,
+        p_reason: b.reason ?? null,
+      });
       if (error) throw fromDbError(error);
       return json(req, 200, data);
     }

@@ -41,14 +41,14 @@ $$;
 grant execute on function tests.fields(text, text, text, uuid, text[]) to anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------- who may call
-select has_function('public', 'grade_categories_save', array['uuid', 'boolean', 'uuid', 'jsonb'], 'grade_categories_save exists');
+select has_function('public', 'grade_categories_save', array['uuid', 'boolean', 'uuid', 'jsonb', 'text'], 'grade_categories_save exists (a reason since Phase 10, for locked weights)');
 select has_function('public', 'assignment_save', array['uuid', 'boolean', 'uuid', 'uuid', 'jsonb', 'text'], 'assignment_save exists');
 select has_function('public', 'assignment_set_publication', array['uuid', 'boolean', 'uuid', 'boolean'], 'assignment_set_publication exists');
 select has_function('public', 'assignment_set_archived', array['uuid', 'boolean', 'uuid', 'boolean'], 'assignment_set_archived exists');
 select has_function('public', 'assignment_audio_activate', array['uuid', 'boolean', 'uuid'], 'assignment_audio_activate exists');
 select is(
   (select count(*)::int from unnest(array[
-     'public.grade_categories_save(uuid, boolean, uuid, jsonb)',
+     'public.grade_categories_save(uuid, boolean, uuid, jsonb, text)',
      'public.assignment_save(uuid, boolean, uuid, uuid, jsonb, text)',
      'public.assignment_set_publication(uuid, boolean, uuid, boolean)',
      'public.assignment_set_archived(uuid, boolean, uuid, boolean)',

@@ -14,6 +14,7 @@ const LessonEditorPage = lazy(() => import('./LessonEditorPage.jsx'));
 const LearnerLessonPage = lazy(() => import('../learner/LearnerLessonPage.jsx'));
 const AssignmentEditorPage = lazy(() => import('./AssignmentEditorPage.jsx'));
 const LearnerAssignmentPage = lazy(() => import('../learner/LearnerAssignmentPage.jsx'));
+const LearnerCourseGradesPage = lazy(() => import('../learner/LearnerCourseGradesPage.jsx'));
 const AssignmentSubmissionsPage = lazy(() => import('./AssignmentSubmissionsPage.jsx'));
 const SubmissionViewPage = lazy(() => import('./SubmissionViewPage.jsx'));
 
@@ -91,5 +92,11 @@ export const AdminSubmission = () => (
 export const LecturerSubmission = () => (
   <RoleShell role="lecturer" slug="my-courses">
     <SubmissionViewPage role="lecturer" />
+  </RoleShell>
+);
+// Phase 10 (owner request 2026-11-10): the learner's gradebook for one course, under Grades.
+export const LearnerCourseGrades = () => (
+  <RoleShell role="learner" slug="grades">
+    <LearnerCourseGradesPage />
   </RoleShell>
 );
