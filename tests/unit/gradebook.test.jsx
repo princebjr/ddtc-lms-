@@ -206,7 +206,9 @@ describe("The learner's gradebook for one course", () => {
       expect(within(categories).getByText('77.5%')).toBeTruthy();
       expect(within(categories).getByText('—')).toBeTruthy();
       expect(screen.getAllByText('15.5 / 20').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Graded · B').length).toBeGreaterThan(0);
+      // Step 10.2: no letter grade on an assignment; the letter is on the course grade above.
+      expect(screen.getAllByText('Graded').length).toBeGreaterThan(0);
+      expect(screen.queryByText('Graded · B')).toBeNull();
       expect(screen.getAllByText('Good reading of the text.').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Awaiting grade').length).toBeGreaterThan(0);
       expect(screen.getAllByText('— / 20').length).toBeGreaterThan(0);
@@ -379,5 +381,18 @@ describe('the gradebook grouped by branch (Phase 10.1; owner answer of 2026-11-1
     ]);
     expect([...container.querySelectorAll('tbody[data-branch]')].map((b) => b.getAttribute('data-branch'))).toEqual(['Kasoa C.P', 'Sampa', 'No branch']);
     expect(screen.getAllByRole('columnheader').some((h) => h.getAttribute('scope') === 'colgroup')).toBe(true);
+  });
+});
+
+describe('the course grade tag (Step 10.2; owner request 2026-11-10)', () => {
+  it('carries the letter grade for the course, provisional or final, and nothing before a grade counts', async () => {
+    const { courseGradeTag } = await import('@/lib/gradebook/gradebook.js');
+    expect(courseGradeTag(learner({ status: 'FINAL', overall_percentage: 77.5, letter_grade: 'B' }))).toEqual({ label: 'Course grade 77.5% · B', tone: 'success' });
+    expect(courseGradeTag(learner({ status: 'PROVISIONAL', overall_percentage: 81.4, letter_grade: 'A' }))).toEqual({
+      label: 'Course grade 81.4% · A (provisional)',
+      tone: 'warning',
+    });
+    expect(courseGradeTag(learner({ status: 'NOT_AVAILABLE', overall_percentage: null, letter_grade: null }))).toBeNull();
+    expect(courseGradeTag(null)).toBeNull();
   });
 });

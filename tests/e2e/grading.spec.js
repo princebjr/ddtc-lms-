@@ -105,7 +105,7 @@ test('a lecturer grades, releases and changes a grade; the learner is told and s
   const card = kwamePage.locator('[data-slot="learner-grade"]');
   await expect(card.getByText('15.5 / 20')).toBeVisible();
   await expect(card.getByText('77.5%')).toBeVisible();
-  await expect(card.getByText('Grade B')).toBeVisible();
+  await expect(card.getByText('Grade B')).toHaveCount(0); // no letter on one piece of work (Step 10.2)
   await expect(card.getByText('Good reading of the text. Develop the section on purpose.')).toBeVisible();
   await expectNoAxeViolations(kwamePage);
   expect(await horizontalOverflow(kwamePage)).toBeLessThanOrEqual(0);
@@ -249,7 +249,7 @@ test("To grade lists the answers waiting and opens the grading screen; the learn
   const essayCells = kwamePage.getByRole('row').filter({ hasText: 'Reformation essay' }).filter({ visible: true });
   const essay$ = (await essayRow.count()) ? essayRow : essayCells;
   await expect(essay$.getByText('15 / 20')).toBeVisible();
-  await expect(essay$.getByText('Graded · B')).toBeVisible();
+  await expect(essay$.getByText('Graded', { exact: true })).toBeVisible(); // the letter is on the course grade (Step 10.2)
   await expect(essay$.getByText('Clear and well organised.')).toBeVisible();
   const journal$ = kwamePage.getByRole((await essayRow.count()) ? 'listitem' : 'row').filter({ hasText: 'Prayer journal' }).filter({ visible: true });
   await expect(journal$.getByText('Awaiting grade')).toBeVisible();
@@ -258,7 +258,7 @@ test("To grade lists the answers waiting and opens the grading screen; the learn
   // Assignments > Submitted says Graded with the released score; an answer not yet released still awaits.
   await kwamePage.goto('/learner/assignments');
   await kwamePage.getByRole('tab', { name: /^Submitted/ }).click();
-  await expect(kwamePage.getByRole('link', { name: /Reformation essay/ }).getByText('Graded · 15 / 20 · B')).toBeVisible();
+  await expect(kwamePage.getByRole('link', { name: /Reformation essay/ }).getByText('Graded · 15 / 20', { exact: true })).toBeVisible();
   await expect(kwamePage.getByRole('link', { name: /Prayer journal/ }).getByText(/^Awaiting grade/)).toBeVisible();
   await kwamePage.goto(`/learner/courses/${course.id}/grades`);
   await dismissToasts(kwamePage);

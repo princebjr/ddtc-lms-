@@ -92,7 +92,7 @@ export default function LearnerAssignmentsPage() {
                         <>
                           {a.grade ? (
                             <StatusChip tone={a.grade.passed ? 'success' : 'warning'}>
-                              {`Graded · ${formatScore(a.grade.score, a.grade.max_marks)}${a.grade.letter_grade ? ` · ${a.grade.letter_grade}` : ''}`}
+                              {`Graded · ${formatScore(a.grade.score, a.grade.max_marks)}`}
                             </StatusChip>
                           ) : (
                             <StatusChip tone="info">{`Awaiting grade · version ${a.submission.current_version}`}</StatusChip>

@@ -11,7 +11,7 @@ import { fetchReleasePreview, releaseCourseGrades } from '@/lib/gradebook/gradeb
 import { formatIdNumber } from '@/lib/id-number.js';
 
 // Review and release (Phase 10; owner request and decision 1 of 2026-11-10): every draft grade of the
-// course, assignment by assignment, with each learner's score, percentage and letter grade as the
+// course, assignment by assignment, with each learner's score and percentage as the
 // database computed them; a released grade changed since is marked "Changed" with what the learner
 // sees now. Release all (N) releases them at once: each learner sees their grades and is notified once
 // per grade. The server refuses while the category weights do not total 100 and says so here.
@@ -88,7 +88,6 @@ export function ReviewReleaseDialog({ courseId, onClose, onReleased }) {
                             <span className="text-ink-secondary">
                               {' '}
                               · {formatPercentage(r.percentage)}
-                              {r.letter_grade ? ` · ${r.letter_grade}` : ''}
                             </span>
                           </span>
                           {r.changed ? <StatusChip tone="warning">{`Changed, was ${formatScore(r.released_score, r.max_marks)}`}</StatusChip> : null}

@@ -14,6 +14,7 @@ import { useProfileImage } from '@/hooks/use-profile-image.js';
 import { fetchCourse, fetchMyEnrolment, fetchTeachers } from '@/lib/courses/courses.js';
 import { CONTENT_TYPE_LABEL, fetchMyAssignments } from '@/lib/assignments/assignments.js';
 import { fetchMyExams, LEARNER_STATE } from '@/lib/exams/exams.js';
+import { courseGradeTag, fetchMyCourseGrade } from '@/lib/gradebook/gradebook.js';
 import { dueStatus, formatDue } from '@/lib/assignments/due.js';
 import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 
@@ -25,7 +26,7 @@ import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 export default function LearnerCoursePage() {
   const { courseId = '' } = useParams();
   const { state, data, reload } = useLoad(async () => {
-    const [course, teachers, enrolment, lessons, progress, assignments, exams] = await Promise.all([
+    const [course, teachers, enrolment, lessons, progress, assignments, exams, grade] = await Promise.all([
       fetchCourse(courseId),
       fetchTeachers(courseId),
       fetchMyEnrolment(courseId),
@@ -33,8 +34,9 @@ export default function LearnerCoursePage() {
       fetchMyProgress(courseId),
       fetchMyAssignments(),
       fetchMyExams(courseId),
+      fetchMyCourseGrade(courseId),
     ]);
-    return { course, teachers, enrolment, lessons, progress, assignments: assignments.filter((a) => a.course_id === courseId), exams };
+    return { course, teachers, enrolment, lessons, progress, assignments: assignments.filter((a) => a.course_id === courseId), exams, grade };
   }, [courseId]);
   const covers = useCourseCovers(data?.course?.cover_image_file_id ? [courseId] : []);
 
@@ -52,6 +54,14 @@ export default function LearnerCoursePage() {
           <div className="flex flex-col gap-3">
             <PageHeader title={course.title} description={course.category ? `${course.course_code} · ${course.category}` : course.course_code} className="pb-0" />
             {/* Always visible (not a header action, which hides below desktop width): the course's own gradebook. */}
+            {/* Step 10.2 (owner request 2026-11-10): the course grade with its letter, on the course's tag. */}
+            {courseGradeTag(data?.grade) ? (
+              <span data-testid="course-grade-tag">
+                <StatusChip tone={/** @type {NonNullable<ReturnType<typeof courseGradeTag>>} */ (courseGradeTag(data?.grade)).tone}>
+                  {/** @type {NonNullable<ReturnType<typeof courseGradeTag>>} */ (courseGradeTag(data?.grade)).label}
+                </StatusChip>
+              </span>
+            ) : null}
             <Button asChild variant="outline" className="self-start">
               <Link to={`/learner/courses/${course.id}/grades`}>
                 <ClipboardCheck aria-hidden="true" />

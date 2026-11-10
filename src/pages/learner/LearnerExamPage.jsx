@@ -180,7 +180,7 @@ function ResultCard({ result }) {
         <StatusChip tone={result.passed ? 'success' : 'warning'}>{result.passed ? 'Pass' : 'Not passed'}</StatusChip>
       </div>
       <span className="text-title-1 tabular-nums text-ink" data-testid="exam-result">
-        {`${Number(result.total_score)} / ${Number(result.total_marks)} · ${formatPercentage(result.percentage)}${result.letter_grade ? ` · ${result.letter_grade}` : ''}`}
+        {`${Number(result.total_score)} / ${Number(result.total_marks)} · ${formatPercentage(result.percentage)}`}
       </span>
       {result.feedback ? <p className="m-0 whitespace-pre-wrap text-body text-ink">{result.feedback}</p> : null}
       <CardDescription>{`Released ${formatDue(result.released_at)}${result.attempt_number > 1 ? ` · attempt ${result.attempt_number}` : ''}.`}</CardDescription>
