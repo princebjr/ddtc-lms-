@@ -1,6 +1,6 @@
 # Owner request (2026-11-10): end-of-course examinations
 
-Status: **recorded; not yet scheduled.** Received during Phase 10, with the instruction to build it
+Status: **recorded; questions 1 to 4 answered by the owner on 2026-11-10; not yet scheduled.** Received during Phase 10, with the instruction to build it
 after Phase 10's tests. Following the phase protocol (CLAUDE.md sections 4 and 8), it becomes its own
 phase: a written plan with the open questions below goes to the owner for approval once Phase 10 is
 merged, and the answers are recorded as an ADR in `docs/DECISIONS.md`. Nothing is built before that.
@@ -14,15 +14,10 @@ grading, release and history (Phase 9) and the gradebook and exports (Phase 10, 
 
 ## Open questions for the owner (to answer in the plan)
 
-1. **Course grade:** do examination results count towards the course grade (D13)? If yes, as their own
-   grade category with a weight (for example "Examination 40%"), or reported separately?
-2. **Deleting:** CLAUDE.md says educational records are never hard-deleted. Proposal: an examination
-   with no attempts can be deleted; once any learner has started it, it can only be archived.
-3. **Retakes:** when a retake is authorised, which result counts (latest, highest), and is the first
-   attempt kept in the history (proposal: always kept)?
-4. **Late work:** after the deadline, are submissions refused outright (the request says so), with the
-   saved but unsubmitted answers kept for the lecturer (proposal: yes; a per-learner extension, as for
-   assignments, is the way to allow more time)?
+1. ~~Course grade~~ **Answered by the owner on 2026-11-10: assignments count 50% and examinations 50% of the course grade.** To settle in the plan: a course with several assignment categories keeps their weights inside the assignments half; how the grade reads before the examination is released (proposal: Provisional, from the assignments only); and a course with more than one examination (proposal: they share the 50% by their marks).
+2. ~~Deleting~~ **Answered by the owner on 2026-11-10: archive examinations rather than delete them** (CLAUDE.md: educational records are never hard-deleted). An archived examination keeps every attempt, answer, mark and history entry.
+3. ~~Retakes~~ **Answered by the owner on 2026-11-10: the retake counts.** The retake's result replaces the earlier one in the course grade; earlier attempts stay in the history (never deleted).
+4. ~~Late work~~ **Answered by the owner on 2026-11-10: the lecturer can extend the deadline.** After the deadline the server refuses submissions; the course's lecturers (and administrators) can extend it. Proposal for the plan: for the whole examination, or for one learner (as assignment extensions, ADR-013), each extension audited and the learner told the new deadline.
 5. **Unsubmitted at the deadline:** are the saved answers graded as the learner's attempt, or only kept
    for review (proposal: kept for review; the lecturer may choose to grade them)?
 6. **MCQ options:** exactly four options A to D (as requested), one correct answer, no negative marking?
