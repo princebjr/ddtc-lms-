@@ -24,6 +24,7 @@ const api = vi.hoisted(() => ({
   submitExam: vi.fn(),
   fetchExamForEditing: vi.fn(),
   saveExamStructure: vi.fn(),
+  saveExam: vi.fn(),
   fetchExamResults: vi.fn(),
   releaseExam: vi.fn(),
   documentUrl: vi.fn(),
@@ -43,6 +44,7 @@ vi.mock('@/lib/exams/exams.js', async (importOriginal) => ({
   submitExam: (/** @type {string} */ id) => api.submitExam(id),
   fetchExamForEditing: (/** @type {string} */ id) => api.fetchExamForEditing(id),
   saveExamStructure: (/** @type {any[]} */ ...a) => api.saveExamStructure(...a),
+  saveExam: (/** @type {any[]} */ ...a) => api.saveExam(...a),
   fetchExamResults: (/** @type {string} */ id) => api.fetchExamResults(id),
   releaseExam: (/** @type {any[]} */ ...a) => api.releaseExam(...a),
   documentUrl: (/** @type {any[]} */ ...a) => api.documentUrl(...a),
@@ -312,9 +314,9 @@ describe('the examination builder', () => {
         </Routes>
       </MemoryRouter>,
     );
-    await screen.findAllByRole('button', { name: 'Add multiple choice' });
+    await screen.findAllByRole('button', { name: 'Add multiple choice to Section A' });
     await settled();
-    fireEvent.click(screen.getByRole('button', { name: 'Add multiple choice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add multiple choice to Section A' }));
     fireEvent.change(screen.getByLabelText('Question'), { target: { value: 'Who led Israel out of Egypt?' } });
     for (const [o, v] of [['A', 'Aaron'], ['B', 'Moses'], ['C', 'Joshua']]) fireEvent.change(screen.getByLabelText(o), { target: { value: v } });
     fireEvent.click(screen.getByRole('button', { name: 'Save questions' }));
@@ -329,6 +331,110 @@ describe('the examination builder', () => {
     const [examId, saved] = api.saveExamStructure.mock.calls[0];
     expect(examId).toBe('e1');
     expect(saved[0].questions[0]).toMatchObject({ kind: 'MCQ', correct: 'B', options: { A: 'Aaron', B: 'Moses', C: 'Joshua', D: 'Samuel' } });
+  });
+});
+
+// Step 11.2 (ADR-021; owner request and answer of 2026-11-11): the lecturer chooses the examination's types
+// of question first; each section has one type from those; an older mixed section is split.
+describe('examination types and one type per section', () => {
+  /** @param {string} path */
+  const editor = (path) =>
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/lecturer/courses/:courseId/exams/:examId" element={<ExamEditorPage role="lecturer" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  /** @param {object} over */
+  const saved = (over) => ({
+    exam: { id: 'e1', course_id: 'c1', title: 'Final examination', description: '', instructions: '', pass_mark: 50, opens_at: '2030-01-10T09:00:00Z', closes_at: '2030-01-20T23:59:00Z', closed_at: null, publication_status: 'DRAFT', archived_at: null, modes: ['MCQ', 'ESSAY'] },
+    sections: [],
+    started: false,
+    ...over,
+  });
+  /** @param {'MCQ' | 'SHORT' | 'ESSAY'} kind @param {string} prompt */
+  const question = (kind, prompt) => ({ kind, prompt, marks: '2', options: { A: 'w', B: 'x', C: 'y', D: 'z' }, correct: kind === 'MCQ' ? 'A' : '', guide: '' });
+
+  it('a new examination needs at least one type, chosen by the lecturer', async () => {
+    api.saveExam.mockResolvedValue({ examId: 'e9' });
+    editor('/lecturer/courses/c1/exams/new');
+    const create = await screen.findByRole('button', { name: 'Create examination' });
+    for (const name of ['Multiple choice', 'Short answer', 'Essay']) expect(screen.getByRole('checkbox', { name }).getAttribute('aria-checked')).toBe('false');
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Final examination' } });
+    fireEvent.click(create);
+    expect(await screen.findByText('Choose at least one type of question')).toBeTruthy();
+    expect(api.saveExam).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Essay' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Multiple choice' }));
+    fireEvent.click(create);
+    await waitFor(() => expect(api.saveExam).toHaveBeenCalled());
+    // Sent in the usual order, whatever order they were ticked in.
+    expect(api.saveExam.mock.calls[0][0].fields.modes).toEqual(['MCQ', 'ESSAY']);
+  });
+
+  it('each section has one type from the examination\'s types, and only that kind of question is added', async () => {
+    api.fetchExamForEditing.mockResolvedValue(saved({}));
+    api.saveExamStructure.mockResolvedValue({ questions: 2 });
+    editor('/lecturer/courses/c1/exams/e1');
+    const first = await screen.findByLabelText('Type of question');
+    await settled();
+    expect(/** @type {HTMLSelectElement} */ (first).value).toBe('MCQ');
+    expect(within(first).getAllByRole('option').map((o) => o.textContent)).toEqual(['Multiple choice', 'Essay']);
+    expect(screen.queryByRole('button', { name: /Add short answer/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Add essay/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add multiple choice to Section A' }));
+    // With a question in it, the section's type is fixed until the question is removed.
+    expect(/** @type {HTMLSelectElement} */ (screen.getAllByLabelText('Type of question')[0]).disabled).toBe(true);
+    expect(screen.getByText("Remove this section's questions to change its type.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Question'), { target: { value: 'Who led Israel out of Egypt?' } });
+    for (const o of ['A', 'B', 'C', 'D']) fireEvent.change(screen.getByLabelText(o), { target: { value: `Option ${o}` } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Option B is correct' }));
+
+    // The next section starts with the type not used yet.
+    fireEvent.click(screen.getByRole('button', { name: 'Add section' }));
+    expect(/** @type {HTMLSelectElement} */ (screen.getAllByLabelText('Type of question')[1]).value).toBe('ESSAY');
+    fireEvent.click(screen.getByRole('button', { name: 'Add essay to Section B' }));
+    fireEvent.change(screen.getAllByLabelText('Question')[1], { target: { value: 'Discuss the covenant.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save questions' }));
+    await waitFor(() => expect(api.saveExamStructure).toHaveBeenCalled());
+    const sections = api.saveExamStructure.mock.calls[0][1];
+    expect(sections.map((/** @type {any} */ x) => x.mode)).toEqual(['MCQ', 'ESSAY']);
+    expect(sections.map((/** @type {any} */ x) => x.questions.map((/** @type {any} */ q) => q.kind))).toEqual([['MCQ'], ['ESSAY']]);
+  });
+
+  it('a section set before this step that mixes types is split before the questions are saved', async () => {
+    api.fetchExamForEditing.mockResolvedValue(
+      saved({ sections: [{ title: 'Section A', instructions: '', mode: null, questions: [question('MCQ', 'Pick one'), question('ESSAY', 'Write about covenant'), question('MCQ', 'Pick another')] }] }),
+    );
+    api.saveExamStructure.mockResolvedValue({ questions: 3 });
+    editor('/lecturer/courses/c1/exams/e1');
+    expect(await screen.findByText(/This section mixes types of question/)).toBeTruthy();
+    await settled();
+    expect(screen.queryByLabelText('Type of question')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Save questions' }));
+    expect(await screen.findByText('Section A mixes types of question: split it into one section for each type')).toBeTruthy();
+    expect(api.saveExamStructure).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Split into sections' }));
+    expect(screen.queryByText(/This section mixes types of question/)).toBeNull();
+    expect(screen.getAllByLabelText('Section title').map((i) => /** @type {HTMLInputElement} */ (i).value)).toEqual(['Section A (Multiple choice)', 'Section A (Essay)']);
+    fireEvent.click(screen.getByRole('button', { name: 'Save questions' }));
+    await waitFor(() => expect(api.saveExamStructure).toHaveBeenCalled());
+    const sections = api.saveExamStructure.mock.calls[0][1];
+    expect(sections.map((/** @type {any} */ x) => [x.mode, x.questions.length])).toEqual([['MCQ', 2], ['ESSAY', 1]]);
+  });
+
+  it('a section whose type the examination no longer includes is refused with the way out', async () => {
+    api.fetchExamForEditing.mockResolvedValue(saved({ sections: [{ title: 'Section A', instructions: '', mode: 'SHORT', questions: [question('SHORT', 'Name one prophet')] }] }));
+    editor('/lecturer/courses/c1/exams/e1');
+    const select = await screen.findByLabelText('Type of question');
+    await settled();
+    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Multiple choice', 'Short answer (not in this examination)', 'Essay']);
+    fireEvent.click(screen.getByRole('button', { name: 'Save questions' }));
+    expect(await screen.findByText(/Section A: this examination does not include short answer questions/)).toBeTruthy();
+    expect(api.saveExamStructure).not.toHaveBeenCalled();
   });
 });
 

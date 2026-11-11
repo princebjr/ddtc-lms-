@@ -455,14 +455,14 @@ isOneToOne: false
                   ]
                 },"exam_sections": {
                   Row: {
-                    "archived_at": string | null,"created_at": string,"exam_id": string,"id": string,"instructions": string,"position": number,"title": string,"updated_at": string
+                    "archived_at": string | null,"created_at": string,"exam_id": string,"id": string,"instructions": string,"mode": Database["public"]['Enums']["exam_question_kind"] | null,"position": number,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"created_at"?: string,"exam_id": string,"id"?: string,"instructions"?: string,"position": number,"title": string,"updated_at"?: string
+                    "archived_at"?: string | null,"created_at"?: string,"exam_id": string,"id"?: string,"instructions"?: string,"mode"?: Database["public"]['Enums']["exam_question_kind"] | null,"position": number,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "archived_at"?: string | null,"created_at"?: string,"exam_id"?: string,"id"?: string,"instructions"?: string,"position"?: number,"title"?: string,"updated_at"?: string
+                    "archived_at"?: string | null,"created_at"?: string,"exam_id"?: string,"id"?: string,"instructions"?: string,"mode"?: Database["public"]['Enums']["exam_question_kind"] | null,"position"?: number,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -475,14 +475,14 @@ isOneToOne: false
                   ]
                 },"examinations": {
                   Row: {
-                    "archived_at": string | null,"category_id": string,"closed_at": string | null,"closes_at": string,"course_id": string,"created_at": string,"created_by": string,"description": string,"id": string,"instructions": string,"opens_at": string,"pass_mark": number,"publication_status": Database["public"]['Enums']["publication_status"],"published_at": string | null,"title": string,"updated_at": string
+                    "archived_at": string | null,"category_id": string,"closed_at": string | null,"closes_at": string,"course_id": string,"created_at": string,"created_by": string,"description": string,"id": string,"instructions": string,"modes": (Database["public"]['Enums']["exam_question_kind"])[],"opens_at": string,"pass_mark": number,"publication_status": Database["public"]['Enums']["publication_status"],"published_at": string | null,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"category_id": string,"closed_at"?: string | null,"closes_at": string,"course_id": string,"created_at"?: string,"created_by": string,"description"?: string,"id"?: string,"instructions"?: string,"opens_at": string,"pass_mark"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title": string,"updated_at"?: string
+                    "archived_at"?: string | null,"category_id": string,"closed_at"?: string | null,"closes_at": string,"course_id": string,"created_at"?: string,"created_by": string,"description"?: string,"id"?: string,"instructions"?: string,"modes"?: (Database["public"]['Enums']["exam_question_kind"])[],"opens_at": string,"pass_mark"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "archived_at"?: string | null,"category_id"?: string,"closed_at"?: string | null,"closes_at"?: string,"course_id"?: string,"created_at"?: string,"created_by"?: string,"description"?: string,"id"?: string,"instructions"?: string,"opens_at"?: string,"pass_mark"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title"?: string,"updated_at"?: string
+                    "archived_at"?: string | null,"category_id"?: string,"closed_at"?: string | null,"closes_at"?: string,"course_id"?: string,"created_at"?: string,"created_by"?: string,"description"?: string,"id"?: string,"instructions"?: string,"modes"?: (Database["public"]['Enums']["exam_question_kind"])[],"opens_at"?: string,"pass_mark"?: number,"publication_status"?: Database["public"]['Enums']["publication_status"],"published_at"?: string | null,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

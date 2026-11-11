@@ -56,6 +56,39 @@ describe('setting an examination (manage-examinations)', () => {
     examId = res.body.examId;
   });
 
+  // Step 11.2 (ADR-021): the examination's types of question, and one type per section.
+  it('keeps the chosen types, refuses a mixed section and a type that was not chosen', async () => {
+    const fields = { title: 'Types test', pass_mark: 50, opens_at: hours(-1), closes_at: hours(48) };
+    const none = await call('manage-examinations', lecturer.token, { action: 'save', courseId, fields: { ...fields, modes: [] } });
+    expect(none.status).toBe(400);
+    expect(none.body.message).toBe('Choose at least one type of question for the examination');
+    const made = await call('manage-examinations', lecturer.token, { action: 'save', courseId, fields: { ...fields, modes: ['ESSAY', 'MCQ'] } });
+    expect(made.status).toBe(200);
+    const id = made.body.examId;
+    const mcq = { kind: 'MCQ', prompt: 'Pick', marks: 1, options: { A: 'w', B: 'x', C: 'y', D: 'z' }, correct: 'A' };
+    const essay = { kind: 'ESSAY', prompt: 'Write', marks: 5 };
+    const mixed = await call('manage-examinations', lecturer.token, { action: 'structure', examId: id, sections: [{ title: 'A', mode: 'MCQ', questions: [mcq, essay] }] });
+    expect(mixed.status).toBe(400);
+    expect(mixed.body.message).toBe('Give each section one type of question');
+    const unchosen = await call('manage-examinations', lecturer.token, { action: 'structure', examId: id, sections: [{ title: 'A', mode: 'SHORT', questions: [{ kind: 'SHORT', prompt: 'Name', marks: 2 }] }] });
+    expect(unchosen.status).toBe(400);
+    expect(unchosen.body.message).toBe('This examination does not include short-answer questions');
+    const good = await call('manage-examinations', lecturer.token, {
+      action: 'structure',
+      examId: id,
+      sections: [
+        { title: 'A', mode: 'MCQ', questions: [mcq] },
+        { title: 'B', mode: 'ESSAY', questions: [essay] },
+      ],
+    });
+    expect(good.status).toBe(200);
+    const off = await call('manage-examinations', lecturer.token, { action: 'save', courseId, examId: id, fields: { ...fields, modes: ['MCQ'] } });
+    expect(off.status).toBe(400);
+    expect(off.body.message).toBe('Remove the essay sections first');
+    const other = await call('manage-examinations', otherLecturer.token, { action: 'save', courseId, examId: id, fields: { ...fields, modes: ['MCQ', 'ESSAY', 'SHORT'] } });
+    expect(other.status).toBe(403);
+  });
+
   it('saves sections and questions, then publishes', async () => {
     const bad = await call('manage-examinations', lecturer.token, {
       action: 'structure',

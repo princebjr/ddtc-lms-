@@ -9,9 +9,11 @@ import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
+import { Checkbox } from '@/components/ui/checkbox.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import { Input } from '@/components/ui/input.jsx';
 import { Label } from '@/components/ui/label.jsx';
+import { NativeSelect } from '@/components/ui/native-select.jsx';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
@@ -23,12 +25,15 @@ import {
   blankQuestion,
   closeExam,
   editorTotal,
+  EXAM_MODES,
   examStatus,
   fetchExamForEditing,
+  MODE_LABEL,
   publishExam,
   saveExam,
   saveExamStructure,
   setExamDeadline,
+  singleKind,
 } from '@/lib/exams/exams.js';
 
 // The examination editor for the course's lecturers and administrators (Phase 10.1, ADR-016; owner
@@ -38,11 +43,17 @@ import {
 // added up, Preview as a learner sees it, Publish or Unpublish, Archive. Once a learner has started, the
 // details and questions are locked; the deadline can still move, or the examination close early. There is
 // no time limit: the deadline is the only limit.
+//
+// Step 11.2 (ADR-021; owner request and answer of 2026-11-11): the lecturer first chooses the types of
+// question the examination uses (one, two or all three), under Details. Every section then has one type,
+// chosen from those, and all its questions are of it. A section set before this step that mixes types
+// is shown with a Split into sections button and must be split before the questions are saved again.
 
 /** @typedef {import('@/lib/exams/exams.js').EditorSection} Section */
 /** @typedef {import('@/lib/exams/exams.js').EditorQuestion} Question */
+/** @typedef {import('@/lib/exams/exams.js').QuestionKind} Kind */
 
-const KIND_LABEL = /** @type {const} */ ({ MCQ: 'Multiple choice', SHORT: 'Short answer', ESSAY: 'Essay' });
+const KIND_LABEL = MODE_LABEL;
 const OPTIONS = /** @type {const} */ (['A', 'B', 'C', 'D']);
 
 /** A default opening or closing time for a new examination (only read when the form first appears). @param {number} days */
@@ -78,7 +89,7 @@ export default function ExamEditorPage({ role }) {
           <DetailsCard role={role} courseId={courseId} exam={exam} locked={Boolean(page.data?.started)} onSaved={page.reload} />
           {exam ? (
             <>
-              <QuestionsCard examId={exam.id} initial={page.data?.sections ?? []} locked={Boolean(page.data?.started)} onSaved={page.reload} />
+              <QuestionsCard examId={exam.id} modes={exam.modes ?? [...EXAM_MODES]} initial={page.data?.sections ?? []} locked={Boolean(page.data?.started)} onSaved={page.reload} />
               <PublishCard exam={exam} started={Boolean(page.data?.started)} sections={page.data?.sections ?? []} onChanged={page.reload} />
             </>
           ) : null}
@@ -103,12 +114,15 @@ function DetailsCard({ role, courseId, exam, locked, onSaved }) {
   const passMark = passDraft ?? String(defaultPass);
   const [opens, setOpens] = useState(() => toGhanaInput(exam?.opens_at ?? daysFromNow(1)));
   const [closes, setCloses] = useState(() => toGhanaInput(exam?.closes_at ?? daysFromNow(8)));
+  // The types of question: a new examination starts with none ticked, so the lecturer chooses.
+  const [modes, setModes] = useState(/** @type {Kind[]} */ (exam ? (exam.modes ?? [...EXAM_MODES]) : []));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
 
   const save = async () => {
     const pass = Number(passMark);
     if (title.trim().length < 3) return setMessage('Give the examination a title of 3 to 200 characters');
+    if (!modes.length) return setMessage('Choose at least one type of question');
     if (!Number.isInteger(pass) || pass < 0 || pass > 100) return setMessage('The pass mark is a whole percentage from 0 to 100');
     const opensAt = fromGhanaInput(opens);
     const closesAt = fromGhanaInput(closes);
@@ -120,7 +134,7 @@ function DetailsCard({ role, courseId, exam, locked, onSaved }) {
       const res = await saveExam({
         courseId,
         examId: exam?.id,
-        fields: { title: title.trim(), description, instructions, pass_mark: pass, opens_at: opensAt, closes_at: closesAt },
+        fields: { title: title.trim(), description, instructions, pass_mark: pass, opens_at: opensAt, closes_at: closesAt, modes: EXAM_MODES.filter((m) => modes.includes(m)) },
       });
       toast.show('lecturer.exam-saved');
       if (exam) onSaved();
@@ -145,6 +159,26 @@ function DetailsCard({ role, courseId, exam, locked, onSaved }) {
         <Label htmlFor="exam-instructions">Instructions for learners</Label>
         <Textarea id="exam-instructions" value={instructions} onChange={(e) => setInstructions(e.target.value)} disabled={locked} maxLength={20000} rows={4} />
       </div>
+      <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0" data-slot="exam-modes">
+        <legend className="mb-1 p-0 text-label text-ink">Types of question</legend>
+        <p className="m-0 text-body-sm text-ink-secondary">Choose before writing the questions: one, two or all three. Each section then has one type.</p>
+        <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-8">
+          {EXAM_MODES.map((m) => (
+            <div key={m} className="flex min-h-11 items-center gap-3 pl-2.5">
+              <Checkbox
+                id={`exam-mode-${m}`}
+                checked={modes.includes(m)}
+                disabled={locked}
+                onCheckedChange={(on) => {
+                  setModes((all) => (on ? [...all.filter((x) => x !== m), m] : all.filter((x) => x !== m)));
+                  setMessage(null);
+                }}
+              />
+              <Label htmlFor={`exam-mode-${m}`}>{KIND_LABEL[m]}</Label>
+            </div>
+          ))}
+        </div>
+      </fieldset>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <FormField label="Pass mark (%)" name="passMark" value={passMark} onChange={(e) => setPassMark(e.target.value)} disabled={locked} inputMode="numeric" maxLength={3} />
         <FormField label="Opens" name="opensAt" type="datetime-local" value={opens} onChange={(e) => setOpens(e.target.value)} disabled={locked} hint="Ghana time (GMT)." />
@@ -160,10 +194,13 @@ function DetailsCard({ role, courseId, exam, locked, onSaved }) {
   );
 }
 
-/** @param {{ examId: string, initial: Section[], locked: boolean, onSaved: () => void }} props */
-function QuestionsCard({ examId, initial, locked, onSaved }) {
+/** A section set before Step 11.2 whose questions are of more than one kind. @param {Section} s */
+const isMixed = (s) => s.questions.length > 1 && singleKind(s.questions) === null;
+
+/** @param {{ examId: string, modes: Kind[], initial: Section[], locked: boolean, onSaved: () => void }} props */
+function QuestionsCard({ examId, modes, initial, locked, onSaved }) {
   const toast = useToast();
-  const [sections, setSections] = useState(() => /** @type {Section[]} */ (initial.length ? initial : [{ title: 'Section A', instructions: '', questions: [] }]));
+  const [sections, setSections] = useState(() => /** @type {Section[]} */ (initial.length ? initial : [{ title: 'Section A', instructions: '', mode: modes[0] ?? null, questions: [] }]));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   /** @param {number} si @param {(s: Section) => Section} f */
@@ -171,10 +208,29 @@ function QuestionsCard({ examId, initial, locked, onSaved }) {
   /** @param {number} si @param {number} qi @param {Partial<Question>} change */
   const editQuestion = (si, qi, change) => editSection(si, (s) => ({ ...s, questions: s.questions.map((q, j) => (j === qi ? { ...q, ...change } : q)) }));
   const total = editorTotal(sections);
+  /** One section for each type of question in a mixed section, in the usual order. @param {number} si */
+  const split = (si) =>
+    setSections((all) =>
+      all.flatMap((s, i) =>
+        i !== si
+          ? [s]
+          : EXAM_MODES.filter((k) => s.questions.some((q) => q.kind === k)).map((k) => ({
+              title: `${s.title} (${KIND_LABEL[k]})`.slice(0, 200),
+              instructions: s.instructions,
+              mode: k,
+              questions: s.questions.filter((q) => q.kind === k),
+            })),
+      ),
+    );
 
   const save = async () => {
     for (const [si, s] of sections.entries()) {
       if (!s.title.trim()) return setMessage(`Give section ${si + 1} a title`);
+      if (isMixed(s)) return setMessage(`${s.title} mixes types of question: split it into one section for each type`);
+      if (!s.mode) return setMessage(`Choose the type of question for ${s.title}`);
+      if (!modes.includes(s.mode)) {
+        return setMessage(`${s.title}: this examination does not include ${KIND_LABEL[s.mode].toLowerCase()} questions. Tick it under Details and save, or remove the section`);
+      }
       if (!s.questions.length) return setMessage(`Add at least one question to ${s.title}`);
       for (const [qi, q] of s.questions.entries()) {
         const where = `${s.title}, question ${qi + 1}`;
@@ -224,6 +280,39 @@ function QuestionsCard({ examId, initial, locked, onSaved }) {
               </Button>
             )}
           </div>
+          {isMixed(s) ? (
+            <div role="alert" className="flex flex-col gap-2 rounded-md status-tint-warning p-3" data-slot="mixed-section">
+              <p className="m-0 text-body-sm text-ink">This section mixes types of question. Each section now has one type: split it into one section for each type.</p>
+              {locked ? null : (
+                <Button variant="outline" className="self-start" onClick={() => split(si)}>
+                  Split into sections
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1 sm:max-w-xs">
+              <Label htmlFor={`section-${si}-mode`}>Type of question</Label>
+              <NativeSelect
+                id={`section-${si}-mode`}
+                value={s.mode ?? ''}
+                onChange={(e) => editSection(si, (x) => ({ ...x, mode: /** @type {Kind} */ (e.target.value) || null }))}
+                disabled={locked || s.questions.length > 0}
+                aria-describedby={s.questions.length && !locked ? `section-${si}-mode-hint` : undefined}
+              >
+                {s.mode ? null : <option value="">Choose a type</option>}
+                {EXAM_MODES.filter((k) => modes.includes(k) || k === s.mode).map((k) => (
+                  <option key={k} value={k}>
+                    {modes.includes(k) ? KIND_LABEL[k] : `${KIND_LABEL[k]} (not in this examination)`}
+                  </option>
+                ))}
+              </NativeSelect>
+              {s.questions.length && !locked ? (
+                <p id={`section-${si}-mode-hint`} className="m-0 text-body-sm text-ink-secondary">
+                  Remove this section's questions to change its type.
+                </p>
+              ) : null}
+            </div>
+          )}
           <ol className="m-0 flex list-none flex-col gap-3 p-0">
             {s.questions.map((q, qi) => (
               <li key={qi} className="flex flex-col gap-3 rounded-md bg-fill p-3" data-slot="exam-question">
@@ -281,15 +370,16 @@ function QuestionsCard({ examId, initial, locked, onSaved }) {
               </li>
             ))}
           </ol>
-          {locked ? null : (
-            <div className="flex flex-wrap gap-2">
-              {/** @type {const} */ (['MCQ', 'SHORT', 'ESSAY']).map((k) => (
-                <Button key={k} variant="outline" onClick={() => editSection(si, (x) => ({ ...x, questions: [...x.questions, blankQuestion(k)] }))}>
-                  <Plus aria-hidden="true" />
-                  {`Add ${KIND_LABEL[k].toLowerCase()}`}
-                </Button>
-              ))}
-            </div>
+          {locked || isMixed(s) || !s.mode ? null : (
+            <Button
+              variant="outline"
+              className="self-start"
+              onClick={() => editSection(si, (x) => ({ ...x, questions: [...x.questions, blankQuestion(/** @type {Kind} */ (x.mode))] }))}
+              aria-label={`Add ${KIND_LABEL[s.mode].toLowerCase()} to ${s.title || `section ${si + 1}`}`}
+            >
+              <Plus aria-hidden="true" />
+              {`Add ${KIND_LABEL[s.mode].toLowerCase()}`}
+            </Button>
           )}
         </section>
       ))}
@@ -298,7 +388,13 @@ function QuestionsCard({ examId, initial, locked, onSaved }) {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={() => setSections((all) => [...all, { title: `Section ${String.fromCharCode(65 + all.length)}`, instructions: '', questions: [] }])}
+            onClick={() =>
+              setSections((all) => [
+                ...all,
+                // The next section starts with a type not used yet, when there is one.
+                { title: `Section ${String.fromCharCode(65 + all.length)}`, instructions: '', mode: modes.find((m) => !all.some((s) => s.mode === m)) ?? modes[0] ?? null, questions: [] },
+              ])
+            }
             disabled={sections.length >= 20}
           >
             <Plus aria-hidden="true" />

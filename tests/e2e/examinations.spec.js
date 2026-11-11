@@ -56,6 +56,11 @@ test('a lecturer sets an examination with multiple-choice and essay questions an
   await page.getByLabel('Instructions for learners').fill('Answer every question.');
   await page.getByLabel('Opens').fill(ghanaInput(-1));
   await page.getByLabel('Closes (deadline)').fill(ghanaInput(48));
+  // Step 11.2 (ADR-021): the lecturer chooses the types of question first; none is ticked for them.
+  await page.getByRole('button', { name: 'Create examination' }).click();
+  await expect(page.getByText('Choose at least one type of question')).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Multiple choice' }).click();
+  await page.getByRole('checkbox', { name: 'Essay' }).click();
   await page.getByRole('button', { name: 'Create examination' }).click();
   await expect(toast(page, 'Examination saved')).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/lecturer/courses/${course.id}/exams/[0-9a-f-]{36}$`));
@@ -67,6 +72,12 @@ test('a lecturer sets an examination with multiple-choice and essay questions an
   for (const [o, v] of [['A', 'Aaron'], ['B', 'Moses'], ['C', 'Joshua'], ['D', 'Samuel']]) await mcq.getByLabel(o, { exact: true }).fill(v);
   await mcq.getByRole('radio', { name: 'Option B is correct' }).check();
   await mcq.getByLabel('Marks').fill('2');
+  // One type per section: Section A is multiple choice only, so the essay goes in a second section,
+  // which starts as Essay (the type not used yet). Short answer was not chosen, so it is not offered.
+  await expect(page.getByRole('button', { name: /Add essay|Add short answer/ })).toHaveCount(0);
+  await expect(page.getByLabel('Type of question').first().locator('option')).toHaveText(['Multiple choice', 'Essay']);
+  await page.getByRole('button', { name: 'Add section' }).click();
+  await expect(page.getByLabel('Type of question').nth(1)).toHaveValue('ESSAY');
   await page.getByRole('button', { name: 'Add essay' }).click();
   const essay = page.locator('[data-slot="exam-question"]').nth(1);
   await essay.getByRole('textbox', { name: 'Question' }).fill('Discuss the covenant in Genesis.');
@@ -106,6 +117,7 @@ test('a learner takes an examination at their own pace; the lecturer marks and r
   await learner.getByLabel('B. Moses').check();
   await expect(learner.getByTestId('save-state')).toHaveText(/^All answers saved/);
   await learner.getByRole('tab', { name: 'Section B: Essay' }).click();
+  await expect(learner.getByTestId('section-mode').filter({ visible: true })).toHaveText('Essay · 1 question');
   await learner.getByLabel('Your essay').fill('Covenant runs through Genesis: Abraham, the land and the blessing.');
   await expect(learner.getByTestId('save-state')).toHaveText(/^All answers saved/);
   // Step 10.3: the red-bordered Record button, and the essay answered with a PDF as well.
