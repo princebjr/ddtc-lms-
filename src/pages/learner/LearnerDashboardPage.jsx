@@ -15,7 +15,7 @@ import { greeting } from '@/lib/greeting.js';
 import { ExamDeadlines } from '@/components/exams/ExamPanels.jsx';
 
 // Learner dashboard (Phase 5): the courses the learner is enrolled in; examinations (Phase 10.1); answers
-// sent, missing work, what is due next, recent grades and lesson progress (Phase 11).
+// sent, missing work, what is due next and lesson progress (Phase 11; recent grades removed at the owner's request, 2026-11-11).
 
 export default function LearnerDashboardPage() {
   const auth = useAuth();
