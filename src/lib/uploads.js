@@ -86,14 +86,14 @@ async function upload({
   else await single(reg, file, contentType, onProgress, signal);
   onProgress?.(1);
   const later = finalizeLater ? await finalizeLater.catch(() => ({})) : {};
-  return /** @type {T} */ (
-    await callFunction('finalize-upload', {
-      fileId: reg.fileId,
-      ...replace,
-      ...finalize,
-      ...later,
-    })
-  );
+  const result = await callFunction('finalize-upload', {
+    fileId: reg.fileId,
+    ...replace,
+    ...finalize,
+    ...later,
+  });
+  // Where the file is (from register-upload), so the caller can play or open it at once.
+  return /** @type {T} */ ({ .../** @type {object} */ (result), bucket: reg.bucket, storagePath: reg.path });
 }
 
 const cancelled = () => new FunctionError(0, 'cancelled', 'The upload was cancelled.');

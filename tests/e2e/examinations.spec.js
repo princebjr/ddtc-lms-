@@ -1,5 +1,5 @@
 import { expect as baseExpect, test } from '@playwright/test';
-import { pdf } from '../fixtures/media.js';
+import { pdf, wav } from '../fixtures/media.js';
 import { dismissToasts, expectNoAxeViolations, horizontalOverflow } from './helpers.js';
 import { createAccount, setBranch } from './support/accounts.js';
 import { createAssignmentFixture } from './support/assignments.js';
@@ -17,7 +17,18 @@ import { signIn } from './support/ui.js';
 // - a lecturer types the practical marks for every learner, grouped by branch, and releases them.
 
 const expect = baseExpect.configure({ timeout: 30_000 });
-test.describe.configure({ timeout: 240_000 });
+test.describe.configure({ timeout: 360_000 });
+
+/**
+ * Downloads an answer document with its Download button and checks the file really arrived (the signed
+ * link is served only to the learner and the course's managers).
+ * @param {import('@playwright/test').Page} page @param {import('@playwright/test').Locator} scope @param {string} name
+ */
+async function expectDownloads(page, scope, name) {
+  const [download] = await Promise.all([page.waitForEvent('download'), scope.getByRole('button', { name: `Download ${name}` }).click()]);
+  expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+  expect(await download.failure()).toBeNull();
+}
 
 test.beforeAll(() => {
   requireSupabase();
@@ -101,7 +112,33 @@ test('a learner takes an examination at their own pace; the lecturer marks and r
   await expect(learner.getByRole('button', { name: 'Record your answer' })).toHaveClass(/border-error/);
   await expect(learner.getByRole('button', { name: 'Upload an audio file' })).toBeVisible();
   await learner.getByTestId('exam-document-input').setInputFiles({ name: 'covenant.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf()) });
-  await expect(learner.getByText('Document attached: covenant.pdf')).toBeVisible();
+  // Owner report of 2026-11-11: the learner could not open the document. It opens in a new tab straight
+  // from the click and downloads, while the examination is still being taken.
+  await expect(learner.getByRole('button', { name: 'Open covenant.pdf' })).toBeVisible();
+  await expect(learner.getByTestId('save-state')).toHaveText(/^All answers saved/);
+  const [preview] = await Promise.all([learner.waitForEvent('popup'), learner.getByRole('button', { name: 'Open covenant.pdf' }).click()]);
+  await preview.close();
+  await expectDownloads(learner, learner.getByTestId('exam-document'), 'covenant.pdf');
+
+  // Owner request of 2026-11-11: up to three recordings or audio files on one answer, each replaceable
+  // and removable. Three are added, the second is replaced, the first is removed: two are sent.
+  const sound = { mimeType: 'audio/wav', buffer: Buffer.from(wav(1)) };
+  const items = learner.getByTestId('exam-audio-item');
+  for (const [i, name] of ['one.wav', 'two.wav', 'three.wav'].entries()) {
+    await learner.getByTestId('exam-audio-input').setInputFiles({ name, ...sound });
+    await expect(items).toHaveCount(i + 1, { timeout: 60_000 });
+  }
+  await expect(learner.getByText(/You have added 3 audio answers, the most one answer can hold/)).toBeVisible();
+  await expect(learner.getByRole('button', { name: /Record another answer|Upload another audio file/ })).toHaveCount(0);
+  await expect(items.first().locator('audio')).toBeVisible();
+  await learner.getByRole('button', { name: 'Replace audio answer 2' }).click();
+  await expect(learner.getByText('Being replaced')).toBeVisible();
+  await learner.getByTestId('exam-audio-input').setInputFiles({ name: 'four.wav', ...sound });
+  await expect(learner.getByText('Being replaced')).toHaveCount(0, { timeout: 60_000 });
+  await expect(items).toHaveCount(3);
+  await learner.getByRole('button', { name: 'Remove audio answer 1' }).click();
+  await expect(items).toHaveCount(2);
+  await expect(learner.getByRole('button', { name: 'Record another answer' })).toBeVisible();
   await expect(learner.getByTestId('save-state')).toHaveText(/^All answers saved/);
   await expectNoAxeViolations(learner);
   expect(await horizontalOverflow(learner)).toBeLessThanOrEqual(0);
@@ -113,6 +150,8 @@ test('a learner takes an examination at their own pace; the lecturer marks and r
   await expect(toast(learner, 'Examination submitted')).toBeVisible();
   await expect(learner.getByText(/^Submitted .+ \(Ghana time\)\. Your result appears here/)).toBeVisible();
   await expect(learner.getByTestId('exam-document')).toContainText('covenant.pdf');
+  await expectDownloads(learner, learner.getByTestId('exam-document'), 'covenant.pdf');
+  await expect(learner.locator('audio')).toHaveCount(2);
 
   const staff = await (await browser.newContext()).newPage();
   await signIn(staff, lecturer.email, lecturer.password);
@@ -123,7 +162,12 @@ test('a learner takes an examination at their own pace; the lecturer marks and r
   await staff.getByRole('link', { name: `Mark the script of Kwame Mensah${tag}` }).filter({ visible: true }).click();
   const essay = staff.locator('[data-slot="script-question"][data-kind="ESSAY"]');
   await expect(essay.getByText('Covenant runs through Genesis: Abraham, the land and the blessing.')).toBeVisible();
+  // The lecturer opens the learner's document to mark it, and hears both recordings.
   await expect(essay.getByRole('button', { name: 'Open covenant.pdf' })).toBeVisible();
+  const [script] = await Promise.all([staff.waitForEvent('popup'), essay.getByRole('button', { name: 'Open covenant.pdf' }).click()]);
+  await script.close();
+  await expectDownloads(staff, essay, 'covenant.pdf');
+  await expect(essay.locator('audio')).toHaveCount(2);
   await essay.getByLabel('Mark out of 8').fill('6');
   await essay.getByLabel('Feedback (optional)').fill('Good use of Genesis 15.');
   await essay.getByRole('button', { name: 'Save mark' }).click();

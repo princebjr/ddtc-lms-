@@ -261,9 +261,9 @@ export async function fetchMyExam(examId) {
 /** @param {string} examId @returns {Promise<{ attemptId: string }>} */
 export const startExam = (examId) => callFunction('exam-attempt', { action: 'start', examId });
 /**
- * Autosave: only the answers given; a recording's file id (or null to remove it).
+ * Autosave: only the answers given; audioFileIds is the answer's whole list of recordings, in order (up to 3; empty removes them).
  * @param {string} examId
- * @param {Array<{ questionId: string, selectedOption?: string | null, textAnswer?: string, audioFileId?: string | null, documentFileId?: string | null }>} answers
+ * @param {Array<{ questionId: string, selectedOption?: string | null, textAnswer?: string, audioFileIds?: string[], documentFileId?: string | null }>} answers
  * @returns {Promise<{ savedAt: string }>}
  */
 export const saveExamAnswers = (examId, answers) => callFunction('exam-attempt', { action: 'save', examId, answers });
@@ -355,10 +355,15 @@ export async function fetchExamFiles(examId, learnerId) {
   return /** @type {ExamAnswerFile[]} */ (data ?? []);
 }
 
-/** A short-lived link that opens or saves an answer document (download expiry D19). @param {ExamAnswerFile} f */
-export async function documentUrl(f) {
+/**
+ * A short-lived link to an answer document (download expiry D19): to save it under its safe name, or
+ * (download false) for the browser to show it, which is how a PDF is opened.
+ * @param {ExamAnswerFile} f
+ * @param {{ download?: boolean }} [options]
+ */
+export async function documentUrl(f, { download = true } = {}) {
   const storage = await getStorage();
-  const { data, error } = await storage.from(f.bucket).createSignedUrl(f.storage_path, 300, { download: f.safe_download_filename });
-  if (error) throw error;
+  const { data, error } = await storage.from(f.bucket).createSignedUrl(f.storage_path, 300, download ? { download: f.safe_download_filename } : undefined);
+  if (error || !data?.signedUrl) throw error ?? new Error('link');
   return data.signedUrl;
 }

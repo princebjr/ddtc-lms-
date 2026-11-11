@@ -26,6 +26,7 @@ const api = vi.hoisted(() => ({
   saveExamStructure: vi.fn(),
   fetchExamResults: vi.fn(),
   releaseExam: vi.fn(),
+  documentUrl: vi.fn(),
 }));
 const toast = vi.hoisted(() => ({ show: vi.fn() }));
 vi.mock('@/lib/uploads.js', () => ({ uploadFile: (/** @type {any} */ o) => api.uploadFile(o) }));
@@ -44,6 +45,7 @@ vi.mock('@/lib/exams/exams.js', async (importOriginal) => ({
   saveExamStructure: (/** @type {any[]} */ ...a) => api.saveExamStructure(...a),
   fetchExamResults: (/** @type {string} */ id) => api.fetchExamResults(id),
   releaseExam: (/** @type {any[]} */ ...a) => api.releaseExam(...a),
+  documentUrl: (/** @type {any[]} */ ...a) => api.documentUrl(...a),
 }));
 
 /** @param {Partial<import('@/lib/exams/exams.js').MyExam>} over @returns {import('@/lib/exams/exams.js').MyExam} */
@@ -146,6 +148,104 @@ describe("the learner's examination", () => {
     await screen.findByText('Document attached: covenant.pdf');
     await waitFor(() => expect(api.saveExamAnswers).toHaveBeenCalledWith('e1', [{ questionId: 'q2', documentFileId: 'f-doc' }]), { timeout: 4000 });
     expect(screen.queryByRole('button', { name: 'Upload a PDF or Word file' })).toBeNull();
+  });
+
+  // Owner request of 2026-11-11 (ADR-020 item 10): up to three recordings or audio files on one answer,
+  // each replaceable in place and removable.
+  it('takes up to three audio answers, replaces one in place and removes one', async () => {
+    api.fetchMyExam.mockResolvedValue(exam({ state: 'IN_PROGRESS', sections }));
+    api.saveExamAnswers.mockResolvedValue({ savedAt: '2030-01-11T10:15:00Z' });
+    for (const id of ['a1', 'a2', 'a3', 'a4']) api.uploadFile.mockResolvedValueOnce({ fileId: id, bucket: 'learner-submissions', storagePath: `exams/e1/me/t1/${id}.m4a` });
+    learnerPage();
+    await screen.findAllByRole('tab');
+    await settled();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Section B/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Section B/ }));
+    await screen.findByRole('button', { name: 'Record your answer' });
+    const audio = (/** @type {string} */ name) => new File(['x'], name, { type: 'audio/mp4' });
+
+    fireEvent.change(screen.getByTestId('exam-audio-input'), { target: { files: [audio('one.m4a')] } });
+    await waitFor(() => expect(screen.getAllByTestId('exam-audio-item')).toHaveLength(1));
+    expect(screen.getByRole('button', { name: 'Record another answer' })).toBeTruthy();
+    fireEvent.change(screen.getByTestId('exam-audio-input'), { target: { files: [audio('two.m4a')] } });
+    await waitFor(() => expect(screen.getAllByTestId('exam-audio-item')).toHaveLength(2));
+    fireEvent.change(screen.getByTestId('exam-audio-input'), { target: { files: [audio('three.m4a')] } });
+    await waitFor(() => expect(screen.getAllByTestId('exam-audio-item')).toHaveLength(3));
+    expect(api.uploadFile).toHaveBeenCalledWith(expect.objectContaining({ resourceType: 'EXAM_ANSWER_AUDIO', examId: 'e1', questionId: 'q2' }));
+
+    // Full: no way to add a fourth, and the page says why.
+    expect(screen.queryByRole('button', { name: /Record another answer|Record your answer/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Upload another audio file|Upload an audio file/ })).toBeNull();
+    expect(screen.getByText(/You have added 3 audio answers, the most one answer can hold/)).toBeTruthy();
+    await waitFor(() => expect(api.saveExamAnswers).toHaveBeenLastCalledWith('e1', [{ questionId: 'q2', audioFileIds: ['a1', 'a2', 'a3'] }]), { timeout: 4000 });
+
+    // Replace the second: the new audio takes its place.
+    fireEvent.click(screen.getByRole('button', { name: 'Replace audio answer 2' }));
+    expect(screen.getByText('Being replaced')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Record the replacement' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Upload the replacement' })).toBeTruthy();
+    fireEvent.change(screen.getByTestId('exam-audio-input'), { target: { files: [audio('four.m4a')] } });
+    await waitFor(() => expect(api.saveExamAnswers).toHaveBeenLastCalledWith('e1', [{ questionId: 'q2', audioFileIds: ['a1', 'a4', 'a3'] }]), { timeout: 4000 });
+    expect(screen.getAllByTestId('exam-audio-item')).toHaveLength(3);
+    expect(screen.queryByText('Being replaced')).toBeNull();
+
+    // Remove the first: two are left, and another may be added again.
+    fireEvent.click(screen.getByRole('button', { name: 'Remove audio answer 1' }));
+    await waitFor(() => expect(api.saveExamAnswers).toHaveBeenLastCalledWith('e1', [{ questionId: 'q2', audioFileIds: ['a4', 'a3'] }]), { timeout: 4000 });
+    expect(screen.getAllByTestId('exam-audio-item')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Record another answer' })).toBeTruthy();
+  }, 30_000); // three autosaves, each after its own pause
+
+  it('opens the recordings a learner already saved, and reads an older single-recording draft as a list', async () => {
+    window.localStorage.setItem('ddtc.exam.e1.me', JSON.stringify({ q2: { audio_file_id: 'old1' } }));
+    api.fetchMyExam.mockResolvedValue(exam({ state: 'IN_PROGRESS', sections }));
+    api.saveExamAnswers.mockResolvedValue({ savedAt: '2030-01-11T10:15:00Z' });
+    learnerPage();
+    await screen.findAllByRole('tab');
+    await settled();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Section B/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Section B/ }));
+    await waitFor(() => expect(screen.getAllByTestId('exam-audio-item')).toHaveLength(1));
+    window.localStorage.removeItem('ddtc.exam.e1.me');
+  });
+
+  // Owner report of 2026-11-11: Open did nothing. The tab is opened inside the click (a tab opened after
+  // waiting for the link is blocked as a pop-up) and then sent to the signed link; Download saves the file.
+  it('opens an uploaded PDF in a new tab at once, and offers Download; a Word file is downloaded', async () => {
+    api.fetchMyExam.mockResolvedValue(exam({ state: 'IN_PROGRESS', sections }));
+    api.saveExamAnswers.mockResolvedValue({ savedAt: '2030-01-11T10:15:00Z' });
+    api.uploadFile.mockResolvedValueOnce({ fileId: 'f-pdf', bucket: 'learner-submissions', storagePath: 'exams/e1/me/t1/f-pdf.pdf', mimeType: 'application/pdf' });
+    /** @type {(url: string) => void} */
+    let deliver = () => undefined;
+    api.documentUrl.mockImplementation(() => new Promise((resolve) => (deliver = resolve)));
+    const tab = { opener: /** @type {unknown} */ ({}), close: vi.fn(), location: { replace: vi.fn() } };
+    const open = vi.spyOn(window, 'open').mockReturnValue(/** @type {any} */ (tab));
+    learnerPage();
+    await screen.findAllByRole('tab');
+    await settled();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Section B/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Section B/ }));
+    await screen.findByRole('button', { name: 'Record your answer' });
+    fireEvent.change(screen.getByTestId('exam-document-input'), { target: { files: [new File(['%PDF-1.4'], 'covenant.pdf', { type: 'application/pdf' })] } });
+
+    const openButton = await screen.findByRole('button', { name: 'Open covenant.pdf' });
+    expect(screen.getByRole('button', { name: 'Download covenant.pdf' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Replace document' })).toBeTruthy();
+    fireEvent.click(openButton);
+    // The tab exists before the link does.
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(tab.location.replace).not.toHaveBeenCalled();
+    expect(tab.opener).toBeNull();
+    expect(api.documentUrl).toHaveBeenCalledWith(expect.objectContaining({ file_id: 'f-pdf', bucket: 'learner-submissions' }), { download: false });
+    await act(async () => deliver('https://files.test/signed-pdf'));
+    await waitFor(() => expect(tab.location.replace).toHaveBeenCalledWith('https://files.test/signed-pdf'));
+
+    // Replacing it with a Word file: no Open (a browser cannot show it), Download only.
+    api.uploadFile.mockResolvedValueOnce({ fileId: 'f-docx', bucket: 'learner-submissions', storagePath: 'exams/e1/me/t1/f-docx.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    fireEvent.change(screen.getByTestId('exam-document-input'), { target: { files: [new File(['PK'], 'essay.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })] } });
+    await screen.findByRole('button', { name: 'Download essay.docx' });
+    expect(screen.queryByRole('button', { name: /^Open / })).toBeNull();
+    open.mockRestore();
   });
 
   it('keeps answers on the device while offline and sends them when back online', async () => {

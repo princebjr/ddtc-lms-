@@ -263,14 +263,14 @@ isOneToOne: false
                   ]
                 },"exam_answers": {
                   Row: {
-                    "attempt_id": string,"audio_file_id": string | null,"auto_marked": boolean,"created_at": string,"document_file_id": string | null,"feedback": string | null,"id": string,"marked_at": string | null,"marked_by": string | null,"question_id": string,"score": number | null,"selected_option": string | null,"text_answer": string,"updated_at": string
+                    "attempt_id": string,"audio_file_id": string | null,"audio_file_ids": (string)[],"auto_marked": boolean,"created_at": string,"document_file_id": string | null,"feedback": string | null,"id": string,"marked_at": string | null,"marked_by": string | null,"question_id": string,"score": number | null,"selected_option": string | null,"text_answer": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempt_id": string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id": string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                    "attempt_id": string,"audio_file_id"?: string | null,"audio_file_ids"?: (string)[],"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id": string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "attempt_id"?: string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id"?: string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                    "attempt_id"?: string,"audio_file_id"?: string | null,"audio_file_ids"?: (string)[],"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id"?: string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

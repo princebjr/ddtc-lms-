@@ -18,6 +18,8 @@ const Answer = z.object({
     .optional(),
   // A recording made for this examination (register-upload, finalize-upload), or null to remove it.
   audioFileId: z.uuid().nullable().optional(),
+  // Migration 45 (ADR-020 item 10): the answer's whole list of recordings, in order, up to three.
+  audioFileIds: z.array(z.uuid()).max(3, 'Add up to 3 recordings or audio files to one answer').optional(),
   // Step 10.3: a PDF or Word document uploaded for this examination, or null to remove it.
   documentFileId: z.uuid().nullable().optional(),
 });
@@ -45,7 +47,7 @@ serve(async (req) => {
       question_id: a.questionId,
       ...(a.selectedOption !== undefined ? { selected_option: a.selectedOption } : {}),
       ...(a.textAnswer !== undefined ? { text_answer: a.textAnswer } : {}),
-      ...(a.audioFileId !== undefined ? { audio_file_id: a.audioFileId } : {}),
+      ...(a.audioFileIds !== undefined ? { audio_file_ids: a.audioFileIds } : a.audioFileId !== undefined ? { audio_file_id: a.audioFileId } : {}),
       ...(a.documentFileId !== undefined ? { document_file_id: a.documentFileId } : {}),
     }));
     const { data, error } = await admin.rpc('exam_save_answers', { p_actor: caller.id, p_exam: b.examId, p_answers: answers });
