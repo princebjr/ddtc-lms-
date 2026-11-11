@@ -1278,6 +1278,9 @@ isOneToOne: false
               "active": number,"branch_name": string,"completed": number,"course_code": string,"course_id": string,"course_title": string,"enrolled_in_period": number,"suspended": number,"withdrawn": number
             }[]
                            },
+"report_export_record":
+{ Args: { "p_filters": Json,"p_kind": string }; Returns: undefined
+                           },
 "report_grades":
 { Args: { "p_branch"?: string,"p_course"?: string }; Returns: {
               "average_percentage": number,"branch_name": string,"course_code": string,"course_id": string,"course_title": string,"graded": number,"learners": number,"passed": number
