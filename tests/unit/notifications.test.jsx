@@ -101,6 +101,7 @@ describe('the notification centre', () => {
     fireEvent.click(sw);
     await waitFor(() => expect(api.setEmailEnabled).toHaveBeenCalledWith('me', false));
     expect(sw.getAttribute('aria-checked')).toBe('false');
+    await waitFor(() => expect(screen.getByTestId('email-switch-state').textContent).toBe('Saved'));
   });
 
   it('shows more, twenty at a time', async () => {

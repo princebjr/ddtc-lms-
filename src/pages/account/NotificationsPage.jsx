@@ -40,6 +40,7 @@ export default function NotificationsPage() {
     return { items, email, more: items.length === PAGE_SIZE };
   }, [me]);
   const [busy, setBusy] = useState(false);
+  const [emailState, setEmailState] = useState(/** @type {'idle' | 'saving' | 'saved'} */ ('idle'));
 
   const items = page.data?.items ?? [];
   const unread = items.filter((n) => !n.read_at).length;
@@ -78,10 +79,13 @@ export default function NotificationsPage() {
   };
   const setEmail = async (/** @type {boolean} */ on) => {
     page.setData((d) => ({ ...d, email: on }));
+    setEmailState('saving');
     try {
       await setEmailEnabled(me, on);
+      setEmailState('saved');
     } catch {
       page.setData((d) => ({ ...d, email: !on }));
+      setEmailState('idle');
       toast.show('request.failed', { onAction: () => void setEmail(on) });
     }
   };
@@ -113,8 +117,17 @@ export default function NotificationsPage() {
                 <CardDescription id="email-switch-help">
                   New work, reminders, grades and enrolments. Emails about your account, such as password resets, are always sent.
                 </CardDescription>
+                <p role="status" aria-live="polite" className="m-0 min-h-5 text-caption text-ink-secondary" data-testid="email-switch-state">
+                  {emailState === 'saving' ? 'Saving…' : emailState === 'saved' ? 'Saved' : ''}
+                </p>
               </div>
-              <Switch id="email-switch" aria-describedby="email-switch-help" checked={page.data?.email ?? true} onCheckedChange={(on) => void setEmail(on)} />
+              <Switch
+                id="email-switch"
+                aria-describedby="email-switch-help"
+                checked={page.data?.email ?? true}
+                disabled={emailState === 'saving'}
+                onCheckedChange={(on) => void setEmail(on)}
+              />
             </Card>
             {items.length === 0 ? (
               <EmptyState icon={Bell} title="No notifications yet" description="When something happens in your courses, it appears here." />

@@ -59,6 +59,7 @@ test('a learner reads notifications, turns course emails off and opens one', asy
   await expect(email).toHaveAttribute('aria-checked', 'true');
   await email.click();
   await expect(email).toHaveAttribute('aria-checked', 'false');
+  await expect(page.getByTestId('email-switch-state')).toHaveText('Saved');
   await page.reload();
   await expect(page.getByRole('switch', { name: 'Email me about my courses' })).toHaveAttribute('aria-checked', 'false');
 
