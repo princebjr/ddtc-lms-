@@ -667,6 +667,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"notification_deliveries": {
+                  Row: {
+                    "attempts": number,"channel": string,"created_at": string,"id": string,"last_error": string | null,"next_attempt_at": string | null,"notification_id": string,"provider_message_id": string | null,"sent_at": string | null,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"channel"?: string,"created_at"?: string,"id"?: string,"last_error"?: string | null,"next_attempt_at"?: string | null,"notification_id": string,"provider_message_id"?: string | null,"sent_at"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "attempts"?: number,"channel"?: string,"created_at"?: string,"id"?: string,"last_error"?: string | null,"next_attempt_at"?: string | null,"notification_id"?: string,"provider_message_id"?: string | null,"sent_at"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_deliveries_notification_id_fkey"
+      columns: ["notification_id"]
+isOneToOne: true
+      referencedRelation: "notifications"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notification_preferences": {
                   Row: {
                     "created_at": string,"email_enabled": boolean,"id": string,"updated_at": string,"user_id": string
@@ -683,6 +703,32 @@ isOneToOne: false
       foreignKeyName: "notification_preferences_user_id_fkey"
       columns: ["user_id"]
 isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"notification_reminders": {
+                  Row: {
+                    "course_id": string,"created_at": string,"deduplication_key": string,"effective_due_at": string,"fire_at": string,"id": string,"item_id": string,"kind": string,"learner_id": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "course_id": string,"created_at"?: string,"deduplication_key": string,"effective_due_at": string,"fire_at": string,"id"?: string,"item_id": string,"kind": string,"learner_id": string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "course_id"?: string,"created_at"?: string,"deduplication_key"?: string,"effective_due_at"?: string,"fire_at"?: string,"id"?: string,"item_id"?: string,"kind"?: string,"learner_id"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_reminders_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "courses"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notification_reminders_learner_id_fkey"
+      columns: ["learner_id"]
+isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
@@ -881,7 +927,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_record_mfa_reset":
+            "admin_dashboard":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_record_mfa_reset":
 { Args: { "p_actor": string,"p_target": string }; Returns: undefined
                            },
 "admin_set_direct_publish":
@@ -936,6 +985,21 @@ isOneToOne: false
 "assignment_submissions":
 { Args: { "p_assignment": string }; Returns: {
               "branch_name": string,"current_version": number,"effective_due_at": string,"enrolment_status": Database["public"]['Enums']["enrolment_status"],"extended_due_at": string,"first_name": string,"id_number": number,"is_late": boolean,"learner_id": string,"profile_image_path": string,"second_name": string,"status": Database["public"]['Enums']["submission_status"],"submission_id": string,"submitted_at": string
+            }[]
+                           },
+"audit_log_actions":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "action": string,"entity_type": string
+            }[]
+                           },
+"audit_log_export":
+{ Args: { "p_action"?: string,"p_actor"?: string,"p_entity_id"?: string,"p_entity_type"?: string,"p_from"?: string,"p_to"?: string }; Returns: {
+              "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"created_at": string,"entity_id": string,"entity_type": string,"id": string,"metadata": Json
+            }[]
+                           },
+"audit_log_search":
+{ Args: { "p_action"?: string,"p_actor"?: string,"p_before"?: string,"p_entity_id"?: string,"p_entity_type"?: string,"p_from"?: string,"p_limit"?: number,"p_to"?: string }; Returns: {
+              "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"created_at": string,"entity_id": string,"entity_type": string,"id": string,"metadata": Json
             }[]
                            },
 "bootstrap_first_admin":
@@ -1112,6 +1176,12 @@ isOneToOne: false
 "launch_readiness":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"learner_dashboard":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"lecturer_dashboard":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "lesson_attachment_add":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_file": string,"p_title": string }; Returns: string
                            },
@@ -1171,6 +1241,14 @@ isOneToOne: false
 "my_submission":
 { Args: { "p_assignment": string }; Returns: Json
                            },
+"notification_deliveries_claim":
+{ Args: { "p_limit": number }; Returns: {
+              "attempts": number,"delivery_id": string,"email": string,"first_name": string,"link_path": string,"message": string,"notification_type": string,"title": string
+            }[]
+                           },
+"notification_delivery_result":
+{ Args: { "p_delivery": string,"p_error": string,"p_ok": boolean,"p_permanent": boolean,"p_provider_id": string }; Returns: string
+                           },
 "practical_marks":
 { Args: { "p_assignment": string }; Returns: {
               "feedback": string,"learner_id": string,"score": number
@@ -1184,6 +1262,26 @@ isOneToOne: false
                            },
 "record_export":
 { Args: { "p_actor": string,"p_entity_id": string,"p_entity_type": string,"p_kind": string,"p_metadata": Json }; Returns: undefined
+                           },
+"report_activity":
+{ Args: { "p_branch"?: string,"p_course"?: string,"p_from"?: string,"p_to"?: string }; Returns: {
+              "active_learners": number,"answers_sent": number,"branch_name": string,"course_code": string,"course_id": string,"course_title": string,"exam_scripts": number,"learners": number,"lessons_completed": number
+            }[]
+                           },
+"report_completion":
+{ Args: { "p_branch"?: string,"p_course"?: string }; Returns: {
+              "average_progress": number,"branch_name": string,"completed_all": number,"course_code": string,"course_id": string,"course_title": string,"learners": number,"lessons": number
+            }[]
+                           },
+"report_enrolment":
+{ Args: { "p_branch"?: string,"p_course"?: string,"p_from"?: string,"p_to"?: string }; Returns: {
+              "active": number,"branch_name": string,"completed": number,"course_code": string,"course_id": string,"course_title": string,"enrolled_in_period": number,"suspended": number,"withdrawn": number
+            }[]
+                           },
+"report_grades":
+{ Args: { "p_branch"?: string,"p_course"?: string }; Returns: {
+              "average_percentage": number,"branch_name": string,"course_code": string,"course_id": string,"course_title": string,"graded": number,"learners": number,"passed": number
+            }[]
                            },
 "standard_parts_preview":
 { Args: { "p_course": string }; Returns: {
@@ -1221,7 +1319,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","exam_attempt_status": "NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED","exam_event": "SUBMITTED"|"MARKED"|"FEEDBACK"|"RELEASED"|"RETAKE_AUTHORISED","exam_question_kind": "MCQ"|"SHORT"|"ESSAY","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","exam_attempt_status": "NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED","exam_event": "SUBMITTED"|"MARKED"|"FEEDBACK"|"RELEASED"|"RETAKE_AUTHORISED","exam_question_kind": "MCQ"|"SHORT"|"ESSAY","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED"|"ASSIGNMENT_PUBLISHED"|"EXAM_PUBLISHED"|"DUE_REMINDER"|"ENROLMENT_ADDED"|"COURSE_APPROVED"|"COURSE_RETURNED"|"EXTENSION_CHANGED"|"SYSTEM_ALERT","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1337,7 +1435,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"exam_attempt_status": ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED"],"exam_event": ["SUBMITTED", "MARKED", "FEEDBACK", "RELEASED", "RETAKE_AUTHORISED"],"exam_question_kind": ["MCQ", "SHORT", "ESSAY"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"exam_attempt_status": ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED"],"exam_event": ["SUBMITTED", "MARKED", "FEEDBACK", "RELEASED", "RETAKE_AUTHORISED"],"exam_question_kind": ["MCQ", "SHORT", "ESSAY"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED", "ASSIGNMENT_PUBLISHED", "EXAM_PUBLISHED", "DUE_REMINDER", "ENROLMENT_ADDED", "COURSE_APPROVED", "COURSE_RETURNED", "EXTENSION_CHANGED", "SYSTEM_ALERT"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const
