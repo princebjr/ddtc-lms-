@@ -4,6 +4,7 @@ import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeleton
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { LearnerOverview } from '@/components/dashboard/DashboardPanels.jsx';
 import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
+import { WhoIsOnline } from '@/components/presence/WhoIsOnline.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { InsetList, InsetListLink } from '@/components/ui/inset-list.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
@@ -39,6 +40,9 @@ export default function LearnerDashboardPage() {
             after={
               <>
                 <RoleIntro role="learner" />
+                <div className="mt-6">
+                  <WhoIsOnline />
+                </div>
                 <ExamDeadlines />
               </>
             }

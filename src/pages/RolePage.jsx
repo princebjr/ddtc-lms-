@@ -8,6 +8,7 @@ import { GradeNotices } from '@/components/grading/GradeNotices.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { AppShell } from '@/components/layout/AppShell.jsx';
 import { NotificationBell } from '@/components/notifications/NotificationBell.jsx';
+import { PresenceProvider } from '@/components/presence/PresenceProvider.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { RolePlaceholder } from '@/components/layout/RolePlaceholder.jsx';
 import { useAvatarUrl } from '@/hooks/use-avatar-url.js';
@@ -100,7 +101,14 @@ export function RoleShell({ role, slug, children }) {
       <SessionWatcher />
       <IdleSessionProvider />
       {role === 'learner' ? <GradeNotices /> : null}
-      <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+      {role === 'admin' ? (
+        <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+      ) : (
+        // Step 11.1: learners and lecturers are announced on their courses' presence channels on every page.
+        <PresenceProvider userId={auth.profile.id}>
+          <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+        </PresenceProvider>
+      )}
     </AppShell>
   );
 }
