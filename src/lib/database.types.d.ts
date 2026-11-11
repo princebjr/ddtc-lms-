@@ -5,7 +5,39 @@ export type Database = {
   
   "public": {
           Tables: {
-            "assignment_versions": {
+            "announcements": {
+                  Row: {
+                    "archived_at": string | null,"author_id": string,"body": string,"branch_id": string | null,"course_id": string | null,"created_at": string,"id": string,"recipients": number,"title": string,"to_everyone": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"author_id": string,"body": string,"branch_id"?: string | null,"course_id"?: string | null,"created_at"?: string,"id"?: string,"recipients"?: number,"title": string,"to_everyone"?: boolean
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"author_id"?: string,"body"?: string,"branch_id"?: string | null,"course_id"?: string | null,"created_at"?: string,"id"?: string,"recipients"?: number,"title"?: string,"to_everyone"?: boolean
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "announcements_author_id_fkey"
+      columns: ["author_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "announcements_branch_id_fkey"
+      columns: ["branch_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "announcements_course_id_fkey"
+      columns: ["course_id"]
+isOneToOne: false
+      referencedRelation: "courses"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assignment_versions": {
                   Row: {
                     "accepted_formats": (string)[],"allow_late": boolean,"assignment_id": string,"category_id": string,"change_reason": string | null,"changed_by": string,"content_type": Database["public"]['Enums']["assignment_content_type"],"created_at": string,"description": string,"due_at": string,"grading_criteria": string,"id": string,"instruction_audio_file_id": string | null,"max_marks": number,"text_instructions": string,"title": string,"version_number": number
                   }
@@ -942,6 +974,12 @@ isOneToOne: false
 "am_i_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"announcement_archive":
+{ Args: { "p_announcement": string }; Returns: undefined
+                           },
+"announcement_send":
+{ Args: { "p_body": string,"p_branch": string,"p_course": string,"p_everyone": boolean,"p_title": string }; Returns: string
+                           },
 "apply_standard_parts":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_course": string,"p_reason": string }; Returns: undefined
                            },
@@ -1322,7 +1360,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","exam_attempt_status": "NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED","exam_event": "SUBMITTED"|"MARKED"|"FEEDBACK"|"RELEASED"|"RETAKE_AUTHORISED","exam_question_kind": "MCQ"|"SHORT"|"ESSAY","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED"|"ASSIGNMENT_PUBLISHED"|"EXAM_PUBLISHED"|"DUE_REMINDER"|"ENROLMENT_ADDED"|"COURSE_APPROVED"|"COURSE_RETURNED"|"EXTENSION_CHANGED"|"SYSTEM_ALERT","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","exam_attempt_status": "NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED","exam_event": "SUBMITTED"|"MARKED"|"FEEDBACK"|"RELEASED"|"RETAKE_AUTHORISED","exam_question_kind": "MCQ"|"SHORT"|"ESSAY","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED"|"ASSIGNMENT_PUBLISHED"|"EXAM_PUBLISHED"|"DUE_REMINDER"|"ENROLMENT_ADDED"|"COURSE_APPROVED"|"COURSE_RETURNED"|"EXTENSION_CHANGED"|"SYSTEM_ALERT"|"ANNOUNCEMENT","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1438,7 +1476,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"exam_attempt_status": ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED"],"exam_event": ["SUBMITTED", "MARKED", "FEEDBACK", "RELEASED", "RETAKE_AUTHORISED"],"exam_question_kind": ["MCQ", "SHORT", "ESSAY"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED", "ASSIGNMENT_PUBLISHED", "EXAM_PUBLISHED", "DUE_REMINDER", "ENROLMENT_ADDED", "COURSE_APPROVED", "COURSE_RETURNED", "EXTENSION_CHANGED", "SYSTEM_ALERT"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"exam_attempt_status": ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED"],"exam_event": ["SUBMITTED", "MARKED", "FEEDBACK", "RELEASED", "RETAKE_AUTHORISED"],"exam_question_kind": ["MCQ", "SHORT", "ESSAY"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED", "ASSIGNMENT_PUBLISHED", "EXAM_PUBLISHED", "DUE_REMINDER", "ENROLMENT_ADDED", "COURSE_APPROVED", "COURSE_RETURNED", "EXTENSION_CHANGED", "SYSTEM_ALERT", "ANNOUNCEMENT"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const
