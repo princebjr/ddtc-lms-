@@ -1,7 +1,7 @@
 # Phase 11 acceptance evidence: Notifications, reports, audit viewer and settings
 
 - Phase file: `docs/phases/phase-11-notifications-reports-settings.md`
-- Branch and pull request: `phase-11-notifications`, PR_LINK
+- Branch and pull request: `phase-11-notifications`, https://github.com/princebjr/ddtc-lms-/pull/20
 - Reviewer (O2): Prince Boateng
 - Evidence date: 2026-11-11
 - Source: the Phase 11 plan, approved by the owner on 2026-11-10 with all six answers kept (no DDTC email domain yet: Resend's test sender on staging). Also the owner requests of 2026-11-11: announcements (`docs/requests/2026-11-11-announcements.md`) and the dashboard welcome with red idle borders (`docs/requests/2026-11-11-dashboard-intro-and-idle-border.md`). Decisions recorded as ADR-019.
