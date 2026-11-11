@@ -35,6 +35,8 @@
   --logo-navy: #0f172a;
   --logo-white: #ffffff;
   --scrim: rgb(15 23 42 / 0.48);
+  /* A stronger dim behind the idle sign-out warning (owner request 2026-11-11) */
+  --scrim-strong: rgb(15 23 42 / 0.72);
   --hero-tint: #eef4ff;
   /* Sign In and Sign Up card edge glow (owner request 2026-11-05, DESIGN.md 9 and 21) */
   --glow: #2563eb;
@@ -148,6 +150,7 @@
   --skeleton-shine: #1f3566;
   --logo: #ffffff;
   --scrim: rgb(2 6 23 / 0.64);
+  --scrim-strong: rgb(2 6 23 / 0.84);
   --hero-tint: #0d1a36;
   --glow: #60a5fa;
   --glow-halo: 0.7;

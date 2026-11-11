@@ -10,11 +10,11 @@ export const AlertDialog = AlertDialogPrimitive.Root;
 export const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 export const AlertDialogCancel = AlertDialogPrimitive.Cancel;
 
-/** @param {import('react').ComponentProps<typeof AlertDialogPrimitive.Content>} props */
-export function AlertDialogContent({ className, children, ...props }) {
+/** @param {import('react').ComponentProps<typeof AlertDialogPrimitive.Content> & { overlayClassName?: string }} props */
+export function AlertDialogContent({ className, overlayClassName, children, ...props }) {
   return (
     <AlertDialogPrimitive.Portal>
-      <AlertDialogPrimitive.Overlay data-slot="alert-dialog-overlay" className="fixed inset-0 z-50 bg-scrim data-[state=open]:animate-fade-in" />
+      <AlertDialogPrimitive.Overlay data-slot="alert-dialog-overlay" className={cn('fixed inset-0 z-50 bg-scrim data-[state=open]:animate-fade-in', overlayClassName)} />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
