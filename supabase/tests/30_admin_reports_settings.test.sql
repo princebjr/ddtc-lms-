@@ -8,7 +8,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(28);
+select plan(31);
 
 select set_config('t.t1', tests.create_user('t1@example.test', 'Ama', 'Boateng', 'LECTURER')::text, true);
 select set_config('t.l1', tests.create_user('l1@example.test', 'Kwame', 'Mensah')::text, true);
@@ -97,6 +97,11 @@ select results_eq($$ select branch_name, lessons_completed from public.report_ac
   $$ values ('Kasoa Test'::text, 1), ('Kumasi Test'::text, 2) $$, 'activity counts lessons completed');
 select results_eq($$ select learners, graded from public.report_grades(tests.id('c1'), tests.id('b1')) $$,
   $$ values (1, 0) $$, 'grade summaries filter by branch and count only released grades');
+select lives_ok($$ select public.report_export_record('grades', '{"course": "BIB101"}') $$, 'downloading a report');
+select tests.reset();
+select is((select count(*)::int from public.audit_logs where action = 'report.exported' and entity_id = 'grades' and actor_id = tests.uid('a1')), 1, 'is audited');
+select tests.authenticate_as(tests.uid('t1'));
+select throws_ok($$ select public.report_export_record('grades', '{}') $$, '42501', null, 'and only administrators may');
 select tests.reset();
 
 select * from finish();
