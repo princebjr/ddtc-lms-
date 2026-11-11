@@ -61,7 +61,7 @@ Tracker (tick after sign-off):
 - [x] Phase 10: Gradebook, distribution charts and exports (`phase-10-done`)
 - [x] Phase 10.1: Examinations, practical marks and branch groups (`phase-10-1-done`)
 - [x] Step 10.2: Letter grades only on the course grade (`phase-10-2-done`)
-- [ ] Step 10.3: Examination answers as uploaded audio, PDF or Word files (`phase-10-3-done`)
+- [x] Step 10.3: Examination answers as uploaded audio, PDF or Word files (`phase-10-3-done`)
 - [ ] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)
 - [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
@@ -72,6 +72,7 @@ Tracker (tick after sign-off):
 - 2026-11-06: assignment performance reports (built in Phase 10, `export-gradebook`) and a live presence directory (planned for Phase 11). Open questions first: `docs/requests/2026-11-06-presence-and-assignment-reports.md`.
 - 2026-11-10: end-of-course examinations (MCQ, short answer, essay; text and audio answers; no countdown timer; course grade weekly assignments 40%, Local Assembly practicals 30%, final examinations 30%), practical marks entered by the lecturer, and learners grouped by branch. Built in Phase 10.1 (ADR-016): `docs/requests/2026-11-10-examinations.md` and `docs/requests/2026-11-10-practical-marks-and-branch-groups.md`.
 - 2026-11-10: on the learner's examination page, upload an audio file or a PDF or Word file as an answer as well as recording, and a red-bordered Record button. Built in Step 10.3 (ADR-018).
+- 2026-11-11: administrators and lecturers send announcements to learners, in the app and by email. Built in Phase 11 (ADR-019): `docs/requests/2026-11-11-announcements.md`.
 
 ## Session prompt for each phase
 
