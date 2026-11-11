@@ -1,5 +1,5 @@
 import { callFunction } from '@/lib/functions.js';
-import { signedUrl } from '@/lib/storage.js';
+import { getStorage, signedUrl } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // End-of-course examinations (Phase 10.1; ADR-016; owner request and answers of 2026-11-10). The
@@ -189,17 +189,6 @@ export async function fetchExamScript(examId, learnerId) {
   return /** @type {Script | null} */ (data);
 }
 
-/**
- * The recordings on a learner's latest attempt (the learner themselves or the course's managers).
- * @param {string} examId @param {string} learnerId
- * @returns {Promise<Array<{ question_id: string, file_id: string, bucket: string, storage_path: string, duration_seconds: number | null, mime_type: string | null }>>}
- */
-export async function fetchExamAudio(examId, learnerId) {
-  const { data, error } = await getSupabase().rpc('exam_answer_audio', { p_exam: examId, p_learner: learnerId });
-  if (error) throw error;
-  return /** @type {any} */ (data ?? []);
-}
-
 /** A playable link to a recording for whoever may read it (Storage policy; playback expiry D19). @param {string} bucket @param {string} path */
 export const audioUrl = (bucket, path) => signedUrl(bucket, path);
 
@@ -274,7 +263,7 @@ export const startExam = (examId) => callFunction('exam-attempt', { action: 'sta
 /**
  * Autosave: only the answers given; a recording's file id (or null to remove it).
  * @param {string} examId
- * @param {Array<{ questionId: string, selectedOption?: string | null, textAnswer?: string, audioFileId?: string | null }>} answers
+ * @param {Array<{ questionId: string, selectedOption?: string | null, textAnswer?: string, audioFileId?: string | null, documentFileId?: string | null }>} answers
  * @returns {Promise<{ savedAt: string }>}
  */
 export const saveExamAnswers = (examId, answers) => callFunction('exam-attempt', { action: 'save', examId, answers });
@@ -342,4 +331,34 @@ export async function fetchExamMarkingQueue() {
   const { data, error } = await getSupabase().rpc('exam_marking_queue');
   if (error) throw error;
   return /** @type {any} */ (data ?? []);
+}
+
+// ---------------------------------------------------------------- answer files (Step 10.3)
+
+/**
+ * @typedef {object} ExamAnswerFile  a recording (AUDIO: recorded or uploaded) or a document (DOCUMENT: PDF or Word) on an answer
+ * @property {string} question_id
+ * @property {'AUDIO' | 'DOCUMENT'} kind
+ * @property {string} file_id
+ * @property {string} bucket
+ * @property {string} storage_path
+ * @property {string} original_filename
+ * @property {string} safe_download_filename
+ * @property {number | null} duration_seconds
+ * @property {string | null} mime_type
+ */
+
+/** The recordings and documents on a learner's latest attempt (the learner themselves or the course's managers). @param {string} examId @param {string} learnerId */
+export async function fetchExamFiles(examId, learnerId) {
+  const { data, error } = await getSupabase().rpc('exam_answer_files', { p_exam: examId, p_learner: learnerId });
+  if (error) throw error;
+  return /** @type {ExamAnswerFile[]} */ (data ?? []);
+}
+
+/** A short-lived link that opens or saves an answer document (download expiry D19). @param {ExamAnswerFile} f */
+export async function documentUrl(f) {
+  const storage = await getStorage();
+  const { data, error } = await storage.from(f.bucket).createSignedUrl(f.storage_path, 300, { download: f.safe_download_filename });
+  if (error) throw error;
+  return data.signedUrl;
 }

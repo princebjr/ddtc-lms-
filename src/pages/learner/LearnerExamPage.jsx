@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle2, CircleDashed, CloudOff, Send } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, CircleDashed, CloudOff, FileText, Mic, Send, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
@@ -6,6 +6,7 @@ import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { FormSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
+import { ExamDocumentLink } from '@/components/exams/ExamDocumentLink.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Recorder } from '@/components/recorder/Recorder.jsx';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog.jsx';
@@ -18,21 +19,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.j
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { formatDue } from '@/lib/assignments/due.js';
-import { audioUrl, fetchExamAudio, fetchMyExam, LEARNER_STATE, saveExamAnswers, startExam, submitExam } from '@/lib/exams/exams.js';
+import { audioUrl, fetchExamFiles, fetchMyExam, LEARNER_STATE, saveExamAnswers, startExam, submitExam } from '@/lib/exams/exams.js';
 import { formatPercentage } from '@/lib/grading/grading.js';
 import { LEARNER_RECORDING } from '@/lib/recording/format.js';
 import { uploadFile } from '@/lib/uploads.js';
 
 // The learner's examination (Phase 10.1, ADR-016; owner request and answers of 2026-11-10). Before it
 // opens: its details. Once open: the instructions, the total and pass mark, and Start. While taking it:
-// the sections one at a time (tabs), multiple choice A to D, short answers and essays typed or recorded,
+// the sections one at a time (tabs), multiple choice A to D, short answers and essays typed, recorded or uploaded (audio, PDF or Word),
 // saved automatically as they go (a saving indicator; answers kept on this device while offline and sent
 // when the connection is back), Review, then Submit after a confirmation. There is NO countdown timer:
 // only the closing time is shown, and the server refuses work after it. After submitting, the answers;
 // once released, the marks, result and feedback.
 
 /** @typedef {import('@/lib/exams/exams.js').MyExam} Exam */
-/** @typedef {{ selected_option?: string | null, text_answer?: string, audio_file_id?: string | null }} Draft */
+/** @typedef {{ selected_option?: string | null, text_answer?: string, audio_file_id?: string | null, document_file_id?: string | null }} Draft */
+/** @typedef {import('@/lib/exams/exams.js').ExamAnswerFile} AnswerFile */
 
 const SAVE_AFTER_MS = 1200;
 const OPTIONS = /** @type {const} */ (['A', 'B', 'C', 'D']);
@@ -62,8 +64,8 @@ export default function LearnerExamPage() {
   const auth = useAuth();
   const me = auth.profile?.id ?? '';
   const page = useLoad(async () => {
-    const [exam, audio] = await Promise.all([fetchMyExam(examId), fetchExamAudio(examId, me)]);
-    return { exam, audio };
+    const [exam, files] = await Promise.all([fetchMyExam(examId), fetchExamFiles(examId, me)]);
+    return { exam, files };
   }, [examId, me]);
 
   if (page.state === 'error') return <ErrorState title="The examination could not be loaded" onRetry={page.reload} />;
@@ -80,9 +82,9 @@ export default function LearnerExamPage() {
           <PageHeader title={exam.title} description={exam.description || 'End-of-course examination'} className="pb-0" />
           <Facts exam={exam} />
           {exam.state === 'IN_PROGRESS' ? (
-            <Taking exam={exam} userId={me} audio={page.data?.audio ?? []} onSubmitted={page.reload} />
+            <Taking exam={exam} userId={me} files={page.data?.files ?? []} onSubmitted={page.reload} />
           ) : (
-            <Outside exam={exam} audio={page.data?.audio ?? []} onStarted={page.reload} />
+            <Outside exam={exam} files={page.data?.files ?? []} onStarted={page.reload} />
           )}
         </div>
       ) : null}
@@ -121,8 +123,8 @@ function Facts({ exam }) {
   );
 }
 
-/** Before, after or outside the examination window. @param {{ exam: Exam, audio: Array<{ question_id: string, bucket: string, storage_path: string }>, onStarted: () => void }} props */
-function Outside({ exam, audio, onStarted }) {
+/** Before, after or outside the examination window. @param {{ exam: Exam, files: AnswerFile[], onStarted: () => void }} props */
+function Outside({ exam, files, onStarted }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const start = async () => {
@@ -166,7 +168,7 @@ function Outside({ exam, audio, onStarted }) {
         </p>
       ) : null}
       {exam.result ? <ResultCard result={exam.result} /> : null}
-      {exam.sections ? <Answers exam={exam} audio={audio} /> : null}
+      {exam.sections ? <Answers exam={exam} files={files} /> : null}
     </div>
   );
 }
@@ -188,8 +190,8 @@ function ResultCard({ result }) {
   );
 }
 
-/** The learner's answers, read-only, with marks and feedback once released. @param {{ exam: Exam, audio: Array<{ question_id: string, bucket: string, storage_path: string }> }} props */
-function Answers({ exam, audio }) {
+/** The learner's answers, read-only, with marks and feedback once released. @param {{ exam: Exam, files: AnswerFile[] }} props */
+function Answers({ exam, files }) {
   return (
     <div className="flex flex-col gap-4">
       {(exam.sections ?? []).map((s) => (
@@ -198,7 +200,8 @@ function Answers({ exam, audio }) {
             {s.title}
           </h2>
           {s.questions.map((q, i) => {
-            const rec = audio.find((a) => a.question_id === q.id);
+            const rec = files.find((a) => a.question_id === q.id && a.kind === 'AUDIO');
+            const doc = files.find((a) => a.question_id === q.id && a.kind === 'DOCUMENT');
             return (
               <Card key={q.id} className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -213,7 +216,8 @@ function Answers({ exam, audio }) {
                   <>
                     {q.answer.text_answer ? <p className="m-0 whitespace-pre-wrap break-words rounded-md bg-fill p-3 text-body text-ink">{q.answer.text_answer}</p> : null}
                     {rec ? <RecordedAnswer bucket={rec.bucket} path={rec.storage_path} label={`Your recorded answer to question ${i + 1}`} /> : null}
-                    {!q.answer.text_answer && !rec ? <p className="m-0 text-body-sm text-ink-secondary">No answer given.</p> : null}
+                    {doc ? <ExamDocumentLink file={doc} /> : null}
+                    {!q.answer.text_answer && !rec && !doc ? <p className="m-0 text-body-sm text-ink-secondary">No answer given.</p> : null}
                   </>
                 )}
                 {q.answer.feedback ? <p className="m-0 whitespace-pre-wrap text-body-sm text-ink-secondary">{`Feedback: ${q.answer.feedback}`}</p> : null}
@@ -243,9 +247,9 @@ function RecordedAnswer({ bucket, path, label }) {
 
 /**
  * Taking the examination: sections as tabs, autosave with an indicator, offline backup, review and submit.
- * @param {{ exam: Exam, userId: string, audio: Array<{ question_id: string, file_id: string, bucket: string, storage_path: string }>, onSubmitted: () => void }} props
+ * @param {{ exam: Exam, userId: string, files: AnswerFile[], onSubmitted: () => void }} props
  */
-function Taking({ exam, userId, audio, onSubmitted }) {
+function Taking({ exam, userId, files, onSubmitted }) {
   const toast = useToast();
   const sections = exam.sections ?? [];
   const key = backupKey(exam.id, userId);
@@ -254,7 +258,7 @@ function Taking({ exam, userId, audio, onSubmitted }) {
     /** @type {Record<string, Draft>} */
     const start = {};
     for (const s of sections) for (const q of s.questions) start[q.id] = { selected_option: q.answer.selected_option ?? null, text_answer: q.answer.text_answer ?? '' };
-    for (const a of audio) start[a.question_id] = { ...start[a.question_id], audio_file_id: a.file_id };
+    for (const a of files) start[a.question_id] = { ...start[a.question_id], [a.kind === 'AUDIO' ? 'audio_file_id' : 'document_file_id']: a.file_id };
     const waiting = readBackup(key);
     for (const [id, d] of Object.entries(waiting)) if (start[id]) start[id] = { ...start[id], ...d };
     return start;
@@ -284,6 +288,7 @@ function Taking({ exam, userId, audio, onSubmitted }) {
           ...(batch[id].selected_option !== undefined ? { selectedOption: /** @type {any} */ (batch[id].selected_option) } : {}),
           ...(batch[id].text_answer !== undefined ? { textAnswer: batch[id].text_answer } : {}),
           ...(batch[id].audio_file_id !== undefined ? { audioFileId: batch[id].audio_file_id } : {}),
+          ...(batch[id].document_file_id !== undefined ? { documentFileId: batch[id].document_file_id } : {}),
         })),
       );
       for (const id of ids) if (pending.current[id] === batch[id]) delete pending.current[id];
@@ -327,7 +332,7 @@ function Taking({ exam, userId, audio, onSubmitted }) {
 
   const answered = (/** @type {string} */ id) => {
     const a = answers[id] ?? {};
-    return Boolean(a.selected_option || a.text_answer?.trim() || a.audio_file_id);
+    return Boolean(a.selected_option || a.text_answer?.trim() || a.audio_file_id || a.document_file_id);
   };
   const all = sections.flatMap((s) => s.questions);
   const done = all.filter((q) => answered(q.id)).length;
@@ -394,7 +399,7 @@ function Taking({ exam, userId, audio, onSubmitted }) {
                     examId={exam.id}
                     question={q}
                     value={answers[q.id] ?? {}}
-                    audio={audio.find((a) => a.question_id === q.id) ?? null}
+                    files={files.filter((a) => a.question_id === q.id)}
                     onChange={(c) => change(q.id, c)}
                   />
                 )}
@@ -475,48 +480,117 @@ function SaveIndicator({ state }) {
   );
 }
 
+const AUDIO_ACCEPT = '.mp3,.m4a,.mp4,.wav,.webm,.weba,.ogg,.oga,.opus,audio/*';
+const DOCUMENT_ACCEPT = '.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
 /**
- * A short answer or essay: typed, recorded, or both (owner answer 8).
+ * A short answer or essay: typed, and (owner answer 8; Step 10.3) one audio answer, recorded or an
+ * uploaded file, and one PDF or Word document. The Record button has a red border (owner request).
  * @param {{ examId: string, question: NonNullable<Exam['sections']>[number]['questions'][number], value: Draft,
- *   audio: { bucket: string, storage_path: string } | null, onChange: (d: Draft) => void }} props
+ *   files: AnswerFile[], onChange: (d: Draft) => void }} props
  */
-function WrittenAnswer({ examId, question: q, value, audio, onChange }) {
+function WrittenAnswer({ examId, question: q, value, files, onChange }) {
   const toast = useToast();
   const [recording, setRecording] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(/** @type {null | 'audio' | 'document'} */ (null));
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
-  const use = async (/** @type {File} */ file) => {
-    setUploading(true);
+  const [added, setAdded] = useState(/** @type {AnswerFile | null} */ (null));
+  const audioInput = useRef(/** @type {HTMLInputElement | null} */ (null));
+  const documentInput = useRef(/** @type {HTMLInputElement | null} */ (null));
+  const audio = files.find((f) => f.kind === 'AUDIO' && f.file_id === value.audio_file_id) ?? null;
+  const doc = (added && added.file_id === value.document_file_id ? added : null) ?? files.find((f) => f.kind === 'DOCUMENT' && f.file_id === value.document_file_id) ?? null;
+
+  /** @param {File} file @param {'audio' | 'document'} kind @param {boolean} recorded */
+  const attach = async (file, kind, recorded) => {
+    setUploading(kind);
     setMessage(null);
     try {
-      const res = /** @type {{ fileId: string }} */ (await uploadFile({ resourceType: 'EXAM_ANSWER_AUDIO', examId, questionId: q.id, file, alwaysResumable: true, onResumed: () => toast.show('learner.upload-resumed') }));
-      onChange({ audio_file_id: res.fileId });
-      setRecording(false);
-      toast.show('learner.recording-saved');
+      const res = /** @type {{ fileId: string, safeDownloadFilename?: string }} */ (
+        await uploadFile({
+          resourceType: kind === 'audio' ? 'EXAM_ANSWER_AUDIO' : 'EXAM_ANSWER_DOCUMENT',
+          examId,
+          questionId: q.id,
+          file,
+          alwaysResumable: kind === 'audio',
+          onResumed: () => toast.show('learner.upload-resumed'),
+        })
+      );
+      if (kind === 'audio') {
+        onChange({ audio_file_id: res.fileId });
+        setRecording(false);
+        if (recorded) toast.show('learner.recording-saved');
+      } else {
+        setAdded({ question_id: q.id, kind: 'DOCUMENT', file_id: res.fileId, bucket: '', storage_path: '', original_filename: file.name, safe_download_filename: file.name, duration_seconds: null, mime_type: file.type });
+        onChange({ document_file_id: res.fileId });
+      }
     } catch (e) {
       setMessage(/** @type {Error} */ (e).message);
     } finally {
-      setUploading(false);
+      setUploading(null);
     }
   };
+  /** @param {import('react').ChangeEvent<HTMLInputElement>} e @param {'audio' | 'document'} kind */
+  const pick = (e, kind) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) void attach(file, kind, false);
+  };
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       <Label htmlFor={`a-${q.id}`}>{q.kind === 'ESSAY' ? 'Your essay' : 'Your answer'}</Label>
       <Textarea id={`a-${q.id}`} value={value.text_answer ?? ''} onChange={(e) => onChange({ text_answer: e.target.value })} rows={q.kind === 'ESSAY' ? 12 : 3} maxLength={50000} />
+
       {value.audio_file_id ? (
         <div className="flex flex-wrap items-center gap-2">
-          {audio ? <RecordedAnswer bucket={audio.bucket} path={audio.storage_path} label="Your recorded answer" /> : <StatusChip tone="success">Recording attached</StatusChip>}
+          {audio ? <RecordedAnswer bucket={audio.bucket} path={audio.storage_path} label="Your audio answer" /> : <StatusChip tone="success">Audio answer attached</StatusChip>}
           <Button variant="ghost" onClick={() => onChange({ audio_file_id: null })}>
-            Remove recording
+            Remove audio answer
           </Button>
         </div>
       ) : recording ? (
-        <Recorder limits={LEARNER_RECORDING} audience="learner" title={`Your answer to: ${q.prompt.slice(0, 60)}`} disabled={uploading} onUse={(file) => void use(file)} />
-      ) : (
-        <Button variant="outline" className="self-start" onClick={() => setRecording(true)}>
-          Record an answer instead
-        </Button>
-      )}
+        <Recorder
+          limits={LEARNER_RECORDING}
+          audience="learner"
+          title={`Your answer to: ${q.prompt.slice(0, 60)}`}
+          disabled={uploading !== null}
+          onUse={(file) => void attach(file, 'audio', true)}
+          onUploadInstead={() => audioInput.current?.click()}
+        />
+      ) : null}
+
+      {value.document_file_id ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {doc && doc.bucket ? <ExamDocumentLink file={doc} /> : <StatusChip tone="success">{doc ? `Document attached: ${doc.original_filename}` : 'Document attached'}</StatusChip>}
+          <Button variant="ghost" onClick={() => onChange({ document_file_id: null })}>
+            Remove document
+          </Button>
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        {!value.audio_file_id && !recording ? (
+          <>
+            <Button variant="outline" className="border-2 border-error" onClick={() => setRecording(true)} disabled={uploading !== null}>
+              <Mic className="text-error" aria-hidden="true" />
+              Record your answer
+            </Button>
+            <Button variant="outline" onClick={() => audioInput.current?.click()} loading={uploading === 'audio'} loadingLabel="Uploading audio" disabled={uploading !== null}>
+              <Upload aria-hidden="true" />
+              Upload an audio file
+            </Button>
+          </>
+        ) : null}
+        {!value.document_file_id ? (
+          <Button variant="outline" onClick={() => documentInput.current?.click()} loading={uploading === 'document'} loadingLabel="Uploading document" disabled={uploading !== null}>
+            <FileText aria-hidden="true" />
+            Upload a PDF or Word file
+          </Button>
+        ) : null}
+      </div>
+      <p className="m-0 text-body-sm text-ink-secondary">Audio: MP3, M4A, WAV, WebM or Ogg. Documents: PDF or Word (.docx), up to 10 MB.</p>
+      <input ref={audioInput} type="file" accept={AUDIO_ACCEPT} className="hidden" onChange={(e) => pick(e, 'audio')} data-testid="exam-audio-input" aria-label="Choose an audio file" />
+      <input ref={documentInput} type="file" accept={DOCUMENT_ACCEPT} className="hidden" onChange={(e) => pick(e, 'document')} data-testid="exam-document-input" aria-label="Choose a PDF or Word file" />
       <FormMessage>{message}</FormMessage>
     </div>
   );

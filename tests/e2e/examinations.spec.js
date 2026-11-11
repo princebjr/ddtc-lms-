@@ -1,4 +1,5 @@
 import { expect as baseExpect, test } from '@playwright/test';
+import { pdf } from '../fixtures/media.js';
 import { dismissToasts, expectNoAxeViolations, horizontalOverflow } from './helpers.js';
 import { createAccount, setBranch } from './support/accounts.js';
 import { createAssignmentFixture } from './support/assignments.js';
@@ -96,6 +97,12 @@ test('a learner takes an examination at their own pace; the lecturer marks and r
   await learner.getByRole('tab', { name: 'Section B: Essay' }).click();
   await learner.getByLabel('Your essay').fill('Covenant runs through Genesis: Abraham, the land and the blessing.');
   await expect(learner.getByTestId('save-state')).toHaveText(/^All answers saved/);
+  // Step 10.3: the red-bordered Record button, and the essay answered with a PDF as well.
+  await expect(learner.getByRole('button', { name: 'Record your answer' })).toHaveClass(/border-error/);
+  await expect(learner.getByRole('button', { name: 'Upload an audio file' })).toBeVisible();
+  await learner.getByTestId('exam-document-input').setInputFiles({ name: 'covenant.pdf', mimeType: 'application/pdf', buffer: Buffer.from(pdf()) });
+  await expect(learner.getByText('Document attached: covenant.pdf')).toBeVisible();
+  await expect(learner.getByTestId('save-state')).toHaveText(/^All answers saved/);
   await expectNoAxeViolations(learner);
   expect(await horizontalOverflow(learner)).toBeLessThanOrEqual(0);
   await dismissToasts(learner);
@@ -105,6 +112,7 @@ test('a learner takes an examination at their own pace; the lecturer marks and r
   await confirm.getByRole('button', { name: 'Submit examination' }).click();
   await expect(toast(learner, 'Examination submitted')).toBeVisible();
   await expect(learner.getByText(/^Submitted .+ \(Ghana time\)\. Your result appears here/)).toBeVisible();
+  await expect(learner.getByTestId('exam-document')).toContainText('covenant.pdf');
 
   const staff = await (await browser.newContext()).newPage();
   await signIn(staff, lecturer.email, lecturer.password);
@@ -115,6 +123,7 @@ test('a learner takes an examination at their own pace; the lecturer marks and r
   await staff.getByRole('link', { name: `Mark the script of Kwame Mensah${tag}` }).filter({ visible: true }).click();
   const essay = staff.locator('[data-slot="script-question"][data-kind="ESSAY"]');
   await expect(essay.getByText('Covenant runs through Genesis: Abraham, the land and the blessing.')).toBeVisible();
+  await expect(essay.getByRole('button', { name: 'Open covenant.pdf' })).toBeVisible();
   await essay.getByLabel('Mark out of 8').fill('6');
   await essay.getByLabel('Feedback (optional)').fill('Good use of Genesis 15.');
   await essay.getByRole('button', { name: 'Save mark' }).click();

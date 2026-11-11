@@ -18,6 +18,8 @@ const Answer = z.object({
     .optional(),
   // A recording made for this examination (register-upload, finalize-upload), or null to remove it.
   audioFileId: z.uuid().nullable().optional(),
+  // Step 10.3: a PDF or Word document uploaded for this examination, or null to remove it.
+  documentFileId: z.uuid().nullable().optional(),
 });
 
 const Body = z.discriminatedUnion('action', [
@@ -44,6 +46,7 @@ serve(async (req) => {
       ...(a.selectedOption !== undefined ? { selected_option: a.selectedOption } : {}),
       ...(a.textAnswer !== undefined ? { text_answer: a.textAnswer } : {}),
       ...(a.audioFileId !== undefined ? { audio_file_id: a.audioFileId } : {}),
+      ...(a.documentFileId !== undefined ? { document_file_id: a.documentFileId } : {}),
     }));
     const { data, error } = await admin.rpc('exam_save_answers', { p_actor: caller.id, p_exam: b.examId, p_answers: answers });
     if (error) throw fromDbError(error);

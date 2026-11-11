@@ -10,7 +10,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { setBranch } from '../e2e/support/accounts.js';
 import { createCourseFixture, enrolFixture } from '../e2e/support/courses.js';
 import { requireSupabase } from '../e2e/support/local-supabase.js';
-import { wav } from '../fixtures/media.js';
+import { pdf, wav } from '../fixtures/media.js';
 import { call, serviceGet, signedInAs } from './support.js';
 
 /** @type {Awaited<ReturnType<typeof signedInAs>>} */
@@ -109,6 +109,30 @@ describe('taking it (exam-attempt), with a recording', () => {
     const again = await call('exam-attempt', kwame.token, { action: 'submit', examId });
     expect(again.status).toBe(400);
     expect(again.body.message).toBe('You have already submitted this examination');
+  });
+
+  // Step 10.3 (owner request 2026-11-10): a PDF or Word document as an answer too.
+  it('a PDF is uploaded and attached to an essay answer; multiple choice takes none', async () => {
+    expect((await call('exam-attempt', abena.token, { action: 'start', examId })).status).toBe(200);
+    const [mcq, essay] = questions;
+    const refused = await call('register-upload', abena.token, { resourceType: 'EXAM_ANSWER_DOCUMENT', examId, questionId: mcq.id, filename: 'notes.pdf', size: 100 });
+    expect(refused.status).toBe(400);
+    expect(refused.body.message).toBe('Multiple-choice questions are answered by choosing A to D');
+    const bytes = pdf();
+    const reg = await call('register-upload', abena.token, { resourceType: 'EXAM_ANSWER_DOCUMENT', examId, questionId: essay.id, filename: 'My essay.pdf', size: bytes.length });
+    expect(reg.status, JSON.stringify(reg.body)).toBe(200);
+    const s = requireSupabase();
+    const put = await fetch(`${s.url}/storage/v1/object/upload/sign/${reg.body.bucket}/${reg.body.path}?token=${reg.body.token}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': reg.body.contentType },
+      body: new Blob([new Uint8Array(bytes)]),
+    });
+    expect(put.ok, await put.clone().text()).toBe(true);
+    const fin = await call('finalize-upload', abena.token, { fileId: reg.body.fileId });
+    expect(fin.status, JSON.stringify(fin.body)).toBe(200);
+    expect(fin.body.status).toBe('VALIDATED');
+    const saved = await call('exam-attempt', abena.token, { action: 'save', examId, answers: [{ questionId: essay.id, documentFileId: reg.body.fileId }] });
+    expect(saved.status, JSON.stringify(saved.body)).toBe(200);
   });
 
   it('a recording cannot be registered for a multiple-choice question', async () => {
