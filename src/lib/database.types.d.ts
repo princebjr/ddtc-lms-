@@ -1295,6 +1295,14 @@ isOneToOne: false
 "practical_marks_save":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_marks": Json,"p_reason"?: string }; Returns: number
                            },
+"presence_my_courses":
+{ Args: Record<PropertyKey, never>; Returns: string[]
+                           },
+"presence_people":
+{ Args: { "p_ids": (string)[] }; Returns: {
+              "first_name": string,"id": string,"profile_image_file_id": string,"role": Database["public"]['Enums']["user_role"],"second_name": string
+            }[]
+                           },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
