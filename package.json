@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "test:db": "supabase test db",
     "test:functions": "vitest run --config vitest.functions.config.js",
-    "db:start": "supabase start -x realtime,imgproxy,studio,postgres-meta,logflare,vector,supavisor",
+    "db:start": "supabase start -x imgproxy,studio,postgres-meta,logflare,vector,supavisor",
     "db:stop": "supabase stop",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/database.types.d.ts",
     "test:e2e": "playwright test",
