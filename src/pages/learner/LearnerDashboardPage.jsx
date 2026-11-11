@@ -5,7 +5,6 @@ import { ErrorState } from '@/components/feedback/States.jsx';
 import { LearnerOverview } from '@/components/dashboard/DashboardPanels.jsx';
 import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
-import { Card } from '@/components/ui/card.jsx';
 import { InsetList, InsetListLink } from '@/components/ui/inset-list.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
@@ -34,26 +33,16 @@ export default function LearnerDashboardPage() {
         <ErrorState title="The dashboard could not be loaded" onRetry={reload} />
       ) : (
         <LoadingRegion loading={state === 'loading'} skeleton={<DashboardSkeleton />} onRetry={reload}>
-          <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2">
-            {tiles.map((t) => (
-              <li key={t.label}>
-                <Card className="flex items-center gap-4">
-                  <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-fill text-link">
-                    <t.icon className="size-6" aria-hidden="true" />
-                  </span>
-                  <span className="flex flex-col">
-                    <span className="text-title-2 text-ink">{t.value}</span>
-                    <span className="text-body-sm text-ink-secondary">{t.label}</span>
-                  </span>
-                </Card>
-              </li>
-            ))}
-          </ul>
-          <RoleIntro role="learner" />
-          <ExamDeadlines />
-          <div className="mt-6">
-            <LearnerOverview />
-          </div>
+          {/* One row of statistic cards, the welcome directly below it (owner request 2026-11-11), then the rest. */}
+          <LearnerOverview
+            leadTiles={tiles}
+            after={
+              <>
+                <RoleIntro role="learner" />
+                <ExamDeadlines />
+              </>
+            }
+          />
           <section aria-labelledby="my-courses-heading" className="mt-6 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <h2 id="my-courses-heading" className="m-0 text-title-3 text-ink">

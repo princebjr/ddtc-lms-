@@ -30,10 +30,11 @@ function Section({ title, id, children, action }) {
   );
 }
 
-/** @param {{ tiles: Array<{ label: string, value: number | string, icon: import('lucide-react').LucideIcon, to?: string, tone?: 'warning' }> }} props */
-function Tiles({ tiles }) {
+/** @typedef {{ label: string, value: number | string, icon: import('lucide-react').LucideIcon, to?: string }} Tile */
+/** @param {{ tiles: Tile[], wide?: boolean }} props */
+function Tiles({ tiles, wide = false }) {
   return (
-    <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className={`m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 ${wide ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
       {tiles.map((t) => {
         const body = (
           <Card className="flex items-center gap-4 hover:bg-fill">
@@ -212,7 +213,12 @@ export function LecturerOverview() {
   );
 }
 
-export function LearnerOverview() {
+/**
+ * The learner's work. `leadTiles` (the dashboard's course counts) join the same row of statistic cards,
+ * and `after` (the welcome, owner request 2026-11-11) comes directly below that row.
+ * @param {{ leadTiles?: Tile[], after?: import('react').ReactNode }} props
+ */
+export function LearnerOverview({ leadTiles = [], after = null }) {
   const page = useLoad(() => fetchDashboard('learner_dashboard'), []);
   const d = page.data ?? {};
   return (
@@ -222,11 +228,14 @@ export function LearnerOverview() {
       ) : (
         <div className="flex flex-col gap-6">
           <Tiles
+            wide={leadTiles.length + 2 === 4}
             tiles={[
+              ...leadTiles,
               { label: 'Answers sent', value: d.sent ?? 0, icon: Send, to: '/learner/assignments' },
               { label: 'Missing work', value: d.missing ?? 0, icon: TriangleAlert, to: '/learner/assignments' },
             ]}
           />
+          {after ? <div className="-mt-6">{after}</div> : null}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Section title="Due next" id="learner-due">
               <Rows
