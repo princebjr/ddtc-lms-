@@ -18,6 +18,8 @@ import { IdleWarningDialog } from './IdleWarningDialog.jsx';
 // is also recorded on the server (record_activity), which is what is_admin() checks, so the limit
 // holds even if this code is bypassed.
 
+const SETTINGS_REFRESH_MS = 5 * 60_000;
+
 async function fetchIdleSettings() {
   const { data, error } = await getSupabase().rpc('idle_settings');
   if (error) throw error;
@@ -35,6 +37,24 @@ export function IdleSessionProvider() {
   // The clock waits for the limits; if they cannot be read, the defaults apply.
   const limits = idleLimits(settings.state === 'ready' ? settings.data : null);
   const session = sessionId && settings.state !== 'loading' ? sessionId : null;
+
+  // A change on Settings reaches open sessions: the limits are read again every few minutes and when
+  // the window regains focus, without restarting the clock.
+  const { setData } = settings;
+  useEffect(() => {
+    if (!sessionId) return undefined;
+    const refresh = () =>
+      void fetchIdleSettings().then(
+        (data) => setData(() => data),
+        () => undefined,
+      );
+    const timer = window.setInterval(refresh, SETTINGS_REFRESH_MS);
+    window.addEventListener('focus', refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [sessionId, setData]);
   const lastSent = useRef(0);
   const path = useRef(location.pathname);
   const { signOut } = auth;

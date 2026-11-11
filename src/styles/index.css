@@ -123,6 +123,7 @@
   --color-logo-navy: var(--logo-navy);
   --color-logo-white: var(--logo-white);
   --color-scrim: var(--scrim);
+  --color-scrim-strong: var(--scrim-strong);
   --color-hero-tint: var(--hero-tint);
   --color-wave-played: var(--wave-played);
   --color-wave-unplayed: var(--wave-unplayed);

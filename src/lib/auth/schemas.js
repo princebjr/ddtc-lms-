@@ -1,4 +1,5 @@
 import * as z from 'zod/mini';
+import { sizeText } from '@/lib/settings/limits.js';
 
 // Zod schemas for every authentication form (CLAUDE.md section 2: Zod validation on every input).
 // zod/mini is the tree-shakeable build of Zod (same rules, a fraction of the bundle: RESPONSIVE.md
@@ -97,14 +98,17 @@ export const profileSchema = z.object({
   ),
 });
 
-/** D17: profile photos are JPG, PNG or WebP, at most 2 MB (checked again on the server). */
+/** D17: profile photos are JPG, PNG or WebP, within the administrator's limit (checked again on the server). */
 export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-export const PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 
-/** @param {{ type: string, size: number }} file @returns {string | null} a reason, or null when fine */
-export function photoProblem(file) {
+/**
+ * @param {{ type: string, size: number }} file
+ * @param {number | null} maxBytes  the profile_image limit from Settings; null while unknown (the server decides)
+ * @returns {string | null} a reason, or null when fine
+ */
+export function photoProblem(file, maxBytes) {
   if (!PHOTO_TYPES.includes(file.type)) return 'use a JPG, PNG or WebP image';
-  if (file.size > PHOTO_MAX_BYTES) return 'the image is larger than 2 MB';
+  if (maxBytes && file.size > maxBytes) return `the image is larger than ${sizeText(maxBytes)}`;
   if (file.size === 0) return 'the file is empty';
   return null;
 }

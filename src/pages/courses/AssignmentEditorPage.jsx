@@ -35,6 +35,7 @@ import { computePeaks } from '@/lib/audio/peaks.js';
 import { validate } from '@/lib/auth/schemas.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
 import { downloadMedia, fetchLessons, playbackUrl } from '@/lib/lessons/lessons.js';
+import { limitFor, limitText, tooLarge, useClientSettings } from '@/lib/settings/client-settings.js';
 import { uploadFile } from '@/lib/uploads.js';
 
 // Assignment editor for the course's lecturers and administrators (Phase 7; D12, D17, D18, D29,
@@ -48,7 +49,6 @@ import { uploadFile } from '@/lib/uploads.js';
 const RichTextEditor = lazy(() => import('@/components/lessons/RichTextEditor.jsx'));
 const AUDIO_ACCEPT = '.mp3,.m4a,.wav,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav';
 const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'wav'];
-const AUDIO_MAX = 25 * 1024 * 1024; // D17; the server checks again
 const TYPES = /** @type {const} */ (['TEXT', 'AUDIO', 'TEXT_AND_AUDIO']);
 
 /** @param {string} name */
@@ -332,7 +332,7 @@ function Editor({ role, course, assignment, categories, lessons, onChanged }) {
             ) : (
               <Card className="flex flex-col gap-2">
                 <CardTitle>Instruction audio</CardTitle>
-                <CardDescription>Save the assignment first, then add its audio (MP3, M4A or WAV, up to 25 MB and 10 minutes).</CardDescription>
+                <CardDescription>Save the assignment first, then add its audio (MP3, M4A or WAV).</CardDescription>
               </Card>
             )
           ) : null}
@@ -462,6 +462,7 @@ function InstructionAudioCard({ assignmentId, courseId, title, readOnly, onAttac
   const toast = useToast();
   const input = useRef(/** @type {HTMLInputElement | null} */ (null));
   const media = useLoad(() => fetchInstructionAudio(assignmentId), [assignmentId]);
+  const limit = limitFor(useClientSettings(), 'instruction_audio');
   const [progress, setProgress] = useState(/** @type {null | { stage: string, fraction: number }} */ (null));
   const [problem, setProblem] = useState(/** @type {string | null} */ (null));
   const audio = media.data ?? null;
@@ -470,7 +471,8 @@ function InstructionAudioCard({ assignmentId, courseId, title, readOnly, onAttac
   const upload = async (file) => {
     setProblem(null);
     if (!AUDIO_EXTENSIONS.includes(extension(file.name))) return setProblem('Use an MP3, M4A or WAV file.');
-    if (file.size > AUDIO_MAX) return setProblem('The file is larger than 25 MB.');
+    const large = tooLarge(file, limit);
+    if (large) return setProblem(large);
     setProgress({ stage: 'Uploading', fraction: 0 });
     try {
       const peaks = computePeaks(file).then((p) => (p ? { peaks: p } : {}));
@@ -510,7 +512,7 @@ function InstructionAudioCard({ assignmentId, courseId, title, readOnly, onAttac
             onDownload={() => downloadMedia(/** @type {any} */ (audio))}
           />
         ) : (
-          <CardDescription>No audio yet. MP3, M4A or WAV, up to 25 MB and 10 minutes.</CardDescription>
+          <CardDescription>{`No audio yet. MP3, M4A or WAV${limit.maxBytes ? `, ${limitText(limit)}` : ''}.`}</CardDescription>
         )}
       </LoadingRegion>
       {progress ? (

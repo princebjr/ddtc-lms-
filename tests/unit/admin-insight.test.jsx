@@ -189,7 +189,7 @@ describe('dashboard panels', () => {
       sent: 3,
       missing: 1,
       due_next: [{ id: 'a1', title: 'Reflection on Genesis 1', course_id: 'c1', course_title: 'BIB101', due: '2026-11-20T23:59:00Z' }],
-      recent_grades: [],
+      recent_grades: [{ id: 'a0', title: 'Covenant essay', course_id: 'c1', course_title: 'BIB101', score: 8, max_marks: 10, percentage: 80 }],
       progress: [{ course_id: 'c1', course_title: 'Introduction to Biblical Studies', lessons: 4, completed: 1 }],
     });
     inRouter(<LearnerOverview />);
@@ -197,7 +197,10 @@ describe('dashboard panels', () => {
     expect(api.fetchDashboard).toHaveBeenCalledWith('learner_dashboard');
     expect(screen.getByText('Missing work').previousSibling?.textContent).toBe('1');
     expect(screen.getByRole('progressbar', { name: 'Introduction to Biblical Studies: lesson progress' }).getAttribute('aria-valuenow')).toBe('25');
-    expect(screen.getByText('No grades released yet.')).toBeTruthy();
+    // Owner request of 2026-11-11: no Recent grades on the learner's dashboard (grades stay on the Grades page).
+    expect(screen.queryByText('Recent grades')).toBeNull();
+    expect(screen.queryByText('No grades released yet.')).toBeNull();
+    expect(screen.queryByText('Covenant essay')).toBeNull();
   });
 
   it('lecturer: deadlines with how many have sent their work', async () => {

@@ -61,9 +61,15 @@ export function horizontalOverflow(page) {
  * reports as low contrast although the toast passes once shown; so one-off animations and
  * transitions are allowed to finish first. Looping ones (skeleton shimmer, the auth card glow)
  * never finish and are not waited for.
+ *
+ * Loading is allowed to end first too (anything marked aria-busy, for up to 10 seconds): data that
+ * arrives while axe is reading the page enables a button, whose 150 ms fade from its disabled look
+ * axe then reports as low contrast (seen on Reports, "Download CSV", in CI on 2026-11-11). If something
+ * is still busy after that, the page is checked as it is.
  * @param {import('@playwright/test').Page} page
  */
 export async function expectNoAxeViolations(page) {
+  await page.waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 10_000 }).catch(() => undefined);
   await page.evaluate(() =>
     Promise.all(
       document

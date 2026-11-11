@@ -263,14 +263,14 @@ isOneToOne: false
                   ]
                 },"exam_answers": {
                   Row: {
-                    "attempt_id": string,"audio_file_id": string | null,"auto_marked": boolean,"created_at": string,"document_file_id": string | null,"feedback": string | null,"id": string,"marked_at": string | null,"marked_by": string | null,"question_id": string,"score": number | null,"selected_option": string | null,"text_answer": string,"updated_at": string
+                    "attempt_id": string,"audio_file_id": string | null,"audio_file_ids": (string)[],"auto_marked": boolean,"created_at": string,"document_file_id": string | null,"feedback": string | null,"id": string,"marked_at": string | null,"marked_by": string | null,"question_id": string,"score": number | null,"selected_option": string | null,"text_answer": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempt_id": string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id": string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                    "attempt_id": string,"audio_file_id"?: string | null,"audio_file_ids"?: (string)[],"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id": string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "attempt_id"?: string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id"?: string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                    "attempt_id"?: string,"audio_file_id"?: string | null,"audio_file_ids"?: (string)[],"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id"?: string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1053,6 +1053,9 @@ isOneToOne: false
               "bucket_name": string,"delete_attempts": number,"id": string,"last_delete_error": string,"resource_type": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string
             }[]
                            },
+"client_settings":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "course_cover_paths":
 { Args: { "p_courses": (string)[] }; Returns: {
               "course_id": string,"storage_path": string
@@ -1294,6 +1297,14 @@ isOneToOne: false
                            },
 "practical_marks_save":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_assignment": string,"p_marks": Json,"p_reason"?: string }; Returns: number
+                           },
+"presence_my_courses":
+{ Args: Record<PropertyKey, never>; Returns: string[]
+                           },
+"presence_people":
+{ Args: { "p_ids": (string)[] }; Returns: {
+              "first_name": string,"id": string,"profile_image_file_id": string,"role": Database["public"]['Enums']["user_role"],"second_name": string
+            }[]
                            },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined

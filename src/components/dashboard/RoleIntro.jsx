@@ -1,8 +1,9 @@
-import { BookOpenText, GraduationCap, ShieldCheck } from 'lucide-react';
+import { ArrowRight, BookOpenText, GraduationCap, ShieldCheck } from 'lucide-react';
 import { Card } from '@/components/ui/card.jsx';
 
 // The dashboard introduction (owner request of 2026-11-11): a short welcome for the signed-in role only,
 // directly below the dashboard's statistic cards. Text only; it repeats none of the dashboard's figures.
+// Each point is a list item marked with an arrow (owner request of 2026-11-11, second).
 
 /** @type {Record<'admin' | 'lecturer' | 'learner', { icon: import('lucide-react').LucideIcon, title: string, lead: string, points: string[] }>} */
 const INTRO = {
@@ -54,9 +55,12 @@ export function RoleIntro({ role }) {
           {intro.title}
         </h2>
         <p className="m-0 text-body text-ink-secondary">{intro.lead}</p>
-        <ul className="m-0 grid grid-cols-1 gap-1 pl-5 text-body text-ink md:grid-cols-2 md:gap-x-6">
+        <ul className="m-0 grid list-none grid-cols-1 gap-2 p-0 text-body text-ink md:grid-cols-2 md:gap-x-6">
           {intro.points.map((p) => (
-            <li key={p}>{p}</li>
+            <li key={p} className="flex items-start gap-2">
+              <ArrowRight className="mt-1 size-4 shrink-0 text-link" aria-hidden="true" data-slot="intro-arrow" />
+              <span className="min-w-0">{p}</span>
+            </li>
           ))}
         </ul>
       </div>

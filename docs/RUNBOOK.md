@@ -263,3 +263,12 @@ select jobname, schedule, active from cron.job;
 - Announcements: lecturers to a course they teach; administrators to all learners, a course or a branch. They cannot be unsent; Archive hides one from learners and keeps it. Both are audited (`announcement.sent`, `announcement.archived`).
 - Reports and the audit log need an administrator with two-step verification. Each CSV download is audited (`report.exported`, `audit_log.exported`).
 - Settings refuse values outside their rules (for example a pass mark above 100 or a grade scale with a gap); each change is audited (`setting.updated`, old and new values).
+
+## Written in Step 11.1
+
+### Who's online (ADR-020)
+
+- Presence uses Supabase Realtime on private channels; who may join is decided by the policies `presence_listen` and `presence_announce` on `realtime.messages` (migration 43). Nothing about presence is stored.
+- **Realtime settings (Supabase dashboard, Project Settings, Realtime):** keep Realtime on, and turn **off** "Allow public access" so every channel must pass the policies. The app only uses private channels.
+- If the card always says nobody is online: check that Realtime is on, that the person is an active learner or lecturer of a published course, and the browser console for a channel error (`CHANNEL_ERROR` usually means the policies refused, for example an administrator or a withdrawn learner).
+- People drop off within about a minute of closing the app or losing their connection (the Realtime heartbeat).

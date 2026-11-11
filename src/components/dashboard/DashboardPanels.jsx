@@ -215,7 +215,8 @@ export function LecturerOverview() {
 
 /**
  * The learner's work. `leadTiles` (the dashboard's course counts) join the same row of statistic cards,
- * and `after` (the welcome, owner request 2026-11-11) comes directly below that row.
+ * and `after` (the welcome, owner request 2026-11-11) comes directly below that row. Released grades are
+ * not listed here (owner request 2026-11-11): the learner reads them on Grades.
  * @param {{ leadTiles?: Tile[], after?: import('react').ReactNode }} props
  */
 export function LearnerOverview({ leadTiles = [], after = null }) {
@@ -236,34 +237,19 @@ export function LearnerOverview({ leadTiles = [], after = null }) {
             ]}
           />
           {after ? <div className="-mt-6">{after}</div> : null}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Section title="Due next" id="learner-due">
-              <Rows
-                label="Due next"
-                empty="Nothing waiting for you. Well done."
-                rows={(d.due_next ?? []).map((/** @type {any} */ w) => ({
-                  key: w.id,
-                  title: w.title,
-                  secondary: w.course_title,
-                  trailing: `Due ${formatDueShort(w.due)}`,
-                  to: `/learner/courses/${w.course_id}/assignments/${w.id}`,
-                }))}
-              />
-            </Section>
-            <Section title="Recent grades" id="learner-grades">
-              <Rows
-                label="Recent grades"
-                empty="No grades released yet."
-                rows={(d.recent_grades ?? []).map((/** @type {any} */ g) => ({
-                  key: g.id,
-                  title: g.title,
-                  secondary: g.course_title,
-                  trailing: `${Number(g.score)} / ${Number(g.max_marks)} · ${formatPercentage(Number(g.percentage))}`,
-                  to: `/learner/courses/${g.course_id}/assignments/${g.id}`,
-                }))}
-              />
-            </Section>
-          </div>
+          <Section title="Due next" id="learner-due">
+            <Rows
+              label="Due next"
+              empty="Nothing waiting for you. Well done."
+              rows={(d.due_next ?? []).map((/** @type {any} */ w) => ({
+                key: w.id,
+                title: w.title,
+                secondary: w.course_title,
+                trailing: `Due ${formatDueShort(w.due)}`,
+                to: `/learner/courses/${w.course_id}/assignments/${w.id}`,
+              }))}
+            />
+          </Section>
           {(d.progress ?? []).length ? (
             <Section title="Lesson progress" id="learner-progress">
               <ul className="m-0 flex list-none flex-col gap-3 p-0">

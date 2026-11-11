@@ -5,6 +5,7 @@ import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeleton
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { LecturerOverview } from '@/components/dashboard/DashboardPanels.jsx';
 import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
+import { WhoIsOnline } from '@/components/presence/WhoIsOnline.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { InsetList, InsetListLink } from '@/components/ui/inset-list.jsx';
@@ -80,6 +81,9 @@ export default function LecturerDashboardPage() {
             })}
           </ul>
           <RoleIntro role="lecturer" />
+          <div className="mt-6">
+            <WhoIsOnline audience="lecturer" />
+          </div>
           <div className="mt-6">
             <ExamMarkingList role="lecturer" />
             <div className="mt-6">

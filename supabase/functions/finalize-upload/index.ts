@@ -39,6 +39,9 @@ const Body = z.object({
 
 type Admin = ReturnType<typeof serviceClient>;
 
+/** Images up to this size have their SHA-256 recorded (the whole file is read for it). */
+const CHECKSUM_UP_TO = 2 * 1024 * 1024;
+
 serve(async (req) => {
   const caller = await requireStaff(req);
   const parsed = Body.safeParse(await readJson(req));
@@ -85,14 +88,16 @@ serve(async (req) => {
 
   // ---------------------------------------------------------------- images (Phases 4 and 5)
   if (type === 'PROFILE_IMAGE' || type === 'COURSE_COVER') {
-    const { data: blob, error: downloadError } = await admin.storage.from(file.bucket_name).download(file.storage_path);
-    if (downloadError || !blob) await reject('The file did not arrive. Try again.');
-    const bytes = new Uint8Array(await blob!.arrayBuffer());
-    if (bytes.length === 0) await reject('The file is empty.');
-    if (bytes.length > maxBytes) await reject(`The file is larger than ${Math.round(maxBytes / 1048576)} MB.`);
-    const detected = sniffImage(bytes);
+    // Size and real type from ranged reads, as for audio and documents: the limit is the administrator's
+    // (ADR-020 item 7), so an image is never read whole just to be measured. The checksum is still
+    // recorded for images up to CHECKSUM_UP_TO (the original 2 MB of D17); a larger one skips only that.
+    const image = await storageReader(file.bucket_name, file.storage_path);
+    if (image.size === 0) await reject('The file is empty.');
+    if (image.size > maxBytes) await reject(`The file is larger than ${Math.round(maxBytes / 1048576)} MB.`);
+    const detected = sniffImage(await image.read(0, Math.min(16, image.size)));
     if (!detected || !(detected in rule.types)) await reject('The file is not a JPG, PNG or WebP image.');
-    await validate({ detected_mime_type: detected, file_size: bytes.length, checksum: await sha256(bytes) });
+    const checksum = image.size <= CHECKSUM_UP_TO ? await sha256(await image.read(0, image.size)) : null;
+    await validate({ detected_mime_type: detected, file_size: image.size, checksum });
 
     if (type === 'PROFILE_IMAGE') {
       const { data: profile } = await admin.from('profiles').select('profile_image_file_id').eq('id', caller.id).single();
@@ -108,7 +113,7 @@ serve(async (req) => {
       if (setError) throw new HttpError(500, 'server_error', 'Could not update the course cover');
       if (previous && previous !== file.id) await removeStoredFile(admin, previous);
     }
-    return json(req, 200, { fileId: file.id, status: 'VALIDATED', mimeType: detected, size: bytes.length });
+    return json(req, 200, { fileId: file.id, status: 'VALIDATED', mimeType: detected, size: image.size });
   }
 
   // ---------------------------------------------------------------- audio and documents (Phase 6)

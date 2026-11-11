@@ -17,6 +17,7 @@ import { fileSize } from '@/lib/audio/format.js';
 import { computePeaks } from '@/lib/audio/peaks.js';
 import { downloadMedia, fetchAudioHistory, fetchLessonMedia, MAX_LESSON_AUDIO, playbackUrl, renameAudio, reorderAudio } from '@/lib/lessons/lessons.js';
 import { extensionForMime, LESSON_RECORDING } from '@/lib/recording/format.js';
+import { lengthText, limitFor, limitText, recordingLimits, tooLarge, useClientSettings } from '@/lib/settings/client-settings.js';
 import { loadRecordingDraft } from '@/lib/recording/recording-drafts.js';
 import { uploadFile } from '@/lib/uploads.js';
 
@@ -33,11 +34,9 @@ import { uploadFile } from '@/lib/uploads.js';
 // Phase 8 (owner decision 5): WebM and Ogg too, as browsers record them.
 const AUDIO_ACCEPT = '.mp3,.m4a,.mp4,.wav,.webm,.weba,.ogg,.oga,.opus,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/webm,audio/ogg';
 const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'mp4', 'wav', 'webm', 'weba', 'ogg', 'oga', 'opus'];
-const AUDIO_MAX = 100 * 1024 * 1024; // D17; the server checks again
 const DOC_ACCEPT =
   '.pdf,.docx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation';
 const DOC_EXTENSIONS = ['pdf', 'docx', 'pptx'];
-const DOC_MAX = 25 * 1024 * 1024;
 
 const dateFormat = new Intl.DateTimeFormat('en-GB', {
   day: 'numeric',
@@ -59,6 +58,10 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
   const toast = useToast();
   const auth = useAuth();
   const userId = auth.profile?.id ?? '';
+  // Limits from Settings; the in-app recorder also stops at 30 minutes (ADR-007).
+  const settings = useClientSettings();
+  const audioLimit = limitFor(settings, 'lesson_audio');
+  const recorderLimits = useMemo(() => recordingLimits(settings, 'lesson_audio', LESSON_RECORDING, LESSON_RECORDING.maxSeconds), [settings]);
   // Phase 8 (ADR-007): record lesson audio in the app, 30 minutes per recording, kept as a draft
   // on this device until used (D43).
   const [recording, setRecording] = useState(false);
@@ -108,7 +111,8 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
     const target = recorded ? null : replacing.current;
     setProblem(null);
     if (!AUDIO_EXTENSIONS.includes(extension(file.name))) return setProblem('Use an audio file: MP3, M4A, WAV, WebM or Ogg.');
-    if (file.size > AUDIO_MAX) return setProblem('The file is larger than 100 MB.');
+    const large = tooLarge(file, audioLimit);
+    if (large) return setProblem(large);
     setProgress({ name: file.name, stage: 'Uploading', fraction: 0 });
     try {
       // The waveform is prepared here while the file uploads (ADR-006); the server checks its shape.
@@ -228,8 +232,7 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
           </ol>
         ) : (
           <CardDescription>
-            No audio yet. Add up to {MAX_LESSON_AUDIO} audio files: MP3, M4A, WAV, WebM or Ogg, each up to 100 MB and 90 minutes, or record in the app (up to 30
-            minutes each).
+            {`No audio yet. Add up to ${MAX_LESSON_AUDIO} audio files: MP3, M4A, WAV, WebM or Ogg${audioLimit.maxBytes ? `, each ${limitText(audioLimit)}` : ''}, or record in the app (up to ${lengthText(recorderLimits.maxSeconds)} each).`}
           </CardDescription>
         )}
       </LoadingRegion>
@@ -267,7 +270,7 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
           />
           {recording && !full ? (
             <Recorder
-              limits={LESSON_RECORDING}
+              limits={recorderLimits}
               audience="lecturer"
               draft={recordingDraft}
               restored={restored}
@@ -416,13 +419,15 @@ export function AttachmentsCard({ lessonId, courseId, archived }) {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(/** @type {string | null} */ (null));
   const deleter = useMediaDelete({ kind: 'lesson-attachment', onDeleted: () => media.reload() });
+  const docLimit = limitFor(useClientSettings(), 'lesson_attachment');
   const attachments = media.data?.attachments ?? [];
 
   /** @param {File} file */
   const upload = async (file) => {
     setProblem(null);
     if (!DOC_EXTENSIONS.includes(extension(file.name))) return setProblem('Use a PDF, Word (.docx) or PowerPoint (.pptx) file.');
-    if (file.size > DOC_MAX) return setProblem('The file is larger than 25 MB.');
+    const large = tooLarge(file, docLimit);
+    if (large) return setProblem(large);
     setBusy(true);
     try {
       await uploadFile({ resourceType: 'LESSON_ATTACHMENT', file, courseId, lessonId, finalize: { title: file.name.replace(/\.[^.]+$/, '') } });
@@ -466,7 +471,7 @@ export function AttachmentsCard({ lessonId, courseId, archived }) {
           ))}
         </ul>
       ) : (
-        <CardDescription>No attachments. PDF, Word or PowerPoint, up to 25 MB.</CardDescription>
+        <CardDescription>{`No attachments. PDF, Word or PowerPoint${docLimit.maxBytes ? `, ${limitText(docLimit)}` : ''}.`}</CardDescription>
       )}
       {archived ? null : (
         <>

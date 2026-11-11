@@ -17,6 +17,7 @@ import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { formatDue, fromGhanaInput, toGhanaInput } from '@/lib/assignments/due.js';
+import { useClientSettings } from '@/lib/settings/client-settings.js';
 import {
   archiveExam,
   blankQuestion,
@@ -96,7 +97,10 @@ function DetailsCard({ role, courseId, exam, locked, onSaved }) {
   const [title, setTitle] = useState(exam?.title ?? '');
   const [description, setDescription] = useState(exam?.description ?? '');
   const [instructions, setInstructions] = useState(exam?.instructions ?? '');
-  const [passMark, setPassMark] = useState(String(exam?.pass_mark ?? 50));
+  // A new examination starts from the pass mark in Settings; each examination keeps its own.
+  const defaultPass = useClientSettings()?.pass_mark ?? 50;
+  const [passDraft, setPassMark] = useState(/** @type {string | null} */ (exam ? String(exam.pass_mark) : null));
+  const passMark = passDraft ?? String(defaultPass);
   const [opens, setOpens] = useState(() => toGhanaInput(exam?.opens_at ?? daysFromNow(1)));
   const [closes, setCloses] = useState(() => toGhanaInput(exam?.closes_at ?? daysFromNow(8)));
   const [busy, setBusy] = useState(false);

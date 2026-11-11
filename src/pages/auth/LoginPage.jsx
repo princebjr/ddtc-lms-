@@ -1,3 +1,4 @@
+import { TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { AuthLayout, FormMessage } from '@/components/auth/AuthLayout.jsx';
@@ -92,10 +93,17 @@ export default function LoginPage() {
         </p>
       }
     >
-      {/* Owner request 2026-11-11: the inactivity sign-out notice has a red border (error colour), like the idle warning. */}
-      <FormMessage tone="info" className="border-2 border-error">
-        {notice}
-      </FormMessage>
+      {/* Owner request 2026-11-11 (second): the inactivity sign-out notice is an alert card in the error colour:
+          tinted background, a red left edge, a filled warning icon, a bold title and the reason beneath. */}
+      {notice ? (
+        <div role="status" data-slot="signed-out-notice" className="flex items-start gap-3 rounded-md border-l-4 border-error status-tint-error p-3">
+          <TriangleAlert className="mt-0.5 size-5 shrink-0 fill-error stroke-error [&>path:nth-child(n+2)]:stroke-on-error" aria-hidden="true" />
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p className="m-0 text-body-sm font-semibold text-ink">You have been signed out</p>
+            <p className="m-0 text-body-sm text-ink-secondary">{notice}</p>
+          </div>
+        </div>
+      ) : null}
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4" aria-describedby={message ? 'login-message' : undefined}>
         <FormField label="Email address" name="email" type="email" inputMode="email" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="you@example.org" error={errors.email} />
         <FormField

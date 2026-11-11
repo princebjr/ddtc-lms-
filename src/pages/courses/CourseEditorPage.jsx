@@ -17,6 +17,7 @@ import { useLoad } from '@/hooks/use-load.js';
 import { validate } from '@/lib/auth/schemas.js';
 import { createCourse, fetchActiveLecturers, transitionCourse } from '@/lib/courses/courses.js';
 import { courseSchema } from '@/lib/courses/schemas.js';
+import { limitFor, limitText, useClientSettings } from '@/lib/settings/client-settings.js';
 
 // New course (prototype `lnew`). A lecturer with course creation creates a course they own; an
 // administrator chooses the lecturer who will own it (ADR-005 decision, 2026-11-06). The course is
@@ -34,7 +35,10 @@ export default function CourseEditorPage({ role }) {
   const [busy, setBusy] = useState(/** @type {null | 'draft' | 'submit'} */ (null));
   const [ownerId, setOwnerId] = useState('');
   const lecturers = useLoad(() => (admin ? fetchActiveLecturers() : Promise.resolve([])), [admin]);
-  const direct = Boolean(auth.profile?.can_publish_directly);
+  const settings = useClientSettings();
+  const coverLimit = limitFor(settings, 'course_cover');
+  // Publishes at once when approval is switched off in Settings (D04) or this lecturer may publish directly (ADR-005); the database decides.
+  const direct = Boolean(auth.profile?.can_publish_directly) || settings?.require_course_approval === false;
 
   /** @param {HTMLFormElement} form @param {'draft' | 'submit'} mode */
   const save = async (form, mode) => {
@@ -152,7 +156,7 @@ export default function CourseEditorPage({ role }) {
             </Card>
             <Card className="flex flex-col gap-2">
               <CardTitle>Cover image</CardTitle>
-              <CardDescription>Add a cover on the course's Overview once it is saved. JPG, PNG or WebP, up to 2 MB.</CardDescription>
+              <CardDescription>{`Add a cover on the course's Overview once it is saved. JPG, PNG or WebP${coverLimit.maxBytes ? `, ${limitText(coverLimit)}` : ''}.`}</CardDescription>
             </Card>
           </div>
         </form>

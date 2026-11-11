@@ -1,6 +1,6 @@
 # Owner request (2026-11-06): live presence and assignment performance reports
 
-Status: **recorded; the six-digit ID numbers (question 6) are built (step 6.1, ADR-008)**; the reports (Phase 10) and presence (Phase 11) are not yet scheduled in detail. Received during Phase 6. Nothing is built until the owner
+Status: **built.** ID numbers in step 6.1 (ADR-008); reports in Phase 10 (ADR-015); presence in Step 11.1 (ADR-020, plan approved 2026-11-11). Received during Phase 6. Nothing is built until the owner
 answers the open questions below and approves where it goes (an ADR in `docs/DECISIONS.md` when it
 is scheduled, as for any change to the build plan).
 

@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { fetchSettings, saveSetting } from '@/lib/admin/insight.js';
 import { formatDue } from '@/lib/assignments/due.js';
+import { loadClientSettings } from '@/lib/settings/client-settings.js';
 
 // Settings (Phase 11, ADR-019; BUILD_PLAN: every system setting with validation and audit). Each value is
 // saved on its own ("Setting saved"); the database checks it again and records every change in the audit
@@ -62,7 +63,7 @@ export default function SettingsPage() {
                 unit="%"
                 min={0}
                 max={100}
-                help="The course grade, examination result or percentage at or above which a learner passes."
+                help="The percentage at or above which a grade counts as a pass. New examinations start with this pass mark; each examination keeps its own."
                 onSaved={replace}
               />
               <SwitchSetting
@@ -90,7 +91,7 @@ export default function SettingsPage() {
                 unit="minutes"
                 min={5}
                 max={60}
-                help="Whole minutes, 5 to 60."
+                help="Whole minutes, 5 to 60. People already signed in follow within a few minutes."
                 onSaved={replace}
               />
               <NumberSetting
@@ -155,6 +156,7 @@ function Group({ title, description, children }) {
 async function persist(key, value, onSaved, toast) {
   try {
     await saveSetting(key, value);
+    void loadClientSettings({ force: true }); // this administrator's own screens follow at once
     onSaved(key, value);
     toast.show('admin.setting-saved');
     return null;
@@ -422,7 +424,7 @@ function FileLimitsSetting({ setting, onSaved }) {
     <Row
       id="s-file_limits"
       label="Largest file and longest recording"
-      help="Sizes in MB; recordings in minutes."
+      help="Sizes in MB; recordings in minutes. The file store takes the new sizes at once. Recording in the app stops at 30 minutes for lesson audio."
       updatedAt={setting.updated_at}
       message={message}
     >
