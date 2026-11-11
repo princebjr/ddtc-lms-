@@ -231,14 +231,14 @@ isOneToOne: false
                   ]
                 },"exam_answers": {
                   Row: {
-                    "attempt_id": string,"audio_file_id": string | null,"auto_marked": boolean,"created_at": string,"feedback": string | null,"id": string,"marked_at": string | null,"marked_by": string | null,"question_id": string,"score": number | null,"selected_option": string | null,"text_answer": string,"updated_at": string
+                    "attempt_id": string,"audio_file_id": string | null,"auto_marked": boolean,"created_at": string,"document_file_id": string | null,"feedback": string | null,"id": string,"marked_at": string | null,"marked_by": string | null,"question_id": string,"score": number | null,"selected_option": string | null,"text_answer": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempt_id": string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id": string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                    "attempt_id": string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id": string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "attempt_id"?: string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id"?: string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
+                    "attempt_id"?: string,"audio_file_id"?: string | null,"auto_marked"?: boolean,"created_at"?: string,"document_file_id"?: string | null,"feedback"?: string | null,"id"?: string,"marked_at"?: string | null,"marked_by"?: string | null,"question_id"?: string,"score"?: number | null,"selected_option"?: string | null,"text_answer"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -250,6 +250,12 @@ isOneToOne: false
     },{
       foreignKeyName: "exam_answers_audio_file_id_fkey"
       columns: ["audio_file_id"]
+isOneToOne: false
+      referencedRelation: "file_objects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "exam_answers_document_file_id_fkey"
+      columns: ["document_file_id"]
 isOneToOne: false
       referencedRelation: "file_objects"
       referencedColumns: ["id"]
@@ -995,6 +1001,11 @@ isOneToOne: false
 "exam_answer_audio":
 { Args: { "p_exam": string,"p_learner": string }; Returns: {
               "bucket": string,"duration_seconds": number,"file_id": string,"mime_type": string,"question_id": string,"storage_path": string
+            }[]
+                           },
+"exam_answer_files":
+{ Args: { "p_exam": string,"p_learner": string }; Returns: {
+              "bucket": string,"duration_seconds": number,"file_id": string,"kind": string,"mime_type": string,"original_filename": string,"question_id": string,"safe_download_filename": string,"storage_path": string
             }[]
                            },
 "exam_answer_grade":
