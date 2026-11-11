@@ -328,3 +328,20 @@ export function GradebookSkeleton() {
     </div>
   );
 }
+
+/** Notifications (UI_FEEDBACK.md): list rows with a small circle and two text lines. @param {{ rows?: number }} props */
+export function NotificationsSkeleton({ rows = 6 }) {
+  return (
+    <div data-skeleton="notifications" className="overflow-hidden rounded-md border border-hairline bg-card">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex min-h-16 items-center gap-3 border-t border-hairline px-4 py-3 first:border-t-0">
+          <Skeleton shape="circle" className="size-2.5" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="w-1/2" />
+            <Skeleton className="h-3 w-5/6" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

@@ -7,6 +7,7 @@ import { DashboardSkeleton } from '@/components/feedback/Skeletons.jsx';
 import { GradeNotices } from '@/components/grading/GradeNotices.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { AppShell } from '@/components/layout/AppShell.jsx';
+import { NotificationBell } from '@/components/notifications/NotificationBell.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { RolePlaceholder } from '@/components/layout/RolePlaceholder.jsx';
 import { useAvatarUrl } from '@/hooks/use-avatar-url.js';
@@ -33,6 +34,7 @@ const LearnerAssignmentsPage = lazy(() => import('./learner/LearnerAssignmentsPa
 const ToGradePage = lazy(() => import('./lecturer/ToGradePage.jsx'));
 const LearnerGradesPage = lazy(() => import('./learner/LearnerGradesPage.jsx'));
 const GradebooksPage = lazy(() => import('./courses/GradebooksPage.jsx'));
+const NotificationsPage = lazy(() => import('./account/NotificationsPage.jsx'));
 
 /** @type {Record<string, () => import('react').ReactNode>} */
 const BUILT = {
@@ -46,6 +48,9 @@ const BUILT = {
   'admin/assignments': () => <AdminAssignmentsPage />,
   'admin/gradebooks': () => <GradebooksPage role="admin" />,
   'admin/profile': () => <ProfilePage />,
+  'admin/notifications': () => <NotificationsPage />,
+  'lecturer/notifications': () => <NotificationsPage />,
+  'learner/notifications': () => <NotificationsPage />,
   'lecturer/dashboard': () => <LecturerDashboardPage />,
   'lecturer/my-courses': () => <CoursesPage role="lecturer" />,
   'lecturer/to-grade': () => <ToGradePage />,
@@ -81,6 +86,7 @@ export function RoleShell({ role, slug, children }) {
       currentSlug={slug}
       user={{ firstName: auth.profile.first_name, secondName: auth.profile.second_name, imageUrl }}
       onSignOut={onSignOut}
+      bell={<NotificationBell href={`/${role}/notifications`} />}
     >
       <SessionWatcher />
       <IdleSessionProvider />
