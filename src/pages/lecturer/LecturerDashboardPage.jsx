@@ -82,7 +82,7 @@ export default function LecturerDashboardPage() {
           </ul>
           <RoleIntro role="lecturer" />
           <div className="mt-6">
-            <WhoIsOnline />
+            <WhoIsOnline audience="lecturer" />
           </div>
           <div className="mt-6">
             <ExamMarkingList role="lecturer" />

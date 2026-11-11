@@ -14,6 +14,11 @@ import { usePresence } from './PresenceProvider.jsx';
 
 const SHOWN = 8;
 const ROLE = { LECTURER: 'Lecturer', LEARNER: 'Learner', ADMIN: '' };
+/** A learner has course-mates; a lecturer has learners, and co-lecturers of shared courses (owner request of 2026-11-11). */
+const WORDS = {
+  learner: { none: 'None of your course-mates are online right now.', sheet: 'Course-mates with DDTC LMS open now.', one: 'course-mate', many: 'course-mates' },
+  lecturer: { none: 'None of your learners are online right now.', sheet: 'Learners and co-lecturers with DDTC LMS open now.', one: 'person', many: 'people' },
+};
 
 /** @param {{ person: import('@/lib/presence.js').OnlinePerson }} props */
 function PersonRow({ person }) {
@@ -44,8 +49,10 @@ function People({ people, label }) {
   );
 }
 
-export function WhoIsOnline() {
+/** @param {{ audience?: 'learner' | 'lecturer' }} props */
+export function WhoIsOnline({ audience = 'learner' }) {
   const { ready, people } = usePresence();
+  const words = WORDS[audience];
   return (
     <section aria-labelledby="who-online-heading" className="flex flex-col gap-3" data-slot="who-is-online">
       <div className="flex items-center justify-between gap-3">
@@ -57,7 +64,7 @@ export function WhoIsOnline() {
             <SheetTrigger asChild>
               <Button variant="ghost">Show all</Button>
             </SheetTrigger>
-            <SheetContent title={`Who's online (${people.length})`} description="Course-mates with DDTC LMS open now.">
+            <SheetContent title={`Who's online (${people.length})`} description={words.sheet}>
               <div className="overflow-y-auto">
                 <People people={people} label="Everyone online" />
               </div>
@@ -70,7 +77,7 @@ export function WhoIsOnline() {
       ) : people.length === 0 ? (
         <Card className="flex items-center gap-3 p-4">
           <Users className="size-5 shrink-0 text-ink-secondary" aria-hidden="true" />
-          <p className="m-0 text-body-sm text-ink-secondary">None of your course-mates are online right now.</p>
+          <p className="m-0 text-body-sm text-ink-secondary">{words.none}</p>
         </Card>
       ) : (
         <div className="overflow-hidden rounded-md border border-hairline bg-card">
@@ -78,7 +85,7 @@ export function WhoIsOnline() {
         </div>
       )}
       <p className="m-0 text-caption text-ink-secondary" role="status" aria-live="polite">
-        {ready ? `${people.length} ${people.length === 1 ? 'course-mate' : 'course-mates'} online` : ''}
+        {ready ? `${people.length} ${people.length === 1 ? words.one : words.many} online` : ''}
       </p>
     </section>
   );

@@ -131,4 +131,16 @@ describe('presence', () => {
     expect(await screen.findByRole('heading', { name: "Who's online (0)" })).toBeTruthy();
     expect(rt.channels).toHaveLength(0);
   });
+
+  // Owner request of 2026-11-11: a lecturer has learners, not course-mates.
+  it('tells a lecturer that none of their learners are online', async () => {
+    const view = render(
+      <PresenceProvider userId="me">
+        <WhoIsOnline audience="lecturer" />
+      </PresenceProvider>,
+    );
+    expect(await screen.findByText('None of your learners are online right now.')).toBeTruthy();
+    expect(screen.queryByText(/course-mates/)).toBeNull();
+    view.unmount();
+  });
 });
