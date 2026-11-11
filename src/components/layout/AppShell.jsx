@@ -27,9 +27,9 @@ function readRailCollapsed() {
  * tablets a collapsible side rail; desktops a persistent sidebar. Content is capped at 1280 px.
  * Phase 3 mounts this shell under guarded routes; until then it is reachable only on preview routes.
  *
- * @param {{ role: RoleKey, basePath: string, currentSlug: string, user: ShellUser, onSignOut: () => void, children: import('react').ReactNode }} props
+ * @param {{ role: RoleKey, basePath: string, currentSlug: string, user: ShellUser, onSignOut: () => void, bell?: import('react').ReactNode, children: import('react').ReactNode }} props
  */
-export function AppShell({ role, basePath, currentSlug, user, onSignOut, children }) {
+export function AppShell({ role, basePath, currentSlug, user, onSignOut, bell = null, children }) {
   const [collapsed, setCollapsed] = useState(readRailCollapsed);
   const nav = NAVIGATION[role];
 
@@ -66,6 +66,7 @@ export function AppShell({ role, basePath, currentSlug, user, onSignOut, childre
             <span className="min-w-0 flex-1 truncate text-headline font-bold tracking-wide text-ink sm:invisible" aria-hidden="true">
               DDTC
             </span>
+            {bell}
             <AccountMenu user={user} roleLabel={nav.roleLabel} profileHref={`${basePath}/profile`} onSignOut={onSignOut} />
           </div>
         </header>

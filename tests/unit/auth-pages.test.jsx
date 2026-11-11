@@ -126,6 +126,8 @@ describe('Sign In', () => {
     expect(idleMessage(10)).toBe('You were signed out after 10 minutes of inactivity.');
     const idle = renderPage(<LoginPage />, '/login?idle=10&next=%2Flearner%2Fdashboard');
     const notice = screen.getByText('You were signed out after 10 minutes of inactivity.');
+    // Owner request 2026-11-11: a red border, like the idle warning.
+    expect(notice.className).toMatch(/border-2 border-error/);
     expect(notice).toHaveAttribute('role', 'status');
     expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.submit(/** @type {HTMLFormElement} */ (idle.container.querySelector('form')));

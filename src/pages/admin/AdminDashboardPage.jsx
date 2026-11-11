@@ -4,6 +4,8 @@ import { Link } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { ErrorState } from '@/components/feedback/States.jsx';
+import { AdminActivity } from '@/components/dashboard/DashboardPanels.jsx';
+import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { fetchUserCounts } from '@/lib/admin/users.js';
@@ -11,7 +13,7 @@ import { fetchCourseCounts } from '@/lib/courses/courses.js';
 import { greeting } from '@/lib/greeting.js';
 
 // Administrator dashboard: account counts (Phase 4) and published courses, courses waiting for
-// approval and active enrolments (Phase 5). A warning shows while fewer than two administrators are active (D32 launch rule).
+// approval and active enrolments (Phase 5); activity, releases and events (Phase 11). A warning shows while fewer than two administrators are active (D32 launch rule).
 
 export default function AdminDashboardPage() {
   const auth = useAuth();
@@ -75,8 +77,10 @@ export default function AdminDashboardPage() {
               </li>
             ))}
           </ul>
+          <RoleIntro role="admin" />
         </LoadingRegion>
       )}
+      <AdminActivity />
     </div>
   );
 }

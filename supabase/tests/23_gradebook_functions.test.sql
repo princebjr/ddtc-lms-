@@ -107,7 +107,7 @@ select is(public.grade_release_course(tests.uid('t1'), false, tests.id('c1')), 4
 select is((select count(*)::int from public.submissions s join public.assignments a on a.id = s.assignment_id
             where a.course_id = tests.id('c1') and s.status = 'GRADED' and s.grade_release_status = 'DRAFT'), 0, 'leaving no draft behind');
 select is((select grade_release_status::text from public.submissions where assignment_id = tests.id('B1') and learner_id = tests.uid('l1')), 'DRAFT', 'and never touching another course');
-select is((select count(*)::int from public.notifications where recipient_id in (tests.uid('l1'), tests.uid('l2'))), 5,
+select is((select count(*)::int from public.notifications where recipient_id in (tests.uid('l1'), tests.uid('l2')) and notification_type::text in ('GRADE_RELEASED', 'GRADE_UPDATED')), 5,
   'one notification per learner and grade (Kwame: A1 first release and update, A2; Abena: A1, A2)');
 select throws_ok($$ select public.grade_release_course(tests.uid('t1'), false, tests.id('c1')) $$, '22023', 'There are no grades to release', 'with nothing left it says so');
 

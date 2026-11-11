@@ -75,7 +75,7 @@ export function learnerRows(table) {
 }
 
 /** @param {string} v */
-function cell(v) {
+export function cell(v) {
   // Also neutralises spreadsheet formulas (CSV injection).
   const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
   return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;

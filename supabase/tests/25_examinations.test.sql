@@ -197,7 +197,7 @@ select tests.reset(); select tests.as_service();
 select throws_ok($$ select public.exam_release(tests.uid('t2'), false, tests.id('E1')) $$, '42501', NULL, 'another course''s lecturer cannot release');
 select is(public.exam_release(tests.uid('t1'), false, tests.id('E1')), 1, 'releasing the examination releases every fully marked script: Kwame''s');
 select tests.reset();
-select is((select count(*)::int from public.notifications where recipient_id = tests.uid('l1') and related_entity_id = tests.id('E1')
+select is((select count(*)::int from public.notifications where recipient_id = tests.uid('l1') and related_entity_id = tests.id('E1') and notification_type::text in ('GRADE_RELEASED', 'GRADE_UPDATED')
             and link_path = '/learner/courses/' || tests.id('c1') || '/exams/' || tests.id('E1')), 1, 'Kwame is told his result is ready');
 select tests.authenticate_as(tests.uid('l1'));
 select results_eq($$ select (r ->> 'total_score')::numeric, (r ->> 'percentage')::numeric, (r ->> 'passed')::boolean, r ->> 'feedback'

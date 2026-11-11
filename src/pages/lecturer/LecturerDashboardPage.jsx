@@ -3,6 +3,8 @@ import { Link } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { ErrorState } from '@/components/feedback/States.jsx';
+import { LecturerOverview } from '@/components/dashboard/DashboardPanels.jsx';
+import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { InsetList, InsetListLink } from '@/components/ui/inset-list.jsx';
@@ -15,7 +17,7 @@ import { ExamMarkingList } from '@/components/exams/ExamPanels.jsx';
 
 // Lecturer dashboard (Phase 5): courses taught at a glance and the most recently changed courses.
 // Step 9.1 adds To grade: the answers waiting for marks and feedback, opening the To grade page.
-// Activity joins it in Phase 11.
+// Phase 11 adds upcoming deadlines and course performance.
 
 export default function LecturerDashboardPage() {
   const auth = useAuth();
@@ -77,8 +79,12 @@ export default function LecturerDashboardPage() {
               );
             })}
           </ul>
+          <RoleIntro role="lecturer" />
           <div className="mt-6">
             <ExamMarkingList role="lecturer" />
+            <div className="mt-6">
+              <LecturerOverview />
+            </div>
           </div>
           <section aria-labelledby="recent-courses" className="mt-6 flex flex-col gap-3">
             <div className="flex items-center justify-between">

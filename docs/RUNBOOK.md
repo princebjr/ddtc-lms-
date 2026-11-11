@@ -231,3 +231,35 @@ audio, attachments or submission files.
   server counts (the indicator says "All answers saved" once it has).
 - **Exports:** Results, Export gives the examination's results (Excel or CSV), sorted by branch; audit
   `export.exam_results`. Every export is now sorted by branch, "No branch" last.
+
+## Written in Phase 11
+
+### Notifications, email and reminders (D21, D31, ADR-019)
+
+- **Jobs:** `send-notification-email` every minute (`cron.job` `send-notification-email`, through the same Vault secrets as `cleanup-files`); `schedule-reminders` every 15 minutes (runs `private.schedule_reminders()` in the database; no secrets needed).
+- **Email setup (once per environment):** create a Resend account and an API key, then set the function secrets (never in the repository or a `VITE_` variable):
+
+```sh
+npx supabase secrets set RESEND_API_KEY=<key> APP_URL=https://<app address> --project-ref <project-ref>
+# Production only, after the DDTC domain is verified in Resend:
+npx supabase secrets set EMAIL_FROM="DDTC LMS <noreply@<verified domain>>" --project-ref <project-ref>
+```
+
+  Without `RESEND_API_KEY` nothing is sent and emails stay queued. Without `EMAIL_FROM` the sender is Resend's test address, which only delivers to the Resend account owner's own address (staging, owner answer 5).
+- **Retries:** a failed send waits 1, 5, 15, 60 and 240 minutes (`notification_retry_minutes`); the sixth failure is FAILED and every administrator gets an in-app alert ("An email could not be sent"). An invalid address fails at once. A wrong API key (401 or 403) stops the run without failing the emails; they are retried after 15 minutes.
+- **Checks (SQL editor):**
+
+```sql
+select status, count(*) from public.notification_deliveries group by status;
+select d.id, d.attempts, d.last_error, d.updated_at from public.notification_deliveries d where d.status = 'FAILED' order by d.updated_at desc limit 20;
+select status, count(*) from public.notification_reminders group by status;
+select jobname, schedule, active from cron.job;
+```
+
+- **Turning a person's email off:** they use the switch on their Notifications page; account emails (verification, password reset) are sent by Supabase Auth and are not affected.
+
+### Announcements, reports, audit logs and settings (ADR-019)
+
+- Announcements: lecturers to a course they teach; administrators to all learners, a course or a branch. They cannot be unsent; Archive hides one from learners and keeps it. Both are audited (`announcement.sent`, `announcement.archived`).
+- Reports and the audit log need an administrator with two-step verification. Each CSV download is audited (`report.exported`, `audit_log.exported`).
+- Settings refuse values outside their rules (for example a pass mark above 100 or a grade scale with a gap); each change is audited (`setting.updated`, old and new values).

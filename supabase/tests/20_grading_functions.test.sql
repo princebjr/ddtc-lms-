@@ -128,7 +128,7 @@ select is(public.grade_release(tests.uid('t1'), false, tests.id('aG'), tests.uid
 select is((select array[grade_release_status::text, trim_scale(released_score)::text, released_feedback] from tests.sub('l1', 'aG')),
   array['RELEASED', '15', 'Good reading of the text.'], 'what the learner sees is now the grade');
 select is((select released_by from tests.sub('l1', 'aG')), tests.uid('t1'), 'with who released it');
-select is((select array[notification_type::text, title, link_path] from public.notifications where recipient_id = tests.uid('l1')),
+select is((select array[notification_type::text, title, link_path] from public.notifications where recipient_id = tests.uid('l1') and notification_type::text in ('GRADE_RELEASED', 'GRADE_UPDATED')),
   array['GRADE_RELEASED', 'New grade available', '/learner/courses/' || tests.id('c1') || '/assignments/' || tests.id('aG')],
   'the learner gets a notification that opens the assignment (owner decision 1)');
 select is((select count(*)::int from public.audit_logs where action = 'grade.released' and entity_id = (tests.sub('l1', 'aG')).id::text), 1, 'the release is audited');
@@ -147,12 +147,12 @@ select is((select array[trim_scale(previous_score)::text, trim_scale(new_score):
             where submission_id = (tests.sub('l1', 'aG')).id and event = 'SAVED' order by changed_at desc, id desc limit 1),
   array['15', '17', 'Marked the second part again'], 'the history keeps the previous and new score and the reason');
 select is((select count(*)::int from public.audit_logs where action = 'grade.changed' and entity_id = (tests.sub('l1', 'aG')).id::text), 1, 'the change is audited');
-select is((select count(*)::int from public.notifications where recipient_id = tests.uid('l1')), 1, 'nothing reaches the learner before the change is released');
+select is((select count(*)::int from public.notifications where recipient_id = tests.uid('l1') and notification_type::text in ('GRADE_RELEASED', 'GRADE_UPDATED')), 1, 'nothing reaches the learner before the change is released');
 select is(public.grade_release(tests.uid('t1'), false, tests.id('aG'), tests.uid('l1')), 1, 'releasing the change');
 select is((select trim_scale(released_score)::text from tests.sub('l1', 'aG')), '17', 'shows the learner the new grade');
-select is((select array_agg(notification_type::text order by created_at, notification_type) from public.notifications where recipient_id = tests.uid('l1')),
+select is((select array_agg(notification_type::text order by created_at, notification_type) from public.notifications where recipient_id = tests.uid('l1') and notification_type::text in ('GRADE_RELEASED', 'GRADE_UPDATED')),
   array['GRADE_RELEASED', 'GRADE_UPDATED'], 'with one more notification saying the grade was updated');
-select is((select count(distinct deduplication_key)::int from public.notifications where recipient_id = tests.uid('l1')), 2, 'one per event (D31)');
+select is((select count(distinct deduplication_key)::int from public.notifications where recipient_id = tests.uid('l1') and notification_type::text in ('GRADE_RELEASED', 'GRADE_UPDATED')), 2, 'one per event (D31)');
 
 -- ---------------------------------------------------------------- releasing a whole assignment
 select public.grade_save(tests.uid('t1'), false, tests.id('aG'), tests.uid('l3'), 11, null, null);
