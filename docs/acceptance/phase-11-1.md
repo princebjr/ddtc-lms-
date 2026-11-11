@@ -50,7 +50,10 @@ Security tests were written first and seen to fail before each migration (files 
   - End to end: shards 1, 2, 4, 6, 7 and 8 each **387 passed**. Shard 3: **386 passed, 1 failed**.
   - The failure: `notifications.spec.js`, "an administrator changes a setting, finds it in the audit logs and reads a report", on laptop-1440 light only: an axe colour-contrast report on the Reports page's "Download CSV" button. The report's data arrived while axe was reading the page; the button was fading from its disabled look (150 ms), which axe read as low contrast. Not a change of this step (Reports is from Phase 11) and the button passes once shown.
   - Fix: `expectNoAxeViolations` now also waits for loading (`aria-busy`) to end before checking, as it already waited for one-off animations. The check itself is unchanged.
-- The run on the final commit is the pull request's CI gate.
+- Run 2 (pull request, commit `9a7f288`): the report-upload step failed on five end-to-end shards and those jobs hung until the 40-minute limit; their test step had not failed. Counted as a failed run.
+- Run 3 was replaced by a later push before it started.
+- **Run 4 (pull request, final commit `98cbc5e`): all 14 checks passed**, every end-to-end shard included: https://github.com/princebjr/ddtc-lms-/actions/runs/43099971654. Merged as `6be8ea5` (pull request 21) and tagged `phase-11-1-done` after the owner's approval on 2026-11-11.
+- Added after this file was first written, and covered by run 4 (ADR-020 items 11 and 12): the lecturer's Who's online wording, no red border on the idle warning, Recent grades removed from the learner's dashboard.
 
 ## 4. Screenshots
 
