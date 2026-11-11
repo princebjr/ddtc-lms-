@@ -1,4 +1,4 @@
-﻿# Step 11.1 acceptance evidence: live presence, settings that take effect, examination answers
+# Step 11.1 acceptance evidence: live presence, settings that take effect, examination answers
 
 - Requests: live presence (owner answers of 2026-11-06, plan approved 2026-11-11); and, added by the owner on 2026-11-11 while the step was open: the centred idle warning, settings that take effect, arrow bullets on the dashboard introduction, the signed-out alert card on Sign In, examination documents that open, and up to three audio answers. Decision record: ADR-020 items 1 to 10. Request file: `docs/requests/2026-11-11-settings-take-effect-intro-arrows-signed-out-alert.md`.
 - Branch: `step-11-1-presence` (19 commits on top of `phase-11-done`).
