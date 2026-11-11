@@ -176,6 +176,11 @@ select throws_ok($$ select * from public.notification_deliveries_claim(10) $$, '
 select tests.reset();
 
 -- The worker claims due deliveries with the address, and skips anyone who turned email off.
+-- Only this test's emails are due here (a local database may hold queued emails from other runs).
+update public.notification_deliveries d set next_attempt_at = now() + interval '1 day'
+  from public.notifications n
+ where n.id = d.notification_id and d.status in ('QUEUED', 'RETRYING')
+   and n.recipient_id not in (tests.uid('t1'), tests.uid('l1'), tests.uid('l2'), tests.uid('l3'), tests.uid('l4'), tests.uid('a1'));
 select tests.as_service();
 create temporary table claimed as select * from public.notification_deliveries_claim(50);
 select ok((select count(*) from claimed where email = 'l1@example.test') > 0, 'the worker claims due emails with the address');

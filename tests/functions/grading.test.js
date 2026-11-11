@@ -87,11 +87,12 @@ describe('release-grades', () => {
     expect(res.body).toEqual({ released: 1 });
     const { data: grade } = await kwame.client.rpc('my_grade', { p_assignment: assignmentId });
     expect(grade).toMatchObject({ score: 15.5, percentage: 77.5, letter_grade: 'B', band: '70-79%', feedback: 'Good reading of the text.' });
-    const { data: notes } = await kwame.client.from('notifications').select('notification_type, title, link_path, read_at');
+    // Since Phase 11 learners are also told of enrolments and new work; this checks the grade notices only.
+    const { data: notes } = await kwame.client.from('notifications').select('notification_type, title, link_path, read_at').in('notification_type', ['GRADE_RELEASED', 'GRADE_UPDATED']);
     expect(notes).toEqual([
       { notification_type: 'GRADE_RELEASED', title: 'New grade available', link_path: `/learner/courses/${courseId}/assignments/${assignmentId}`, read_at: null },
     ]);
-    const { data: others } = await abena.client.from('notifications').select('id');
+    const { data: others } = await abena.client.from('notifications').select('id').in('notification_type', ['GRADE_RELEASED', 'GRADE_UPDATED']);
     expect(others).toEqual([]);
     const again = await call('release-grades', lecturer.token, { assignmentId, learnerId: kwame.userId });
     expect(again.status).toBe(400);
