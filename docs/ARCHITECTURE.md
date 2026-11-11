@@ -401,6 +401,8 @@ Nothing is stored as a total. One database function, `calculate_course_grades`, 
 
 **As built (Phase 11, ADR-019):** migrations 38 to 42. Notifications for every event come from triggers (`private.notify`, one per deduplication key); email deliveries are queued by a trigger on `notifications` and sent by the `send-notification-email` Edge Function (Resend; `_shared/email.ts`) every minute; `private.schedule_reminders()` every 15 minutes keeps and fires 24-hour reminders and raises file-cleanup alerts. Announcements (`announcements`, `announcement_send`). Settings checks on `system_settings`; audit viewer and reports functions; one summary function per dashboard. Screens: the header `NotificationBell`, `NotificationsPage` (every role, with the email switch), `SettingsPage`, `AuditLogsPage`, `ReportsPage`, `AnnouncementsPage` (lecturer and administrator), `CourseAnnouncements` on the learner's course page, and `DashboardPanels`.
 
+**As built (Step 11.1, ADR-020):** migration 43 (`presence_member`, the `realtime.messages` policies, `presence_my_courses`, `presence_people`). `src/lib/presence.js` loads `@supabase/realtime-js` on demand (token from the Auth session on connect and every heartbeat); `PresenceProvider` (in the learner and lecturer shells) joins each course channel and tracks the person; `WhoIsOnline` on the two dashboards. Local `db:start` and CI now run Realtime.
+
 ## 13. Background jobs
 
 | Job | Runs | Purpose |
