@@ -28,12 +28,12 @@ export function IdleWarningDialog({ open, endsAt, timeoutMs, warningMs, unsaved,
         if (!next) onContinue();
       }}
     >
-      {/* Owner requests 2026-11-11: a red border (error colour) marks the security warning, in both themes; it sits in the
-          centre of the screen on every size (not a bottom sheet on phones) over a stronger dim. */}
+      {/* Owner requests 2026-11-11: in the centre of the screen on every size (not a bottom sheet on phones) over a stronger
+          dim. The red border asked for earlier that day was taken off again at the owner's request: the ordinary border. */}
       <AlertDialogContent
         data-slot="idle-warning"
         overlayClassName="bg-scrim-strong"
-        className="inset-x-4 top-1/2 bottom-auto -translate-y-1/2 rounded-lg border-2 border-error pb-4 sm:border-2"
+        className="inset-x-4 top-1/2 bottom-auto -translate-y-1/2 rounded-lg border border-hairline pb-4"
       >
         <AlertDialogHeader>
           <AlertDialogTitle>Your session ends in {formatSpan(warningMs)}</AlertDialogTitle>

@@ -118,9 +118,10 @@ describe('the idle warning and sign-out', () => {
     expect(dialog()).toBeNull();
     advance(1000);
     const warning = screen.getByRole('alertdialog', { name: 'Your session ends in 2 minutes' });
-    // Owner request 2026-11-11: the warning has a red border (the error colour), in both themes.
-    expect(warning.className).toMatch(/border-2/);
-    expect(warning.className).toMatch(/border-error/);
+    // Owner request 2026-11-11 (later the same day): no red border on the warning; the ordinary hairline border.
+    expect(warning.className).not.toMatch(/border-error/);
+    expect(warning.className).not.toMatch(/border-2/);
+    expect(warning.className).toMatch(/border-hairline/);
     // Owner request 2026-11-11: centred on every screen size (not a bottom sheet on phones), over a stronger dim.
     expect(warning.className).toMatch(/top-1\/2/);
     expect(warning.className).toMatch(/-translate-y-1\/2/);
