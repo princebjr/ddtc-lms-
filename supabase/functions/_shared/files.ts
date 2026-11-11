@@ -10,7 +10,8 @@ export type ResourceType =
   | 'LESSON_ATTACHMENT'
   | 'ASSIGNMENT_INSTRUCTION_AUDIO'
   | 'SUBMISSION_FILE'
-  | 'EXAM_ANSWER_AUDIO';
+  | 'EXAM_ANSWER_AUDIO'
+  | 'EXAM_ANSWER_DOCUMENT';
 
 const IMAGE_TYPES = { 'image/jpeg': ['jpg', 'jpeg'], 'image/png': ['png'], 'image/webp': ['webp'] };
 /** Uploaded audio of any kind (D17); browsers record WebM, Ogg or MP4 (Phase 8). */
@@ -70,6 +71,12 @@ export const RESOURCES: Record<ResourceType, { bucket: string; limitKey: string;
     bucket: 'learner-submissions',
     limitKey: 'submission_audio',
     types: RECORDING_TYPES,
+  },
+  // Step 10.3 (owner request 2026-11-10): a learner's PDF or Word examination answer, with the submission document limit (D17).
+  EXAM_ANSWER_DOCUMENT: {
+    bucket: 'learner-submissions',
+    limitKey: 'submission_document',
+    types: SUBMISSION_DOCUMENT_TYPES,
   },
   // Phase 7: the lecturer's instruction audio for an assignment (25 MB, 10 minutes, D17).
   ASSIGNMENT_INSTRUCTION_AUDIO: {

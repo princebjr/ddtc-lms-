@@ -140,6 +140,15 @@ serve(async (req) => {
     return json(req, 200, { fileId: file.id, status: 'VALIDATED', role, mimeType: mime, size: reader.size });
   }
 
+  // Step 10.3: an examination answer's PDF or Word document, checked like an answer's document (no macros).
+  if (type === 'EXAM_ANSWER_DOCUMENT') {
+    const mime = await inspectDocument(reader);
+    if (!mime || mime === PPTX) await reject('The file is not a PDF or Word (.docx) file, or it contains macros.');
+    if (!DOCUMENT_EXTENSIONS[mime!].includes(ext)) await reject('The file content does not match its name.');
+    await validate({ detected_mime_type: mime, file_size: reader.size });
+    return json(req, 200, { fileId: file.id, status: 'VALIDATED', role: mime === 'application/pdf' ? 'PDF' : 'DOCX', mimeType: mime, size: reader.size });
+  }
+
   // Phase 10.1 (ADR-016): an examination answer's recording, checked like an answer's audio.
   if (type === 'EXAM_ANSWER_AUDIO') {
     const facts = await inspectAudio(reader);
