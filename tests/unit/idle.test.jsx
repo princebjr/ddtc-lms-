@@ -118,6 +118,9 @@ describe('the idle warning and sign-out', () => {
     expect(dialog()).toBeNull();
     advance(1000);
     const warning = screen.getByRole('alertdialog', { name: 'Your session ends in 2 minutes' });
+    // Owner request 2026-11-11: the warning has a red border (the error colour), in both themes.
+    expect(warning.className).toMatch(/border-2/);
+    expect(warning.className).toMatch(/border-error/);
     expect(warning).toHaveTextContent('You have not used DDTC LMS for 8 minutes. Choose Continue Session to keep working.');
     expect(warning).not.toHaveTextContent('unsaved changes');
     expect(screen.getByRole('button', { name: 'Continue Session' })).toHaveFocus();

@@ -5,6 +5,7 @@ import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { AdminActivity } from '@/components/dashboard/DashboardPanels.jsx';
+import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { fetchUserCounts } from '@/lib/admin/users.js';
@@ -76,6 +77,7 @@ export default function AdminDashboardPage() {
               </li>
             ))}
           </ul>
+          <RoleIntro role="admin" />
         </LoadingRegion>
       )}
       <AdminActivity />

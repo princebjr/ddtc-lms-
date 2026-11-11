@@ -4,6 +4,7 @@ import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { LecturerOverview } from '@/components/dashboard/DashboardPanels.jsx';
+import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { InsetList, InsetListLink } from '@/components/ui/inset-list.jsx';
@@ -78,6 +79,7 @@ export default function LecturerDashboardPage() {
               );
             })}
           </ul>
+          <RoleIntro role="lecturer" />
           <div className="mt-6">
             <ExamMarkingList role="lecturer" />
             <div className="mt-6">

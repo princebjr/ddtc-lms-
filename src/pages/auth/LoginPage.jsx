@@ -92,7 +92,10 @@ export default function LoginPage() {
         </p>
       }
     >
-      <FormMessage tone="info">{notice}</FormMessage>
+      {/* Owner request 2026-11-11: the inactivity sign-out notice has a red border (error colour), like the idle warning. */}
+      <FormMessage tone="info" className="border-2 border-error">
+        {notice}
+      </FormMessage>
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4" aria-describedby={message ? 'login-message' : undefined}>
         <FormField label="Email address" name="email" type="email" inputMode="email" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="you@example.org" error={errors.email} />
         <FormField
