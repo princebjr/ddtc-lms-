@@ -1053,6 +1053,9 @@ isOneToOne: false
               "bucket_name": string,"delete_attempts": number,"id": string,"last_delete_error": string,"resource_type": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string,"updated_at": string
             }[]
                            },
+"client_settings":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "course_cover_paths":
 { Args: { "p_courses": (string)[] }; Returns: {
               "course_id": string,"storage_path": string

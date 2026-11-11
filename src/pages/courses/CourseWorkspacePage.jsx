@@ -45,6 +45,7 @@ import {
 import { courseSchema, returnReasonSchema } from '@/lib/courses/schemas.js';
 import { callFunction } from '@/lib/functions.js';
 import { formatIdNumber } from '@/lib/id-number.js';
+import { limitFor, limitText, sizeText, useClientSettings } from '@/lib/settings/client-settings.js';
 import { getStorage } from '@/lib/storage.js';
 import { TextArea } from './CourseEditorPage.jsx';
 import { AssignmentsTab } from './AssignmentsTab.jsx';
@@ -71,7 +72,6 @@ const TABS = /** @type {const} */ ([
 ]);
 
 const COVER_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const COVER_MAX = 2 * 1024 * 1024;
 
 /** @param {{ role: 'admin' | 'lecturer' }} props */
 export default function CourseWorkspacePage({ role }) {
@@ -146,7 +146,9 @@ function CourseHeader({ course, teachers, admin, isOwner, onChanged, reload }) {
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const [dialog, setDialog] = useState(/** @type {null | 'approve' | 'return'} */ (null));
   const owner = teachers.find((t) => t.permission_level === 'OWNER');
-  const direct = Boolean(auth.profile?.can_publish_directly);
+  // Publishes at once when approval is switched off in Settings (D04) or this lecturer may publish directly (ADR-005); the database decides.
+  const settings = useClientSettings();
+  const direct = Boolean(auth.profile?.can_publish_directly) || settings?.require_course_approval === false;
 
   /**
    * @param {'submit' | 'publish' | 'approve' | 'return' | 'archive' | 'unarchive'} action
@@ -383,12 +385,13 @@ export function CoverCard({ course, canEdit, onChanged }) {
   const [note, setNote] = useState(/** @type {null | { tone: 'error' | 'success', text: string }} */ (null));
   const url = course.cover_image_file_id ? covers[course.id] : undefined;
   const remover = useMediaDelete({ kind: 'course-cover', onDeleted: () => onChanged() });
+  const limit = limitFor(useClientSettings(), 'course_cover');
 
   /** @param {File} file */
   const upload = async (file) => {
     setNote(null);
     if (!COVER_TYPES.includes(file.type)) return setNote({ tone: 'error', text: 'Use a JPG, PNG or WebP image.' });
-    if (file.size > COVER_MAX) return setNote({ tone: 'error', text: 'Use an image of 2 MB or less.' });
+    if (limit.maxBytes && file.size > limit.maxBytes) return setNote({ tone: 'error', text: `Use an image of ${sizeText(limit.maxBytes)} or less.` });
     setBusy(true);
     try {
       const reg = /** @type {{ bucket: string, path: string, token: string, fileId: string }} */ (
@@ -412,7 +415,7 @@ export function CoverCard({ course, canEdit, onChanged }) {
     <Card className="flex flex-col gap-3">
       <CardTitle>Cover image</CardTitle>
       <CourseCover url={url} alt={`Cover of ${course.title}`} className="rounded-md" />
-      <CardDescription>JPG, PNG or WebP, up to 2 MB.</CardDescription>
+      <CardDescription>{`JPG, PNG or WebP${limit.maxBytes ? `, ${limitText(limit)}` : ''}.`}</CardDescription>
       {canEdit ? (
         <>
           <input

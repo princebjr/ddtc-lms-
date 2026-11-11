@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea.jsx';
 import { useDraftAutosave, useDraftStart } from '@/hooks/use-draft.js';
 import { computePeaks } from '@/lib/audio/peaks.js';
 import { extensionForMime, LEARNER_RECORDING } from '@/lib/recording/format.js';
+import { limitFor, limitText, recordingLimits, useClientSettings } from '@/lib/settings/client-settings.js';
 import { clearRecordingDraft, loadRecordingDraft } from '@/lib/recording/recording-drafts.js';
 import { MAX_TEXT_ANSWER, removeDraftFile, submitAnswer } from '@/lib/submissions/submissions.js';
 import { uploadFile } from '@/lib/uploads.js';
@@ -83,6 +84,11 @@ export function AnswerForm({ assignmentId, title, mine, onSent }) {
   const documentInput = useRef(/** @type {HTMLInputElement | null} */ (null));
   const recordingDraft = useMemo(() => (userId ? { userId, key: draftKey } : null), [userId, draftKey]);
 
+  // Limits from Settings (the server checks again, D18).
+  const settings = useClientSettings();
+  const audioLimit = limitFor(settings, 'submission_audio');
+  const docLimit = limitFor(settings, 'submission_document');
+  const recorderLimits = useMemo(() => recordingLimits(settings, 'submission_audio', LEARNER_RECORDING), [settings]);
   const documentKinds = mine.accepted_formats.filter((f) => f === 'PDF' || f === 'DOCX').map((f) => (f === 'PDF' ? 'PDF' : 'Word'));
   const active = parts.filter((p) => p.status !== 'rejected' && p.status !== 'failed');
   const full = active.length >= mine.max_files;
@@ -324,7 +330,7 @@ export function AnswerForm({ assignmentId, title, mine, onSent }) {
           ) : (
             <Recorder
               onActiveChange={setRecorderActive}
-              limits={LEARNER_RECORDING}
+              limits={recorderLimits}
               audience="learner"
               draft={recordingDraft}
               restored={restored}
@@ -342,8 +348,8 @@ export function AnswerForm({ assignmentId, title, mine, onSent }) {
         </TabsContent>
         <TabsContent value="upload" className="flex flex-col gap-3">
           <p className="m-0 text-body-sm text-ink-secondary">
-            Audio up to 10 minutes (25 MB): MP3, M4A, WAV, WebM or Ogg, including your phone’s voice recordings.
-            {documentKinds.length ? ` ${documentKinds.join(' and ')} files up to 10 MB.` : ''}
+            {`Audio${audioLimit.maxBytes ? ` ${limitText(audioLimit)}` : ''}: MP3, M4A, WAV, WebM or Ogg, including your phone’s voice recordings.`}
+            {documentKinds.length ? ` ${documentKinds.join(' and ')} files${docLimit.maxBytes ? ` ${limitText(docLimit)}` : ''}.` : ''}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button type="button" variant="outline" onClick={() => audioInput.current?.click()} disabled={full}>

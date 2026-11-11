@@ -1,5 +1,5 @@
 import { ArrowLeft, CheckCircle2, CircleDashed, CloudOff, FileText, Mic, Send, Upload } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
@@ -22,6 +22,7 @@ import { formatDue } from '@/lib/assignments/due.js';
 import { audioUrl, fetchExamFiles, fetchMyExam, LEARNER_STATE, saveExamAnswers, startExam, submitExam } from '@/lib/exams/exams.js';
 import { formatPercentage } from '@/lib/grading/grading.js';
 import { LEARNER_RECORDING } from '@/lib/recording/format.js';
+import { limitFor, limitText, recordingLimits, useClientSettings } from '@/lib/settings/client-settings.js';
 import { uploadFile } from '@/lib/uploads.js';
 
 // The learner's examination (Phase 10.1, ADR-016; owner request and answers of 2026-11-10). Before it
@@ -497,6 +498,11 @@ function WrittenAnswer({ examId, question: q, value, files, onChange }) {
   const [added, setAdded] = useState(/** @type {AnswerFile | null} */ (null));
   const audioInput = useRef(/** @type {HTMLInputElement | null} */ (null));
   const documentInput = useRef(/** @type {HTMLInputElement | null} */ (null));
+  // Limits from Settings (the server checks again, D18).
+  const settings = useClientSettings();
+  const audioLimit = limitFor(settings, 'submission_audio');
+  const docLimit = limitFor(settings, 'submission_document');
+  const recorderLimits = useMemo(() => recordingLimits(settings, 'submission_audio', LEARNER_RECORDING), [settings]);
   const audio = files.find((f) => f.kind === 'AUDIO' && f.file_id === value.audio_file_id) ?? null;
   const doc = (added && added.file_id === value.document_file_id ? added : null) ?? files.find((f) => f.kind === 'DOCUMENT' && f.file_id === value.document_file_id) ?? null;
 
@@ -550,7 +556,7 @@ function WrittenAnswer({ examId, question: q, value, files, onChange }) {
         </div>
       ) : recording ? (
         <Recorder
-          limits={LEARNER_RECORDING}
+          limits={recorderLimits}
           audience="learner"
           title={`Your answer to: ${q.prompt.slice(0, 60)}`}
           disabled={uploading !== null}
@@ -588,7 +594,7 @@ function WrittenAnswer({ examId, question: q, value, files, onChange }) {
           </Button>
         ) : null}
       </div>
-      <p className="m-0 text-body-sm text-ink-secondary">Audio: MP3, M4A, WAV, WebM or Ogg. Documents: PDF or Word (.docx), up to 10 MB.</p>
+      <p className="m-0 text-body-sm text-ink-secondary">{`Audio: MP3, M4A, WAV, WebM or Ogg${audioLimit.maxBytes ? `, ${limitText(audioLimit)}` : ''}. Documents: PDF or Word (.docx)${docLimit.maxBytes ? `, ${limitText(docLimit)}` : ''}.`}</p>
       <input ref={audioInput} type="file" accept={AUDIO_ACCEPT} className="hidden" onChange={(e) => pick(e, 'audio')} data-testid="exam-audio-input" aria-label="Choose an audio file" />
       <input ref={documentInput} type="file" accept={DOCUMENT_ACCEPT} className="hidden" onChange={(e) => pick(e, 'document')} data-testid="exam-document-input" aria-label="Choose a PDF or Word file" />
       <FormMessage>{message}</FormMessage>

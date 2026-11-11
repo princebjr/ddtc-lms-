@@ -16,6 +16,7 @@ import { PASSWORD_MIN, PHOTO_TYPES, photoProblem, profileSchema, resetPasswordSc
 import { callFunction } from '@/lib/functions.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 import { NAVIGATION } from '@/lib/navigation.js';
+import { limitFor, limitText, useClientSettings } from '@/lib/settings/client-settings.js';
 import { getStorage } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
 
@@ -96,13 +97,14 @@ function PhotoSection() {
   const input = useRef(/** @type {HTMLInputElement | null} */ (null));
   const [busy, setBusy] = useState(/** @type {null | 'upload' | 'remove'} */ (null));
   const pick = () => input.current?.click();
+  const limit = limitFor(useClientSettings(), 'profile_image');
 
   /** @param {string} reason */
   const rejected = (reason) => toast.show('profile.photo-rejected', { params: { reason }, onAction: pick });
 
   /** @param {File} file */
   const upload = async (file) => {
-    const problem = photoProblem(file);
+    const problem = photoProblem(file, limit.maxBytes);
     if (problem) return rejected(problem);
     setBusy('upload');
     try {
@@ -163,7 +165,7 @@ function PhotoSection() {
             </Button>
           ) : null}
         </div>
-        <p className="m-0 text-caption text-ink-tertiary">JPG, PNG or WebP, up to 2 MB.</p>
+        <p className="m-0 text-caption text-ink-tertiary">{`JPG, PNG or WebP${limit.maxBytes ? `, ${limitText(limit)}` : ''}.`}</p>
       </div>
     </div>
   );

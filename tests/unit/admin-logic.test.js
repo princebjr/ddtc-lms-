@@ -56,9 +56,13 @@ describe('profile rules', () => {
   });
 
   it('a profile photo must be JPG, PNG or WebP and at most 2 MB', () => {
-    expect(photoProblem({ type: 'image/png', size: 1000 })).toBeNull();
-    expect(photoProblem({ type: 'image/gif', size: 1000 })).toBe('use a JPG, PNG or WebP image');
-    expect(photoProblem({ type: 'image/jpeg', size: 2 * 1024 * 1024 + 1 })).toBe('the image is larger than 2 MB');
-    expect(photoProblem({ type: 'image/webp', size: 0 })).toBe('the file is empty');
+    expect(photoProblem({ type: 'image/png', size: 1000 }, 2 * 1024 * 1024)).toBeNull();
+    expect(photoProblem({ type: 'image/gif', size: 1000 }, 2 * 1024 * 1024)).toBe('use a JPG, PNG or WebP image');
+    expect(photoProblem({ type: 'image/jpeg', size: 2 * 1024 * 1024 + 1 }, 2 * 1024 * 1024)).toBe('the image is larger than 2 MB');
+    // The limit is the administrator's setting (ADR-020 item 7): 5 MB accepts what 2 MB refused.
+    expect(photoProblem({ type: 'image/jpeg', size: 4 * 1024 * 1024 }, 5 * 1024 * 1024)).toBeNull();
+    expect(photoProblem({ type: 'image/jpeg', size: 6 * 1024 * 1024 }, 5 * 1024 * 1024)).toBe('the image is larger than 5 MB');
+    expect(photoProblem({ type: 'image/jpeg', size: 6 * 1024 * 1024 }, null)).toBeNull();
+    expect(photoProblem({ type: 'image/webp', size: 0 }, 2 * 1024 * 1024)).toBe('the file is empty');
   });
 });
