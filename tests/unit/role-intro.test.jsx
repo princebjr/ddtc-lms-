@@ -24,3 +24,19 @@ describe('the dashboard introduction', () => {
     expect(screen.queryByText(/Grade submissions/)).toBeNull();
   });
 });
+
+// Owner request of 2026-11-11 (second): each point is a list item marked with an arrow, not a dot.
+describe('the introduction points', () => {
+  it.each(/** @type {const} */ (['admin', 'lecturer', 'learner']))('%s: four points, each with an arrow bullet', (role) => {
+    const { container, unmount } = render(<RoleIntro role={role} />);
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(4);
+    for (const item of items) {
+      const arrow = item.querySelector('svg[data-slot="intro-arrow"]');
+      expect(arrow).not.toBeNull();
+      expect(arrow?.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(container.querySelector('ul')?.className).toMatch(/list-none/);
+    unmount();
+  });
+});
