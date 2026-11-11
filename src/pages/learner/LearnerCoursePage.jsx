@@ -1,4 +1,5 @@
 import { BookOpen, CircleCheck, Circle, ClipboardCheck, ClipboardList, Library } from 'lucide-react';
+import { CourseAnnouncements } from '@/components/announcements/CourseAnnouncements.jsx';
 import { Link, useParams } from 'react-router';
 import { CourseCover } from '@/components/courses/CourseCover.jsx';
 import { CourseWorkspaceSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
@@ -81,6 +82,7 @@ export default function LearnerCoursePage() {
               </p>
             </div>
           ) : null}
+          <CourseAnnouncements courseId={course.id} />
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <Card className="flex flex-col gap-4 lg:col-span-2">
               {covers[course.id] ? <CourseCover url={covers[course.id]} className="rounded-md" /> : null}

@@ -38,6 +38,7 @@ const NotificationsPage = lazy(() => import('./account/NotificationsPage.jsx'));
 const SettingsPage = lazy(() => import('./admin/SettingsPage.jsx'));
 const AuditLogsPage = lazy(() => import('./admin/AuditLogsPage.jsx'));
 const ReportsPage = lazy(() => import('./admin/ReportsPage.jsx'));
+const AnnouncementsPage = lazy(() => import('./courses/AnnouncementsPage.jsx'));
 
 /** @type {Record<string, () => import('react').ReactNode>} */
 const BUILT = {
@@ -55,6 +56,8 @@ const BUILT = {
   'admin/settings': () => <SettingsPage />,
   'admin/audit-logs': () => <AuditLogsPage />,
   'admin/reports': () => <ReportsPage />,
+  'admin/announcements': () => <AnnouncementsPage role="admin" />,
+  'lecturer/announcements': () => <AnnouncementsPage role="lecturer" />,
   'lecturer/notifications': () => <NotificationsPage />,
   'learner/notifications': () => <NotificationsPage />,
   'lecturer/dashboard': () => <LecturerDashboardPage />,

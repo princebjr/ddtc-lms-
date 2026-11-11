@@ -56,6 +56,7 @@ Type: S = success, I = info, W = warning, E = error.
 | Lecturer | Course saved as draft | "Draft saved" (S) | none |
 | Lecturer | Course submitted for approval | "Submitted for approval" (S) | none |
 | Lecturer | Course published | "Course published" (S) | none |
+| Lecturer or administrator | Announcement sent (ADR-019) | "Announcement sent" (S) | none |
 | Lecturer | Co-lecturer added or removed | "Co-lecturer added" or "Co-lecturer removed" (S) | Undo |
 | Lecturer | Lesson saved | "Lesson saved" (S) | none |
 | Lecturer | Lesson published or unpublished | "Lesson published" or "Lesson unpublished" (S) | Undo |

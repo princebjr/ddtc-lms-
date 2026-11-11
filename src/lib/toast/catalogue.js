@@ -70,6 +70,7 @@ export const TOASTS = Object.freeze({
   'lecturer.draft-saved': { type: 'success', text: fixed('Draft saved') },
   'lecturer.submitted-for-approval': { type: 'success', text: fixed('Submitted for approval') },
   'lecturer.course-published': { type: 'success', text: fixed('Course published') },
+  'staff.announcement-sent': { type: 'success', text: fixed('Announcement sent') },
   'lecturer.co-lecturer-added': { type: 'success', text: fixed('Co-lecturer added'), undo: true },
   'lecturer.co-lecturer-removed': { type: 'success', text: fixed('Co-lecturer removed'), undo: true },
   'lecturer.lesson-saved': { type: 'success', text: fixed('Lesson saved') },
