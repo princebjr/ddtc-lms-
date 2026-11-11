@@ -28,8 +28,8 @@ select tests.as_service();
 create temporary table ex as select public.exam_save(tests.uid('t1'), false, tests.id('c1'), null,
   jsonb_build_object('title', 'Final examination', 'opens_at', now() - interval '1 hour', 'closes_at', now() + interval '1 day')) as id;
 select public.exam_structure_save(tests.uid('t1'), false, (select id from ex), jsonb_build_array(jsonb_build_object('title', 'A', 'questions', jsonb_build_array(
-  jsonb_build_object('kind', 'MCQ', 'prompt', 'Pick', 'marks', 1, 'correct', 'A', 'options', jsonb_build_object('A', 'w', 'B', 'x', 'C', 'y', 'D', 'z')),
-  jsonb_build_object('kind', 'ESSAY', 'prompt', 'Speak about covenant', 'marks', 10),
+  jsonb_build_object('kind', 'MCQ', 'prompt', 'Pick', 'marks', 1, 'correct', 'A', 'options', jsonb_build_object('A', 'w', 'B', 'x', 'C', 'y', 'D', 'z')))), jsonb_build_object('title', 'B', 'questions', jsonb_build_array(
+  jsonb_build_object('kind', 'ESSAY', 'prompt', 'Speak about covenant', 'marks', 10))), jsonb_build_object('title', 'C', 'questions', jsonb_build_array(
   jsonb_build_object('kind', 'SHORT', 'prompt', 'Name one prophet', 'marks', 2)))));
 select public.exam_publish(tests.uid('t1'), false, (select id from ex), true);
 select public.exam_start(tests.uid('l1'), (select id from ex));

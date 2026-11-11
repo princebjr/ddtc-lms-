@@ -33,7 +33,7 @@ declare v uuid;
 begin
   v := public.exam_save(tests.uid('t1'), false, tests.id(p_course), null, jsonb_build_object('title', p_title, 'opens_at', now() + p_opens, 'closes_at', now() + p_closes));
   perform public.exam_structure_save(tests.uid('t1'), false, v, jsonb_build_array(jsonb_build_object('title', 'A', 'questions', jsonb_build_array(
-    jsonb_build_object('kind', 'MCQ', 'prompt', 'Pick', 'marks', 1, 'correct', 'A', 'options', jsonb_build_object('A', 'w', 'B', 'x', 'C', 'y', 'D', 'z')),
+    jsonb_build_object('kind', 'MCQ', 'prompt', 'Pick', 'marks', 1, 'correct', 'A', 'options', jsonb_build_object('A', 'w', 'B', 'x', 'C', 'y', 'D', 'z')))), jsonb_build_object('title', 'B', 'questions', jsonb_build_array(
     jsonb_build_object('kind', 'ESSAY', 'prompt', 'Write', 'marks', 9)))));
   perform public.exam_publish(tests.uid('t1'), false, v, true);
   return v;
