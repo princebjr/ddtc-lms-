@@ -12,7 +12,7 @@ export const RESUMABLE_OVER = 25 * 1024 * 1024;
 
 /**
  * @typedef {object} UploadRequest
- * @property {'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO' | 'SUBMISSION_FILE' | 'EXAM_ANSWER_AUDIO'} resourceType
+ * @property {'PROFILE_IMAGE' | 'COURSE_COVER' | 'LESSON_AUDIO' | 'LESSON_ATTACHMENT' | 'ASSIGNMENT_INSTRUCTION_AUDIO' | 'SUBMISSION_FILE' | 'EXAM_ANSWER_AUDIO' | 'EXAM_ANSWER_DOCUMENT'} resourceType
  * @property {File} file
  * @property {string} [courseId]
  * @property {string} [lessonId]

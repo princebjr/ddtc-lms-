@@ -6,6 +6,7 @@ import { FormField } from '@/components/auth/FormField.jsx';
 import { GradingSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
+import { ExamDocumentLink } from '@/components/exams/ExamDocumentLink.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
@@ -19,7 +20,7 @@ import { formatDue, fromGhanaInput, toGhanaInput } from '@/lib/assignments/due.j
 import {
   audioUrl,
   authoriseRetake,
-  fetchExamAudio,
+  fetchExamFiles,
   fetchExamResults,
   fetchExamScript,
   markExamAnswer,
@@ -44,8 +45,8 @@ import { formatPercentage } from '@/lib/grading/grading.js';
 export default function ExamScriptPage({ role }) {
   const { courseId = '', examId = '', learnerId = '' } = useParams();
   const page = useLoad(async () => {
-    const [script, results, audio] = await Promise.all([fetchExamScript(examId, learnerId), fetchExamResults(examId), fetchExamAudio(examId, learnerId)]);
-    return { script, row: results.find((r) => r.learner_id === learnerId) ?? null, audio };
+    const [script, results, files] = await Promise.all([fetchExamScript(examId, learnerId), fetchExamResults(examId), fetchExamFiles(examId, learnerId)]);
+    return { script, row: results.find((r) => r.learner_id === learnerId) ?? null, files };
   }, [examId, learnerId]);
   const [reason, setReason] = useState('');
   const [retaking, setRetaking] = useState(false);
@@ -96,7 +97,8 @@ export default function ExamScriptPage({ role }) {
                   key={q.id}
                   number={i + 1}
                   question={q}
-                  audio={page.data?.audio.find((a) => a.question_id === q.id) ?? null}
+                  audio={page.data?.files.find((a) => a.question_id === q.id && a.kind === 'AUDIO') ?? null}
+                  document={page.data?.files.find((a) => a.question_id === q.id && a.kind === 'DOCUMENT') ?? null}
                   examId={examId}
                   learnerId={learnerId}
                   reason={reason}
@@ -118,9 +120,9 @@ export default function ExamScriptPage({ role }) {
 }
 
 /**
- * @param {{ number: number, question: Question, audio: { bucket: string, storage_path: string } | null, examId: string, learnerId: string, reason: string, onSaved: () => void }} props
+ * @param {{ number: number, question: Question, audio: { bucket: string, storage_path: string } | null, document: import('@/lib/exams/exams.js').ExamAnswerFile | null, examId: string, learnerId: string, reason: string, onSaved: () => void }} props
  */
-function QuestionMark({ number, question: q, audio, examId, learnerId, reason, onSaved }) {
+function QuestionMark({ number, question: q, audio, document: doc, examId, learnerId, reason, onSaved }) {
   const toast = useToast();
   const [score, setScore] = useState(q.answer?.score === null || q.answer?.score === undefined || q.answer?.auto_marked ? '' : String(Number(q.answer.score)));
   const [feedback, setFeedback] = useState(q.answer?.feedback ?? '');
@@ -169,7 +171,8 @@ function QuestionMark({ number, question: q, audio, examId, learnerId, reason, o
         <>
           {answer?.text_answer ? <p className="m-0 whitespace-pre-wrap break-words rounded-md bg-fill p-3 text-body text-ink">{answer.text_answer}</p> : null}
           {audio ? <AnswerAudio bucket={audio.bucket} path={audio.storage_path} label={`Recorded answer to question ${number}`} /> : null}
-          {!answer?.text_answer && !audio ? <CardDescription>No answer was given (marked 0).</CardDescription> : null}
+          {doc ? <ExamDocumentLink file={doc} /> : null}
+          {!answer?.text_answer && !audio && !doc ? <CardDescription>No answer was given (marked 0).</CardDescription> : null}
           {q.marking_guide ? (
             <details className="text-body-sm">
               <summary className="flex min-h-11 cursor-pointer items-center text-label text-link focus-visible:focus-ring">Marking guide</summary>

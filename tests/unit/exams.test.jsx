@@ -17,7 +17,8 @@ import LearnerExamPage from '@/pages/learner/LearnerExamPage.jsx';
 
 const api = vi.hoisted(() => ({
   fetchMyExam: vi.fn(),
-  fetchExamAudio: vi.fn(),
+  fetchExamFiles: vi.fn(),
+  uploadFile: vi.fn(),
   startExam: vi.fn(),
   saveExamAnswers: vi.fn(),
   submitExam: vi.fn(),
@@ -27,6 +28,7 @@ const api = vi.hoisted(() => ({
   releaseExam: vi.fn(),
 }));
 const toast = vi.hoisted(() => ({ show: vi.fn() }));
+vi.mock('@/lib/uploads.js', () => ({ uploadFile: (/** @type {any} */ o) => api.uploadFile(o) }));
 vi.mock('@/lib/supabase.js', () => ({ getSupabase: () => ({}) }));
 vi.mock('@/hooks/use-profile-image.js', () => ({ useProfileImage: () => null }));
 vi.mock('@/components/feedback/ToastProvider.jsx', () => ({ useToast: () => toast }));
@@ -34,7 +36,7 @@ vi.mock('@/components/auth/AuthProvider.jsx', () => ({ useAuth: () => ({ profile
 vi.mock('@/lib/exams/exams.js', async (importOriginal) => ({
   ...(await importOriginal()),
   fetchMyExam: (/** @type {string} */ id) => api.fetchMyExam(id),
-  fetchExamAudio: () => api.fetchExamAudio(),
+  fetchExamFiles: () => api.fetchExamFiles(),
   startExam: (/** @type {string} */ id) => api.startExam(id),
   saveExamAnswers: (/** @type {any[]} */ ...a) => api.saveExamAnswers(...a),
   submitExam: (/** @type {string} */ id) => api.submitExam(id),
@@ -93,7 +95,7 @@ const settled = async () => {
 beforeEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
-  api.fetchExamAudio.mockResolvedValue([]);
+  api.fetchExamFiles.mockResolvedValue([]);
 });
 afterEach(() => {
   Object.defineProperty(window.navigator, 'onLine', { configurable: true, value: true });
@@ -122,6 +124,28 @@ describe("the learner's examination", () => {
     expect(screen.getByTestId('save-state').textContent).toBe('Saving…');
     await waitFor(() => expect(api.saveExamAnswers).toHaveBeenCalledWith('e1', [{ questionId: 'q1', selectedOption: 'B' }]), { timeout: 4000 });
     await waitFor(() => expect(screen.getByTestId('save-state').textContent).toBe('All answers saved at 10:15'));
+  });
+
+  it('offers Record (red border), Upload an audio file and Upload a PDF or Word file, and saves the document', async () => {
+    api.fetchMyExam.mockResolvedValue(exam({ state: 'IN_PROGRESS', sections }));
+    api.saveExamAnswers.mockResolvedValue({ savedAt: '2030-01-11T10:15:00Z' });
+    api.uploadFile.mockResolvedValue({ fileId: 'f-doc' });
+    learnerPage();
+    await screen.findAllByRole('tab');
+    await settled();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Section B/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Section B/ }));
+    const record = await screen.findByRole('button', { name: 'Record your answer' });
+    expect(record.className).toMatch(/border-error/);
+    expect(screen.getByRole('button', { name: 'Upload an audio file' })).toBeTruthy();
+    expect(screen.getByTestId('exam-audio-input').getAttribute('accept')).toMatch(/audio/);
+    expect(screen.getByTestId('exam-document-input').getAttribute('accept')).toMatch(/.pdf,.docx/);
+    const file = new File(['%PDF-1.4'], 'covenant.pdf', { type: 'application/pdf' });
+    fireEvent.change(screen.getByTestId('exam-document-input'), { target: { files: [file] } });
+    await waitFor(() => expect(api.uploadFile).toHaveBeenCalledWith(expect.objectContaining({ resourceType: 'EXAM_ANSWER_DOCUMENT', examId: 'e1', questionId: 'q2', file })));
+    await screen.findByText('Document attached: covenant.pdf');
+    await waitFor(() => expect(api.saveExamAnswers).toHaveBeenCalledWith('e1', [{ questionId: 'q2', documentFileId: 'f-doc' }]), { timeout: 4000 });
+    expect(screen.queryByRole('button', { name: 'Upload a PDF or Word file' })).toBeNull();
   });
 
   it('keeps answers on the device while offline and sends them when back online', async () => {
