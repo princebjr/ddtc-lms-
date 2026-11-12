@@ -13,7 +13,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(36);
+select plan(39);
 
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.t1', tests.create_user('t1@example.test', 'Ama', 'Boateng', 'LECTURER')::text, true);
@@ -134,6 +134,13 @@ select throws_ok($$ select public.retention_hold_place('SUBMISSION', tests.id('n
 select throws_ok($$ select public.retention_hold_place('COURSE', tests.id('c1'), 'x') $$, '22023', 'Give a reason of 3 to 500 characters', 'a hold needs a reason');
 select lives_ok($$ select public.retention_hold_place('EXAM_ATTEMPT', (select id from public.exam_attempts where exam_id = (select id from ex) and learner_id = tests.uid('l1')), 'Result queried') $$,
   'an administrator holds one examination answer');
+select results_eq($$ select answer_id = (select id from public.exam_attempts where exam_id = (select id from ex) and learner_id = tests.uid('l1')), reason
+                      from public.retention_answer_hold('EXAM_ATTEMPT', (select id from ex), tests.uid('l1')) $$,
+  $$ values (true, 'Result queried') $$, 'an administrator reads an examination answer''s hold');
+select results_eq($$ select answer_id = tests.id('s1'), hold_id is null from public.retention_answer_hold('SUBMISSION', tests.id('aA'), tests.uid('l1')) $$,
+  $$ values (true, true) $$, 'and an assignment answer with no hold');
+select tests.reset(); select tests.authenticate_as(tests.uid('t1'));
+select throws_ok($$ select * from public.retention_answer_hold('SUBMISSION', tests.id('aA'), tests.uid('l1')) $$, '42501', null, 'a lecturer cannot read an answer''s hold');
 select tests.reset(); select tests.as_service();
 select is(tests.candidates(), array['f1.m4a'], 'held files are not candidates: the course hold covers f4, the attempt hold covers e1');
 select tests.reset(); select tests.as_service();

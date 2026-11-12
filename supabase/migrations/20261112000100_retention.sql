@@ -244,6 +244,43 @@ $$;
 revoke execute on function public.retention_hold_list() from public, anon;
 grant execute on function public.retention_hold_list() to authenticated;
 
+/**
+ * One answer's id and its active hold, for the administrator's Hold button on an answer (ADR-022 decision
+ * 4): an assignment answer (p_scope SUBMISSION, p_parent the assignment) or the learner's latest
+ * examination attempt (EXAM_ATTEMPT, p_parent the examination). No row when there is no answer.
+ */
+create function public.retention_answer_hold(p_scope public.retention_scope, p_parent uuid, p_learner uuid)
+returns table (answer_id uuid, hold_id uuid, reason text, placed_at timestamptz)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_answer uuid;
+begin
+  if not private.is_admin() then
+    raise exception 'Only administrators read retention holds' using errcode = '42501';
+  end if;
+  if p_scope = 'SUBMISSION' then
+    select s.id into v_answer from public.submissions s where s.assignment_id = p_parent and s.learner_id = p_learner;
+  elsif p_scope = 'EXAM_ATTEMPT' then
+    select t.id into v_answer from public.exam_attempts t where t.exam_id = p_parent and t.learner_id = p_learner order by t.attempt_number desc limit 1;
+  else
+    raise exception 'Choose an answer' using errcode = '22023';
+  end if;
+  if v_answer is null then
+    return;
+  end if;
+  return query
+  select v_answer, h.id, h.reason, h.placed_at
+    from (select 1) one
+    left join public.retention_holds h on h.scope = p_scope and h.scope_id = v_answer and h.released_at is null;
+end;
+$$;
+revoke execute on function public.retention_answer_hold(public.retention_scope, uuid, uuid) from public, anon;
+grant execute on function public.retention_answer_hold(public.retention_scope, uuid, uuid) to authenticated;
+
 -- ---------------------------------------------------------------- runs (the scheduled job only)
 /** Starts a run: LIVE only when switched on and dry runs began at least retention_dry_run_days ago. */
 create function public.retention_run_begin() returns table (run_id uuid, mode public.retention_mode)

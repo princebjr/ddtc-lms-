@@ -811,6 +811,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"retention_holds": {
+                  Row: {
+                    "created_at": string,"id": string,"placed_at": string,"placed_by": string,"reason": string,"released_at": string | null,"released_by": string | null,"scope": Database["public"]['Enums']["retention_scope"],"scope_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"placed_at"?: string,"placed_by": string,"reason": string,"released_at"?: string | null,"released_by"?: string | null,"scope": Database["public"]['Enums']["retention_scope"],"scope_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"placed_at"?: string,"placed_by"?: string,"reason"?: string,"released_at"?: string | null,"released_by"?: string | null,"scope"?: Database["public"]['Enums']["retention_scope"],"scope_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "retention_holds_placed_by_fkey"
+      columns: ["placed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "retention_holds_released_by_fkey"
+      columns: ["released_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"retention_runs": {
+                  Row: {
+                    "created_at": string,"deleted_count": number,"details": NonNullable<Json>,"eligible_count": number,"failed_count": number,"finished_at": string | null,"id": string,"mode": Database["public"]['Enums']["retention_mode"],"started_at": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"deleted_count"?: number,"details"?: NonNullable<Json>,"eligible_count"?: number,"failed_count"?: number,"finished_at"?: string | null,"id"?: string,"mode": Database["public"]['Enums']["retention_mode"],"started_at"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"deleted_count"?: number,"details"?: NonNullable<Json>,"eligible_count"?: number,"failed_count"?: number,"finished_at"?: string | null,"id"?: string,"mode"?: Database["public"]['Enums']["retention_mode"],"started_at"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"submission_extensions": {
                   Row: {
                     "assignment_id": string,"created_at": string,"extended_due_at": string,"granted_by": string,"id": string,"learner_id": string,"reason": string | null,"revoked_at": string | null,"revoked_by": string | null,"updated_at": string
@@ -1335,6 +1375,41 @@ isOneToOne: false
               "average_percentage": number,"branch_name": string,"course_code": string,"course_id": string,"course_title": string,"graded": number,"learners": number,"passed": number
             }[]
                            },
+"retention_answer_hold":
+{ Args: { "p_learner": string,"p_parent": string,"p_scope": Database["public"]['Enums']["retention_scope"] }; Returns: {
+              "answer_id": string,"hold_id": string,"placed_at": string,"reason": string
+            }[]
+                           },
+"retention_candidates":
+{ Args: { "p_limit"?: number }; Returns: {
+              "answer_id": string,"bucket_name": string,"course_id": string,"file_id": string,"learner_id": string,"released_at": string,"source": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string
+            }[]
+                           },
+"retention_hold_list":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "detail": string,"id": string,"placed_at": string,"placed_by_name": string,"reason": string,"released_at": string,"released_by_name": string,"scope": Database["public"]['Enums']["retention_scope"],"scope_id": string,"subject": string
+            }[]
+                           },
+"retention_hold_place":
+{ Args: { "p_reason": string,"p_scope": Database["public"]['Enums']["retention_scope"],"p_scope_id": string }; Returns: string
+                           },
+"retention_hold_release":
+{ Args: { "p_hold": string }; Returns: undefined
+                           },
+"retention_record":
+{ Args: { "p_deleted": boolean,"p_error": string,"p_file": string,"p_run": string }; Returns: undefined
+                           },
+"retention_run_begin":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "mode": Database["public"]['Enums']["retention_mode"],"run_id": string
+            }[]
+                           },
+"retention_run_finish":
+{ Args: { "p_details": Json,"p_eligible": number,"p_run": string }; Returns: undefined
+                           },
+"retention_still_candidate":
+{ Args: { "p_file": string }; Returns: boolean
+                           },
 "standard_parts_preview":
 { Args: { "p_course": string }; Returns: {
               "current_overall": number,"first_name": string,"learner_id": string,"new_overall": number,"second_name": string
@@ -1371,7 +1446,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","exam_attempt_status": "NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED","exam_event": "SUBMITTED"|"MARKED"|"FEEDBACK"|"RELEASED"|"RETAKE_AUTHORISED","exam_question_kind": "MCQ"|"SHORT"|"ESSAY","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED"|"ASSIGNMENT_PUBLISHED"|"EXAM_PUBLISHED"|"DUE_REMINDER"|"ENROLMENT_ADDED"|"COURSE_APPROVED"|"COURSE_RETURNED"|"EXTENSION_CHANGED"|"SYSTEM_ALERT"|"ANNOUNCEMENT","publication_status": "DRAFT"|"PUBLISHED","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
+            "account_status": "ACTIVE"|"SUSPENDED"|"DEACTIVATED","assignment_content_type": "TEXT"|"AUDIO"|"TEXT_AND_AUDIO","audio_lifecycle": "ACTIVE"|"SUPERSEDED"|"ARCHIVED"|"DELETED","completion_status": "IN_PROGRESS"|"COMPLETED","course_permission": "OWNER"|"CO_LECTURER","course_status": "DRAFT"|"PENDING_APPROVAL"|"PUBLISHED"|"ARCHIVED","enrolment_status": "ACTIVE"|"COMPLETED"|"WITHDRAWN"|"SUSPENDED","exam_attempt_status": "NOT_STARTED"|"IN_PROGRESS"|"SUBMITTED","exam_event": "SUBMITTED"|"MARKED"|"FEEDBACK"|"RELEASED"|"RETAKE_AUTHORISED","exam_question_kind": "MCQ"|"SHORT"|"ESSAY","file_status": "PENDING"|"VALIDATED"|"REJECTED"|"DELETED"|"DELETE_FAILED","grade_event": "SAVED"|"RELEASED"|"REOPENED","grade_part": "ASSIGNMENTS"|"PRACTICALS"|"EXAMINATIONS","grade_release_status": "DRAFT"|"RELEASED","notification_type": "GRADE_RELEASED"|"GRADE_UPDATED"|"ASSIGNMENT_PUBLISHED"|"EXAM_PUBLISHED"|"DUE_REMINDER"|"ENROLMENT_ADDED"|"COURSE_APPROVED"|"COURSE_RETURNED"|"EXTENSION_CHANGED"|"SYSTEM_ALERT"|"ANNOUNCEMENT","publication_status": "DRAFT"|"PUBLISHED","retention_mode": "DRY_RUN"|"LIVE","retention_scope": "SUBMISSION"|"EXAM_ATTEMPT"|"LEARNER"|"COURSE","submission_file_role": "AUDIO"|"PDF"|"DOCX"|"OTHER","submission_status": "DRAFT"|"SUBMITTED"|"GRADED"|"REOPENED","user_role": "ADMIN"|"LECTURER"|"LEARNER"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1487,7 +1562,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"exam_attempt_status": ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED"],"exam_event": ["SUBMITTED", "MARKED", "FEEDBACK", "RELEASED", "RETAKE_AUTHORISED"],"exam_question_kind": ["MCQ", "SHORT", "ESSAY"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED", "ASSIGNMENT_PUBLISHED", "EXAM_PUBLISHED", "DUE_REMINDER", "ENROLMENT_ADDED", "COURSE_APPROVED", "COURSE_RETURNED", "EXTENSION_CHANGED", "SYSTEM_ALERT", "ANNOUNCEMENT"],"publication_status": ["DRAFT", "PUBLISHED"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
+            "account_status": ["ACTIVE", "SUSPENDED", "DEACTIVATED"],"assignment_content_type": ["TEXT", "AUDIO", "TEXT_AND_AUDIO"],"audio_lifecycle": ["ACTIVE", "SUPERSEDED", "ARCHIVED", "DELETED"],"completion_status": ["IN_PROGRESS", "COMPLETED"],"course_permission": ["OWNER", "CO_LECTURER"],"course_status": ["DRAFT", "PENDING_APPROVAL", "PUBLISHED", "ARCHIVED"],"enrolment_status": ["ACTIVE", "COMPLETED", "WITHDRAWN", "SUSPENDED"],"exam_attempt_status": ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED"],"exam_event": ["SUBMITTED", "MARKED", "FEEDBACK", "RELEASED", "RETAKE_AUTHORISED"],"exam_question_kind": ["MCQ", "SHORT", "ESSAY"],"file_status": ["PENDING", "VALIDATED", "REJECTED", "DELETED", "DELETE_FAILED"],"grade_event": ["SAVED", "RELEASED", "REOPENED"],"grade_part": ["ASSIGNMENTS", "PRACTICALS", "EXAMINATIONS"],"grade_release_status": ["DRAFT", "RELEASED"],"notification_type": ["GRADE_RELEASED", "GRADE_UPDATED", "ASSIGNMENT_PUBLISHED", "EXAM_PUBLISHED", "DUE_REMINDER", "ENROLMENT_ADDED", "COURSE_APPROVED", "COURSE_RETURNED", "EXTENSION_CHANGED", "SYSTEM_ALERT", "ANNOUNCEMENT"],"publication_status": ["DRAFT", "PUBLISHED"],"retention_mode": ["DRY_RUN", "LIVE"],"retention_scope": ["SUBMISSION", "EXAM_ATTEMPT", "LEARNER", "COURSE"],"submission_file_role": ["AUDIO", "PDF", "DOCX", "OTHER"],"submission_status": ["DRAFT", "SUBMITTED", "GRADED", "REOPENED"],"user_role": ["ADMIN", "LECTURER", "LEARNER"]
           }
         }
 } as const
