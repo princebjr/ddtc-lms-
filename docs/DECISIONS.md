@@ -85,7 +85,7 @@ Reply to each with "keep" or your change. "Default" is what the plan assumes. Ti
 
 | # | Decision | Needed by | Done |
 |---|---|---|---|
-| O21 | A privacy and data-protection owner, and approved retention schedules for records, accounts, logs, files and backups | Phase 13 | [ ] |
+| O21 | A privacy and data-protection owner, and approved retention schedules for records, accounts, logs, files and backups | Phase 13 | [x] 2026-11-12: Prince Boateng; `docs/RETENTION_SCHEDULE.md` approved |
 | O22 | Support contact shown in the app | Phase 14 | [ ] |
 | O23 | Devices available for real-device testing (iPhone on iOS 18 and iOS 17, iPad, an Android phone, Windows and Mac laptops) | Phase 6 | [ ] |
 | O24 | The pilot group (a few real lecturers and learners) and who signs off acceptance | Phase 14 | [ ] |

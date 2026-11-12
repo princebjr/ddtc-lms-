@@ -105,7 +105,7 @@ Each capture checked for sideways scrolling (none). Console errors: one capture 
 2. **Backups:** R2 account, bucket and its four secrets done (2026-11-12; the workflow uses the owner's names `R2_*`). Still to do: the `age` key (kept offline), the Supabase S3 key and the other seven `BACKUP_*` secrets, the `BACKUP_ENV` variable and the 30-day lifecycle rules. The first run is after the merge and the staging migrations, because GitHub runs the workflow only from `main` and it reports into `backup_runs` (migration 51).
 3. **Restore drill:** deferred to Phase 14 (ADR-025): pause `ddtc-lms-dev`, create a temporary project, and run the drill from the R2 backup with the private key (runbook "Restore drill").
 4. **Uptime monitor:** a free account with two checks (runbook "Monitoring").
-5. **Retention schedule:** review and approve `docs/RETENTION_SCHEDULE.md` (O21), with a legal or privacy adviser where needed.
+5. **Retention schedule:** approved by the owner on 2026-11-12 (O21); the legal or privacy adviser's review is still to come.
 6. **Real devices:** VoiceOver on an iPhone and TalkBack on Android: sign in, a lesson's audio player, a written answer, a chart.
 7. **After merge (with your go-ahead):** on staging, `npx supabase db push --linked --yes` (migrations 48 to 54), deploy `export-gradebook`, `bulk-import-learners`, `register-upload`, `provision-lecturer`, `provision-admin` and `delete-media`, and `npx supabase config push` for the Auth rate limits.
 
@@ -116,5 +116,5 @@ Each capture checked for sideways scrolling (none). Console errors: one capture 
 3. **First request after a mass sign-in** is slow when every user starts in the same second. Phase 15 spike test. Owner: development.
 4. **Local stack limits:** with 2.8 GB for Docker the Edge runtime needs a restart after a few hours of tests. CI is the reliable evidence. Owner: development.
 5. **Audio removed from an examination answer before it was sent** stays in storage (carried from Phase 12): not deleted by cleanup or retention. Decide in Phase 15 with the capacity work. Owner: development.
-6. **CLAUDE.md** still names Cloudflare Turnstile in the stack, although the owner removed it on 2026-11-05 (D22). The app and CSP are right; the line needs the owner's correction.
+6. **CLAUDE.md** named Cloudflare Turnstile in the stack, although the owner removed it on 2026-11-05 (D22). Corrected with the owner's approval on 2026-11-12.
 7. **Staging restore drill and real-device screen-reader passes** are open (section 7). Owner: Prince Boateng.
