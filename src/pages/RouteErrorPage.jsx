@@ -6,7 +6,7 @@ import NotFoundPage from './NotFoundPage.jsx';
 /**
  * Error boundary for every route. A failed route chunk while offline shows the offline page;
  * a 404 shows Not found; anything else shows a plain error state with Retry. The raw error is
- * reported to the console for now (Sentry arrives later) and never shown to the user.
+ * written to the browser console only (no error-reporting service collects it: owner decision, ADR-023) and never shown to the user.
  */
 export default function RouteErrorPage() {
   const error = useRouteError();

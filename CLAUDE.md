@@ -15,7 +15,7 @@ You are building the **DDTC Learning Management System** for Dynamic Discipleshi
 
 ## 2. Stack
 
-React, Vite, JavaScript (ES modules) with JSDoc types checked by `tsc --checkJs`, Zod validation on every input, Tailwind CSS, shadcn/ui, Lucide React, React Router, Supabase JavaScript client. Supabase: Auth (email and password; Continue with Google for learners), PostgreSQL with Row Level Security, Storage, Edge Functions (TypeScript), `pg_cron`. Tests: Vitest, React Testing Library, pgTAP, Playwright, Lighthouse CI. Hosting: Vercel. Email: Resend. CAPTCHA: Cloudflare Turnstile. Errors: Sentry. No Express, MongoDB or Firebase.
+React, Vite, JavaScript (ES modules) with JSDoc types checked by `tsc --checkJs`, Zod validation on every input, Tailwind CSS, shadcn/ui, Lucide React, React Router, Supabase JavaScript client. Supabase: Auth (email and password; Continue with Google for learners), PostgreSQL with Row Level Security, Storage, Edge Functions (TypeScript), `pg_cron`. Tests: Vitest, React Testing Library, pgTAP, Playwright, Lighthouse CI. Hosting: Vercel. Email: Resend. CAPTCHA: Cloudflare Turnstile. Errors: Supabase and Vercel server logs plus the daily job health check; browser errors are not collected centrally (no Sentry; owner decision of 2026-11-12, ADR-023). No Express, MongoDB or Firebase.
 
 ## 3. Rules you never break
 
