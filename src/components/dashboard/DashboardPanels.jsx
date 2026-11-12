@@ -216,10 +216,12 @@ export function LecturerOverview() {
 /**
  * The learner's work. `leadTiles` (the dashboard's course counts) join the same row of statistic cards,
  * and `after` (the welcome, owner request 2026-11-11) comes directly below that row. Released grades are
- * not listed here (owner request 2026-11-11): the learner reads them on Grades.
- * @param {{ leadTiles?: Tile[], after?: import('react').ReactNode }} props
+ * not listed here (owner request 2026-11-11): the learner reads them on Grades. `tail` (the dashboard's "My
+ * courses") is drawn last, together with the rest, so nothing on screen moves when the overview arrives
+ * (Phase 13: a layout shift of 0.13 on a throttled phone, budget 0.1).
+ * @param {{ leadTiles?: Tile[], after?: import('react').ReactNode, tail?: import('react').ReactNode }} props
  */
-export function LearnerOverview({ leadTiles = [], after = null }) {
+export function LearnerOverview({ leadTiles = [], after = null, tail = null }) {
   const page = useLoad(() => fetchDashboard('learner_dashboard'), []);
   const d = page.data ?? {};
   return (
@@ -279,6 +281,7 @@ export function LearnerOverview({ leadTiles = [], after = null }) {
               </ul>
             </Section>
           ) : null}
+          {tail}
         </div>
       )}
     </LoadingRegion>

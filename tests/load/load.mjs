@@ -36,7 +36,7 @@ const record = (/** @type {string} */ name, /** @type {number} */ ms, /** @type 
 /** One timed request. @param {string} name @param {string} path @param {string} token @param {RequestInit} [init] */
 async function hit(name, path, token, init = {}) {
   const t0 = performance.now();
-  let status = 0;
+  let status;
   let body = null;
   try {
     const res = await fetch(`${s.url}${path}`, { ...init, headers: { apikey: s.anonKey, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...init.headers } });
@@ -134,6 +134,7 @@ const rows = Object.entries(stats).map(([name, st]) => ({
 }));
 const total = rows.reduce((n, r) => n + r.count, 0);
 const errors = rows.reduce((n, r) => n + r.errors, 0);
+// eslint-disable-next-line no-console -- a measuring tool prints its results as a table
 console.table(rows);
 console.log(`${total} requests in ${seconds.toFixed(0)} s (${(total / seconds).toFixed(1)}/s); errors ${errors} (${((100 * errors) / Math.max(1, total)).toFixed(2)}%); users that failed to start ${failedUsers.length}`);
 if (process.argv.includes('--json')) {

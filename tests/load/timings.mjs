@@ -77,5 +77,6 @@ for (const [who, call, id] of CASES) {
   rows.push({ who, call: call.replace(/'[0-9a-f-]{36}'/g, '…'), median_ms: times[1], max_ms: times[2] });
   if (planOf && call.startsWith(planOf)) console.log(plan);
 }
+// eslint-disable-next-line no-console -- a measuring tool prints its results as a table
 console.table(rows);
 if (process.argv.includes('--json')) writeFileSync(process.argv[process.argv.indexOf('--json') + 1], JSON.stringify(rows, null, 2));
