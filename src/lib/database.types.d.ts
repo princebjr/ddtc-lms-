@@ -139,6 +139,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"backup_runs": {
+                  Row: {
+                    "created_at": string,"error": string | null,"finished_at": string,"id": string,"kind": string,"location": string | null,"size_bytes": number | null,"started_at": string,"succeeded": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"error"?: string | null,"finished_at"?: string,"id"?: string,"kind": string,"location"?: string | null,"size_bytes"?: number | null,"started_at"?: string,"succeeded": boolean
+                  }
+                  Update: {
+                    "created_at"?: string,"error"?: string | null,"finished_at"?: string,"id"?: string,"kind"?: string,"location"?: string | null,"size_bytes"?: number | null,"started_at"?: string,"succeeded"?: boolean
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"branches": {
                   Row: {
                     "created_at": string,"id": string,"is_active": boolean,"name": string,"position": number
@@ -1080,6 +1094,9 @@ isOneToOne: false
               "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"created_at": string,"entity_id": string,"entity_type": string,"id": string,"metadata": Json
             }[]
                            },
+"backup_report":
+{ Args: { "p_error": string,"p_kind": string,"p_location": string,"p_size_bytes": number,"p_succeeded": boolean }; Returns: string
+                           },
 "bootstrap_first_admin":
 { Args: { "p_user": string }; Returns: undefined
                            },
@@ -1440,6 +1457,11 @@ isOneToOne: false
 "submission_submit":
 { Args: { "p_actor": string,"p_assignment": string,"p_files": (string)[],"p_request": string,"p_text": string }; Returns: {
               "is_late": boolean,"replayed": boolean,"resubmitted": boolean,"submission_id": string,"version_number": number
+            }[]
+                           },
+"system_health":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "key": string,"message": string,"severity": string,"title": string
             }[]
                            },
 "weights_impact_preview":
