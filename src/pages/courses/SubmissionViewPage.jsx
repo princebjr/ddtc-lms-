@@ -16,6 +16,7 @@ import { formatDue } from '@/lib/assignments/due.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 import { fetchSubmissionReview } from '@/lib/submissions/submissions.js';
+import { AnswerAudioHold } from '@/components/retention/AnswerAudioHold.jsx';
 
 // Grading one learner's answer (Phase 8 answer view, grading added in Phase 9; DESIGN.md 13 grading
 // screen; D10, D16, D30, D42). The header shows the learner's photo, name, ID number and branch chip;
@@ -87,6 +88,7 @@ export default function SubmissionViewPage({ role }) {
               ) : null}
             </dl>
           </Card>
+          {role === 'admin' && r.status ? <AnswerAudioHold scope="SUBMISSION" parentId={assignmentId} learnerId={learnerId} /> : null}
           <div className="flex flex-col gap-6 md:grid md:grid-cols-grading md:items-start">
             <div className="min-w-0">
               {r.versions.length ? (

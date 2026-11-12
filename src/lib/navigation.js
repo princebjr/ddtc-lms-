@@ -1,19 +1,4 @@
-import {
-  Bell,
-  BookOpen,
-  ChartColumn,
-  ClipboardCheck,
-  ClipboardList,
-  GraduationCap,
-  LayoutDashboard,
-  Megaphone,
-  ScrollText,
-  Settings,
-  ShieldCheck,
-  UserRound,
-  Users,
-  UsersRound,
-} from 'lucide-react';
+import { Archive, Bell, BookOpen, ChartColumn, ClipboardCheck, ClipboardList, GraduationCap, LayoutDashboard, Megaphone, ScrollText, Settings, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-react';
 
 // Navigation per role (D40, DESIGN.md 12.4, prototype in docs/prototype/).
 // Phone: exactly three destination icons plus a permanent More button. Destinations that are not
@@ -62,6 +47,7 @@ export const NAVIGATION = Object.freeze({
       { slug: 'notifications', label: 'Notifications', title: 'Notifications', description: 'Latest alerts.', icon: Bell, group: 'System', under: 'more', phase: 11 },
       { slug: 'audit-logs', label: 'Audit logs', title: 'Audit logs', description: 'Who did what, and when.', icon: ScrollText, group: 'System', under: 'more', phase: 11 },
       { slug: 'settings', label: 'Settings', title: 'Settings', description: 'Institution settings.', icon: Settings, group: 'System', under: 'more', phase: 11 },
+      { slug: 'retention', label: 'Retention', title: 'Retention', description: "When learners' recorded answers are removed.", icon: Archive, group: 'System', under: 'more', phase: 12 },
       { slug: 'profile', label: 'Profile', title: 'Profile settings', description: 'Your account.', icon: UserRound, group: 'Account', under: 'more', phase: 4 },
     ],
   },

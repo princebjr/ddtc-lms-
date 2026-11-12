@@ -30,6 +30,7 @@ import {
   setExamExtension,
 } from '@/lib/exams/exams.js';
 import { formatPercentage } from '@/lib/grading/grading.js';
+import { AnswerAudioHold } from '@/components/retention/AnswerAudioHold.jsx';
 
 // One learner's examination script for marking (Phase 10.1, ADR-016; owner request and answers of
 // 2026-11-10), for the course's lecturers and administrators: every question with the learner's answer.
@@ -81,6 +82,7 @@ export default function ExamScriptPage({ role }) {
               {row.percentage === null ? '' : ` · ${formatPercentage(row.percentage)} · ${row.passed ? 'Pass' : 'Fail'}`}
             </span>
           </Card>
+          {role === 'admin' && script.attempt ? <AnswerAudioHold scope="EXAM_ATTEMPT" parentId={examId} learnerId={learnerId} /> : null}
           {released ? (
             <div className="flex flex-col gap-1">
               <Label htmlFor="change-reason">Reason for changing the released result</Label>
