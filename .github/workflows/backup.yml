@@ -24,6 +24,8 @@ permissions:
 
 env:
   BACKUP_ENV: ${{ vars.BACKUP_ENV || 'staging' }}
+  # Supabase Storage's S3 connection signs requests with the project's region (Europe, Ireland: ADR-002).
+  SUPABASE_S3_REGION: ${{ vars.BACKUP_SUPABASE_S3_REGION || 'eu-west-1' }}
 
 jobs:
   backup:
@@ -72,7 +74,7 @@ jobs:
           mkdir -p ~/.config/rclone
           printf '%s\n' \
             "[supabase]" "type = s3" "provider = Other" "endpoint = ${SUPABASE_S3_ENDPOINT}" \
-            "access_key_id = ${SUPABASE_S3_KEY_ID}" "secret_access_key = ${SUPABASE_S3_SECRET}" "region = local" \
+            "access_key_id = ${SUPABASE_S3_KEY_ID}" "secret_access_key = ${SUPABASE_S3_SECRET}" "region = ${SUPABASE_S3_REGION}" \
             "[r2]" "type = s3" "provider = Cloudflare" "endpoint = ${R2_ENDPOINT}" \
             "access_key_id = ${R2_KEY_ID}" "secret_access_key = ${R2_SECRET}" "no_check_bucket = true" > ~/.config/rclone/rclone.conf
           # no_check_bucket: the R2 token may only read and write objects in its one bucket, so rclone must not
