@@ -22,7 +22,10 @@ export function vercelPageHeaders(file = new URL('../vercel.json', import.meta.u
 /**
  * The same headers for the local preview: the Supabase origin of this build is added to the CSP sources
  * that name Supabase (http and ws locally), and upgrade-insecure-requests and HSTS are left out because
- * the preview is plain http on 127.0.0.1.
+ * the preview is plain http on 127.0.0.1. Cross-Origin-Opener-Policy is also left out: in Firefox it moves
+ * the page into a new process that the test browser's emulated colour scheme does not reach, so dark-mode
+ * tests would see light mode (a test-browser limit; a real device's setting reaches every process).
+ * Production keeps it, and a unit test checks vercel.json still sets it.
  * @param {string | undefined} supabaseUrl
  * @returns {Array<[string, string]>}
  */
@@ -30,7 +33,7 @@ export function previewHeaders(supabaseUrl) {
   const origin = supabaseUrl ? new URL(supabaseUrl).origin : null;
   const ws = origin ? origin.replace(/^http/, 'ws') : null;
   return vercelPageHeaders()
-    .filter(([name]) => name !== 'Strict-Transport-Security')
+    .filter(([name]) => name !== 'Strict-Transport-Security' && name !== 'Cross-Origin-Opener-Policy')
     .map(([name, value]) => {
       if (name !== 'Content-Security-Policy' || !origin) return [name, value];
       const csp = value

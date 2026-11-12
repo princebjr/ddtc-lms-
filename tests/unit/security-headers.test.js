@@ -29,6 +29,7 @@ describe('security headers (vercel.json)', () => {
     expect(headers['X-Frame-Options']).toBe('DENY');
     expect(headers['Referrer-Policy']).toBe('strict-origin-when-cross-origin');
     expect(headers['Permissions-Policy']).toMatch(/^microphone=\(self\), camera=\(\)/);
+    expect(headers['Cross-Origin-Opener-Policy']).toBe('same-origin');
   });
 
   it('the local preview serves the same policy with the local Supabase origin, over plain http', () => {
@@ -37,6 +38,8 @@ describe('security headers (vercel.json)', () => {
     expect(local['Content-Security-Policy']).toContain('media-src \'self\' blob: https://*.supabase.co http://127.0.0.1:54321');
     expect(local['Content-Security-Policy']).not.toContain('upgrade-insecure-requests');
     expect(local['Strict-Transport-Security']).toBeUndefined();
+    // Left out locally only: in Firefox it stops the test browser's emulated dark mode reaching the page.
+    expect(local['Cross-Origin-Opener-Policy']).toBeUndefined();
     expect(local['X-Frame-Options']).toBe('DENY');
   });
 });
