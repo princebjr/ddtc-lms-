@@ -74,7 +74,9 @@ jobs:
             "[supabase]" "type = s3" "provider = Other" "endpoint = ${SUPABASE_S3_ENDPOINT}" \
             "access_key_id = ${SUPABASE_S3_KEY_ID}" "secret_access_key = ${SUPABASE_S3_SECRET}" "region = local" \
             "[r2]" "type = s3" "provider = Cloudflare" "endpoint = ${R2_ENDPOINT}" \
-            "access_key_id = ${R2_KEY_ID}" "secret_access_key = ${R2_SECRET}" > ~/.config/rclone/rclone.conf
+            "access_key_id = ${R2_KEY_ID}" "secret_access_key = ${R2_SECRET}" "no_check_bucket = true" > ~/.config/rclone/rclone.conf
+          # no_check_bucket: the R2 token may only read and write objects in its one bucket, so rclone must not
+          # check for (or try to create) the bucket itself, which R2 refuses with AccessDenied.
 
       - name: Database
         if: steps.ready.outputs.ready == 'true'
@@ -83,14 +85,17 @@ jobs:
           day=$(date -u +%Y-%m-%d)
           file="db-${BACKUP_ENV}-${day}.dump.age"
           report() { curl -fsS -X POST "${SUPABASE_URL}/rest/v1/rpc/backup_report" -H "apikey: ${SERVICE_KEY}" -H "Authorization: Bearer ${SERVICE_KEY}" -H 'Content-Type: application/json' -d "$1" > /dev/null; }
-          if pg_dump --format=custom --no-owner --no-privileges "${DB_URL}" | age -r "${AGE_RECIPIENT}" > "${file}"; then
-            size=$(stat -c %s "${file}")
-            rclone copyto "${file}" "r2:${R2_BUCKET}/db/${file}"
-            report "{\"p_kind\":\"DATABASE\",\"p_succeeded\":true,\"p_size_bytes\":${size},\"p_location\":\"r2://${R2_BUCKET}/db/${file}\",\"p_error\":null}"
-          else
+          # Every failure is reported (so the health check says "failed", not just "missing") before the job fails.
+          if ! pg_dump --format=custom --no-owner --no-privileges "${DB_URL}" | age -r "${AGE_RECIPIENT}" > "${file}"; then
             report "{\"p_kind\":\"DATABASE\",\"p_succeeded\":false,\"p_size_bytes\":null,\"p_location\":null,\"p_error\":\"pg_dump or encryption failed (see the Backup workflow run)\"}"
             exit 1
           fi
+          size=$(stat -c %s "${file}")
+          if ! rclone copyto "${file}" "r2:${R2_BUCKET}/db/${file}"; then
+            report "{\"p_kind\":\"DATABASE\",\"p_succeeded\":false,\"p_size_bytes\":${size},\"p_location\":null,\"p_error\":\"uploading to R2 failed (see the Backup workflow run)\"}"
+            exit 1
+          fi
+          report "{\"p_kind\":\"DATABASE\",\"p_succeeded\":true,\"p_size_bytes\":${size},\"p_location\":\"r2://${R2_BUCKET}/db/${file}\",\"p_error\":null}"
 
       - name: Storage
         if: steps.ready.outputs.ready == 'true'
@@ -102,7 +107,7 @@ jobs:
             rclone sync "supabase:${bucket}" "r2:${R2_BUCKET}/storage/current/${bucket}" \
               --backup-dir "r2:${R2_BUCKET}/storage/history/${day}/${bucket}" --transfers 4 --checksum || failed=1
           done
-          size=$(rclone size --json "r2:${R2_BUCKET}/storage/current" | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])')
+          size=$(rclone size --json "r2:${R2_BUCKET}/storage/current" | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])') || { size=null; failed=1; }
           if [ "$failed" = 0 ]; then
             report "{\"p_kind\":\"STORAGE\",\"p_succeeded\":true,\"p_size_bytes\":${size},\"p_location\":\"r2://${R2_BUCKET}/storage/current\",\"p_error\":null}"
           else
