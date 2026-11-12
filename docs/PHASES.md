@@ -66,7 +66,7 @@ Tracker (tick after sign-off):
 - [x] Step 11.1: Live presence, "Who's online"; settings that take effect; examination documents and audio answers (`phase-11-1-done`)
 - [x] Step 11.2: Examination types and one type per section (`phase-11-2-done`)
 - [x] Phase 12: Assignment-audio retention (`phase-12-done`)
-- [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
+- [x] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`); restore drill deferred to Phase 14 (ADR-025)
 - [ ] Phase 15: Stability and speed, on staging (`phase-15-done`); runs **before** Phase 14 (owner, 2026-11-12, ADR-023). Brief: `docs/requests/2026-11-12-phase-15-stability-and-speed.md`
 - [ ] Phase 14: Staging acceptance and production release (`v1.0.0`, the final tag)
 
@@ -80,6 +80,7 @@ Tracker (tick after sign-off):
 - 2026-11-11: the lecturer chooses an examination's types of question, and each section has one type. Built in Step 11.2 (ADR-021): `docs/requests/2026-11-11-examination-types.md`.
 - 2026-11-12: Phase 15, stability and speed (stress, spike and soak tests, capacity, speed on low-end phones). Runs after Phase 13 and before Phase 14, on staging (ADR-023). Five questions go to the owner before its plan: `docs/requests/2026-11-12-phase-15-stability-and-speed.md`.
 - 2026-11-12: learners and lecturers clear notifications one at a time or all at once. Built in Phase 13 (ADR-024).
+- 2026-11-12: the approved retention schedule (`docs/RETENTION_SCHEDULE.md`) removes notifications, email delivery records and reminders after 2 years. A small daily job is still to build; plan it into Phase 15 or 14 with the owner.
 
 ## Session prompt for each phase
 

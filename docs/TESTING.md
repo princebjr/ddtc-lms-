@@ -75,7 +75,7 @@ Seed data (development and staging only, never real learner data): two administr
 | 10 | Exact numbers for every D13 case; chart counts equal authorised data; learner cannot export or query others |
 | 11 | Notification recipients, retries (1, 5, 15, 60, 240 min), deduplication, reminder replacement |
 | 12 | Retention never touches non-eligible files; dry run changes nothing; failures retried |
-| 13 | Policy review; axe clean in both themes; Lighthouse budgets; VoiceOver and TalkBack; restore drill |
+| 13 | Policy review; axe clean in both themes; Lighthouse budgets; ~~VoiceOver and TalkBack~~ (dropped, ADR-026); restore drill (deferred to Phase 14, ADR-025) |
 | 14 | Full acceptance journey on staging then production; rollback test |
 
 ## 7. Rules for tests

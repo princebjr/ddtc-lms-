@@ -1,6 +1,6 @@
-# DDTC LMS: Retention schedule (DRAFT)
+# DDTC LMS: Retention schedule
 
-**Status: draft for approval** by DDTC's privacy and incident contact, Prince Boateng (ADR-023 item 5; INPUTS 7 and 8, O21). Nothing here is a legal conclusion: DDTC's legal or privacy adviser decides what Ghanaian and other law requires (BUILD_PLAN section 13, D25). Until approved, the system keeps everything as it does today ("As built" below), which is the safe default: nothing educational is lost.
+**Status: approved** by DDTC's privacy and incident contact, Prince Boateng, on 2026-11-12 (ADR-023 item 5; INPUTS 7 and 8, O21). Nothing here is a legal conclusion: DDTC's legal or privacy adviser still reviews it and decides what Ghanaian and other law requires (BUILD_PLAN section 13, D25); a change from that review is a new approval. The "Proposed period" column is the approved period. Periods marked "not built until approved" (notifications) are built in a later phase; until then the system keeps those records as today ("As built"), which loses nothing.
 
 Rules that apply to every row (D25): academic and audit records are never hard-deleted by the app; courses and content are archived and accounts deactivated; any legally required erasure is done by a documented, audited administrator procedure that anonymises personal fields and keeps the academic rows; a hold (Retention page) stops any automatic removal.
 
@@ -21,4 +21,4 @@ Rules that apply to every row (D25): academic and audit records are never hard-d
 
 **Requests from a person** (access, correction, erasure): the privacy contact receives them, an administrator acts through the normal screens (correction) or the anonymisation procedure (erasure, when the adviser confirms it is required), and the action is audited. Answer within the period the adviser sets.
 
-**Approval.** Approved by: ____________________  Date: ____________  Changes from this draft: ____________________
+**Approval.** Approved by: Prince Boateng, DDTC privacy and incident contact. Date: 2026-11-12. Changes from the draft: none. Still to come: the legal or privacy adviser's review.

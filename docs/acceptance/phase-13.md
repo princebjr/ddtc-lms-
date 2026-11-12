@@ -24,7 +24,7 @@ Branch `phase-13-hardening`. Plan approved 2026-11-12 with the five recommendati
 | Item | Result |
 |---|---|
 | No high-severity findings open | **Pass.** The attack suites found no way past any rule. `npm audit`: 0 issues in production dependencies; 9 in development and build tools (2 low, 7 moderate, none high). Secret scan clean. |
-| Restore drill documented and successful | **Partly.** Documented (runbook "Restore drill"). Rehearsed locally end to end and successful (section 5). The drill on a temporary Supabase project from a real R2 backup needs the owner's R2 account and a temporary project (section 7), so it is **open**. |
+| Restore drill documented and successful | **Deferred to Phase 14 by the owner (ADR-025, 2026-11-12).** Documented (runbook "Restore drill") and rehearsed locally end to end, successful (section 5). The nightly backup works on staging since 2026-11-12: database 1 MB and Storage 12 MB (all 9 files) in R2, both recorded in `backup_runs` (Backup workflow run 43302327409). The drill from that real backup with the owner's key is a required step and exit-gate item of Phase 14, before production goes live. |
 
 ## 3. Tests required by the phase file
 
@@ -103,10 +103,10 @@ Each capture checked for sideways scrolling (none). Console errors: one capture 
 
 1. **Budgets:** decided by the owner on 2026-11-12 (approval of the pull request): the load-time and blocking-time budgets move to Phase 15, which is about speed on low-end phones and measures on staging. Layout shift stays enforced.
 2. **Backups:** R2 account, bucket and its four secrets done (2026-11-12; the workflow uses the owner's names `R2_*`). Still to do: the `age` key (kept offline), the Supabase S3 key and the other seven `BACKUP_*` secrets, the `BACKUP_ENV` variable and the 30-day lifecycle rules. The first run is after the merge and the staging migrations, because GitHub runs the workflow only from `main` and it reports into `backup_runs` (migration 51).
-3. **Restore drill:** pause `ddtc-lms-dev`, create a temporary project, and run the drill from the R2 backup (runbook "Restore drill"). This closes the second exit-gate line.
-4. **Uptime monitor:** a free account with two checks (runbook "Monitoring").
-5. **Retention schedule:** review and approve `docs/RETENTION_SCHEDULE.md` (O21), with a legal or privacy adviser where needed.
-6. **Real devices:** VoiceOver on an iPhone and TalkBack on Android: sign in, a lesson's audio player, a written answer, a chart.
+3. **Restore drill:** deferred to Phase 14 (ADR-025): pause `ddtc-lms-dev`, create a temporary project, and run the drill from the R2 backup with the private key (runbook "Restore drill").
+4. **Uptime monitor:** set up by the owner on 2026-11-12, with two checks (runbook "Monitoring").
+5. **Retention schedule:** approved by the owner on 2026-11-12 (O21); the legal or privacy adviser's review is still to come.
+6. **Real devices:** the VoiceOver and TalkBack pass is dropped by the owner (ADR-026, 2026-11-12); the automated accessibility checks stay.
 7. **After merge (with your go-ahead):** on staging, `npx supabase db push --linked --yes` (migrations 48 to 54), deploy `export-gradebook`, `bulk-import-learners`, `register-upload`, `provision-lecturer`, `provision-admin` and `delete-media`, and `npx supabase config push` for the Auth rate limits.
 
 ## 8. Known issues and deferred
@@ -116,5 +116,5 @@ Each capture checked for sideways scrolling (none). Console errors: one capture 
 3. **First request after a mass sign-in** is slow when every user starts in the same second. Phase 15 spike test. Owner: development.
 4. **Local stack limits:** with 2.8 GB for Docker the Edge runtime needs a restart after a few hours of tests. CI is the reliable evidence. Owner: development.
 5. **Audio removed from an examination answer before it was sent** stays in storage (carried from Phase 12): not deleted by cleanup or retention. Decide in Phase 15 with the capacity work. Owner: development.
-6. **CLAUDE.md** still names Cloudflare Turnstile in the stack, although the owner removed it on 2026-11-05 (D22). The app and CSP are right; the line needs the owner's correction.
-7. **Staging restore drill and real-device screen-reader passes** are open (section 7). Owner: Prince Boateng.
+6. **CLAUDE.md** named Cloudflare Turnstile in the stack, although the owner removed it on 2026-11-05 (D22). Corrected with the owner's approval on 2026-11-12.
+7. **Staging restore drill** deferred to Phase 14 (ADR-025); **real-device screen-reader passes** dropped (ADR-026). Owner: Prince Boateng.
