@@ -94,8 +94,10 @@ export function DistributionChart({ title, summary, distribution, ownBand = null
         }}
       </ResponsiveChart>
       {/* Phase 13 (WCAG 1.1.1): the drawing is hidden from screen readers, so every band and its count is given
-          here as a table they read; the visible caption above stays the short summary. */}
-      <table className="sr-only" data-testid="distribution-table">
+          here as a table they read; the visible caption above stays the short summary. The wrapper carries
+          sr-only because a table ignores the 1 px width and clipping and would widen small phones' pages. */}
+      <div className="sr-only">
+      <table data-testid="distribution-table">
         <caption>{`${title}: learners in each band`}</caption>
         <thead>
           <tr>
@@ -112,6 +114,7 @@ export function DistributionChart({ title, summary, distribution, ownBand = null
           ))}
         </tbody>
       </table>
+      </div>
       <p className="m-0 min-h-5 text-body-sm text-ink" aria-hidden="true">
         {pickedBand ? `${pickedBand.band}: ${pickedBand.count} ${pickedBand.count === 1 ? 'learner' : 'learners'}${pickedBand.band === ownBand ? ' (your band)' : ''}` : ''}
       </p>

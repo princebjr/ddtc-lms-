@@ -125,7 +125,9 @@ describe('the distribution chart for screen readers', () => {
       />,
     );
     const table = screen.getByTestId('distribution-table');
-    expect(table.className).toMatch(/sr-only/);
+    // Hidden visually by its wrapper (a table ignores sr-only's 1 px box and would widen small phones' pages).
+    expect(table.parentElement?.className).toMatch(/\bsr-only\b/);
+    expect(table.className).not.toMatch(/sr-only/);
     expect(within(table).getByText('Score distribution: learners in each band')).toBeTruthy();
     const rows = within(table).getAllByRole('row').slice(1).map((r) => r.textContent);
     expect(rows).toEqual(['60-69%1', '70-79% (your band)2']);
