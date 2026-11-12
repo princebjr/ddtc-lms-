@@ -111,3 +111,14 @@ describe('stored files', () => {
     expect(await list.json()).toEqual([]);
   });
 });
+
+describe('per-user rate limits (migration 48)', () => {
+  it('the 31st gradebook export in ten minutes is refused with 429, and another user is not affected', async () => {
+    const statuses = [];
+    for (let i = 0; i < 31; i += 1) statuses.push((await call('export-gradebook', lecturer.token, {})).status);
+    expect(statuses.slice(0, 30).every((s) => s !== 429)).toBe(true);
+    expect(statuses[30]).toBe(429);
+    const other = await signedInAs({ role: 'LECTURER', first: 'Grace', second: 'Owusu' });
+    expect((await call('export-gradebook', other.token, {})).status).not.toBe(429);
+  });
+});

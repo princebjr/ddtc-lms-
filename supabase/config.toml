@@ -466,8 +466,10 @@ enabled = false
 provider = "turnstile"
 
 [remotes.staging.auth.rate_limit]
-sign_in_sign_ups = 30
-token_refresh = 150
+# Phase 13 rate-limit review: a class signs in together on one church or school Wi-Fi (one IP address), so
+# 30 sign-ins per 5 minutes per IP would lock out the 31st learner. 150 still stops password guessing.
+sign_in_sign_ups = 150
+token_refresh = 300
 token_verifications = 30
 
 [remotes.staging.auth.email]

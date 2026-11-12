@@ -1346,6 +1346,9 @@ isOneToOne: false
               "first_name": string,"id": string,"profile_image_file_id": string,"role": Database["public"]['Enums']["user_role"],"second_name": string
             }[]
                            },
+"rate_limit_take":
+{ Args: { "p_action": string,"p_actor": string,"p_max": number,"p_window_seconds": number }; Returns: undefined
+                           },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },

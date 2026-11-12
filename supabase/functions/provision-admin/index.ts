@@ -6,6 +6,7 @@
 import { requireAdmin, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { audit, findByEmail, invite, Person } from '../_shared/people.ts';
+import { takeRateLimit } from '../_shared/rate-limit.ts';
 
 serve(async (req) => {
   const caller = await requireAdmin(req);
@@ -13,6 +14,7 @@ serve(async (req) => {
   if (!parsed.success) throw new HttpError(400, 'invalid', parsed.error.issues[0]?.message ?? 'Invalid request');
   const person = parsed.data;
   const admin = serviceClient();
+  await takeRateLimit(admin, caller.id, 'provision-account');
 
   let userId: string;
   let invited = false;

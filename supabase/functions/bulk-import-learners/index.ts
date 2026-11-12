@@ -10,6 +10,7 @@ import { z } from 'npm:zod@4.6.7';
 import { requireAdmin, serviceClient } from '../_shared/auth.ts';
 import { HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { audit, findByEmail, invite, Person } from '../_shared/people.ts';
+import { takeRateLimit } from '../_shared/rate-limit.ts';
 
 const MAX_ROWS = 500;
 const Body = z.object({
@@ -28,6 +29,7 @@ serve(async (req) => {
   const parsed = Body.safeParse(await readJson(req));
   if (!parsed.success) throw new HttpError(400, 'invalid', `Send between 1 and ${MAX_ROWS} rows`);
   const admin = serviceClient();
+  await takeRateLimit(admin, caller.id, 'bulk-import-learners');
   const seen = new Set<string>();
   const results: RowResult[] = [];
 
