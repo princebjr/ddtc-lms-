@@ -13,7 +13,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 \ir _helpers.psql
 
-select plan(35);
+select plan(36);
 
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.t1', tests.create_user('t1@example.test', 'Ama', 'Boateng', 'LECTURER')::text, true);
@@ -136,6 +136,8 @@ select lives_ok($$ select public.retention_hold_place('EXAM_ATTEMPT', (select id
   'an administrator holds one examination answer');
 select tests.reset(); select tests.as_service();
 select is(tests.candidates(), array['f1.m4a'], 'held files are not candidates: the course hold covers f4, the attempt hold covers e1');
+select tests.reset(); select tests.as_service();
+select ok(public.retention_still_candidate(tests.id('f1')) and not public.retention_still_candidate(tests.id('f4')), 'the runner''s check just before deleting sees a new hold');
 select tests.reset(); select tests.authenticate_as(tests.uid('a1'), 'aal2');
 select lives_ok($$ select public.retention_hold_place('LEARNER', tests.uid('l1'), 'Learner asked to keep their recordings') $$, 'an administrator holds a learner');
 select tests.reset(); select tests.as_service();

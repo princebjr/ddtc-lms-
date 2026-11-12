@@ -289,6 +289,16 @@ begin
 end;
 $$;
 
+/** Whether a file is still a candidate, asked just before deleting it (a hold may have been placed since the list was read). */
+create function public.retention_still_candidate(p_file uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (select 1 from private.retention_candidate_rows() c where c.file_id = p_file);
+$$;
+
 /** Closes a run with its candidate count and per-file details, and audits it. */
 create function public.retention_run_finish(p_run uuid, p_eligible integer, p_details jsonb) returns void
 language plpgsql
@@ -308,8 +318,8 @@ begin
     jsonb_build_object('mode', r.mode, 'eligible', r.eligible_count, 'deleted', r.deleted_count, 'failed', r.failed_count));
 end;
 $$;
-revoke execute on function public.retention_run_begin(), public.retention_record(uuid, uuid, boolean, text), public.retention_run_finish(uuid, integer, jsonb) from public, anon, authenticated;
-grant execute on function public.retention_run_begin(), public.retention_record(uuid, uuid, boolean, text), public.retention_run_finish(uuid, integer, jsonb) to service_role;
+revoke execute on function public.retention_run_begin(), public.retention_record(uuid, uuid, boolean, text), public.retention_still_candidate(uuid), public.retention_run_finish(uuid, integer, jsonb) from public, anon, authenticated;
+grant execute on function public.retention_run_begin(), public.retention_record(uuid, uuid, boolean, text), public.retention_still_candidate(uuid), public.retention_run_finish(uuid, integer, jsonb) to service_role;
 
 -- ---------------------------------------------------------------- the hourly cleanup leaves answer audio to retention
 create or replace function public.files_due_for_cleanup(p_limit integer default 100)
