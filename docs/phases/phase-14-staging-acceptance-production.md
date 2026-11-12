@@ -16,10 +16,12 @@
 **Tests required**
 
 - Acceptance journey passes on staging and again on production; production smoke tests pass; rollback tested.
+- **Restore drill (deferred from Phase 13, ADR-025):** restore the latest nightly backup from R2 into a temporary Supabase project with the owner's private key, as in `docs/RUNBOOK.md` "Restore drill"; `scripts/verify-restore.sql` passes; sign in as each role on the restored copy; record the duration (RTO 8 hours) and the data-loss window (RPO 24 hours). Must pass before production goes live.
 
 **Exit gate (all must pass)**
 
 - Written sign-off in `docs/DECISIONS.md`.
+- Restore drill from a real nightly backup documented and successful (ADR-025), before production is opened to users.
 - Real-device matrix completed with no open layout, audio, recording, download or sign-in defects.
 - Retention stays in dry-run for the first 30 days.
 

@@ -24,7 +24,7 @@ Branch `phase-13-hardening`. Plan approved 2026-11-12 with the five recommendati
 | Item | Result |
 |---|---|
 | No high-severity findings open | **Pass.** The attack suites found no way past any rule. `npm audit`: 0 issues in production dependencies; 9 in development and build tools (2 low, 7 moderate, none high). Secret scan clean. |
-| Restore drill documented and successful | **Partly.** Documented (runbook "Restore drill"). Rehearsed locally end to end and successful (section 5). The drill on a temporary Supabase project from a real R2 backup needs the owner's R2 account and a temporary project (section 7), so it is **open**. |
+| Restore drill documented and successful | **Deferred to Phase 14 by the owner (ADR-025, 2026-11-12).** Documented (runbook "Restore drill") and rehearsed locally end to end, successful (section 5). The nightly backup works on staging since 2026-11-12: database 1 MB and Storage 12 MB (all 9 files) in R2, both recorded in `backup_runs` (Backup workflow run 43302327409). The drill from that real backup with the owner's key is a required step and exit-gate item of Phase 14, before production goes live. |
 
 ## 3. Tests required by the phase file
 
@@ -103,7 +103,7 @@ Each capture checked for sideways scrolling (none). Console errors: one capture 
 
 1. **Budgets:** decided by the owner on 2026-11-12 (approval of the pull request): the load-time and blocking-time budgets move to Phase 15, which is about speed on low-end phones and measures on staging. Layout shift stays enforced.
 2. **Backups:** R2 account, bucket and its four secrets done (2026-11-12; the workflow uses the owner's names `R2_*`). Still to do: the `age` key (kept offline), the Supabase S3 key and the other seven `BACKUP_*` secrets, the `BACKUP_ENV` variable and the 30-day lifecycle rules. The first run is after the merge and the staging migrations, because GitHub runs the workflow only from `main` and it reports into `backup_runs` (migration 51).
-3. **Restore drill:** pause `ddtc-lms-dev`, create a temporary project, and run the drill from the R2 backup (runbook "Restore drill"). This closes the second exit-gate line.
+3. **Restore drill:** deferred to Phase 14 (ADR-025): pause `ddtc-lms-dev`, create a temporary project, and run the drill from the R2 backup with the private key (runbook "Restore drill").
 4. **Uptime monitor:** a free account with two checks (runbook "Monitoring").
 5. **Retention schedule:** review and approve `docs/RETENTION_SCHEDULE.md` (O21), with a legal or privacy adviser where needed.
 6. **Real devices:** VoiceOver on an iPhone and TalkBack on Android: sign in, a lesson's audio player, a written answer, a chart.

@@ -66,7 +66,7 @@ Tracker (tick after sign-off):
 - [x] Step 11.1: Live presence, "Who's online"; settings that take effect; examination documents and audio answers (`phase-11-1-done`)
 - [x] Step 11.2: Examination types and one type per section (`phase-11-2-done`)
 - [x] Phase 12: Assignment-audio retention (`phase-12-done`)
-- [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
+- [x] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`); restore drill deferred to Phase 14 (ADR-025)
 - [ ] Phase 15: Stability and speed, on staging (`phase-15-done`); runs **before** Phase 14 (owner, 2026-11-12, ADR-023). Brief: `docs/requests/2026-11-12-phase-15-stability-and-speed.md`
 - [ ] Phase 14: Staging acceptance and production release (`v1.0.0`, the final tag)
 
