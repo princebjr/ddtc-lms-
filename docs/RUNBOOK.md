@@ -272,3 +272,27 @@ select jobname, schedule, active from cron.job;
 - **Realtime settings (Supabase dashboard, Project Settings, Realtime):** keep Realtime on, and turn **off** "Allow public access" so every channel must pass the policies. The app only uses private channels.
 - If the card always says nobody is online: check that Realtime is on, that the person is an active learner or lecturer of a published course, and the browser console for a channel error (`CHANNEL_ERROR` usually means the policies refused, for example an administrator or a withdrawn learner).
 - People drop off within about a minute of closing the app or losing their connection (the Realtime heartbeat).
+
+## Written in Phase 12
+
+### Learner-audio retention (D20, ADR-022)
+
+**What it does.** Every day at 02:40 (Ghana time) the `retention-runner` job looks for learners' recorded or uploaded audio on submitted assignment and examination answers whose grade or result was released at least `retention_days` (180) days ago and is not held. Text, PDF and Word answers, lesson and instruction audio, attachments, grades, feedback and history are never touched. Administrators see each run on **Retention**.
+
+**Launch state.** `retention_enabled` is false. Leave it off until the Phase 14 review. The job still runs daily as a dry run: it counts what it would remove and changes nothing.
+
+**Enabling live deletion (after the Phase 14 review and DDTC's approval).**
+1. Confirm on Retention that daily dry runs have been running for at least 30 days and that their counts look right.
+2. Check the holds: anything under appeal, investigation or a learner's request is held (a course, a learner, or one answer from its answer or script page).
+3. Switch **Live deletion** on and confirm. If 30 days of dry runs have not passed yet, nothing is deleted until they have; the database enforces this.
+4. The next day, check the run on Retention: removed and failed counts. A failed deletion is retried every day. If the same files keep failing, read the run's details (`retention_runs.details`) and the Storage logs.
+
+**Switching off.** Switch **Live deletion** off. The next run is a dry run again. Files already deleted cannot be recovered except from a Storage backup (D34).
+
+**Changing the period.** `retention_days` changes only with DDTC's written approval. An AAL2 administrator updates it in the SQL editor:
+`update public.system_settings set value = '<days>' where key = 'retention_days';`
+The change is audited (`setting.updated`). The database accepts 0 to 3650. Never set 0 in production.
+
+**Staging test (BUILD_PLAN Phase 14, item 14).** On staging only: set `retention_days` to 0, seed answers with released grades, run the job (`select private.call_edge_function('retention-runner');`), and check that only eligible learner audio is removed and that holds work. Then restore `retention_days` to 180 and `retention_enabled` to false, and verify both on Retention.
+
+**After adding a new Edge Function locally.** The local stack lists its functions when it starts: run `npx supabase stop` and `npm run db:start` before testing a new function, or it answers 404 "Function not found".

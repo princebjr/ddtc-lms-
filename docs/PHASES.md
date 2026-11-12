@@ -64,7 +64,7 @@ Tracker (tick after sign-off):
 - [x] Step 10.3: Examination answers as uploaded audio, PDF or Word files (`phase-10-3-done`)
 - [x] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)
 - [x] Step 11.1: Live presence, "Who's online"; settings that take effect; examination documents and audio answers (`phase-11-1-done`)
-- [ ] Step 11.2: Examination types and one type per section (`phase-11-2-done`)
+- [x] Step 11.2: Examination types and one type per section (`phase-11-2-done`)
 - [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
 - [ ] Phase 14: Staging acceptance and production release (`v1.0.0`)
