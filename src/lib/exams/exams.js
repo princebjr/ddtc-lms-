@@ -24,6 +24,7 @@ import { getSupabase } from '@/lib/supabase.js';
  * @property {string | null} closed_at
  * @property {'DRAFT' | 'PUBLISHED'} publication_status
  * @property {string | null} archived_at
+ * @property {QuestionKind[]} [modes]  the types of question the lecturer chose (Step 11.2, ADR-021)
  */
 /**
  * @typedef {object} EditorQuestion
@@ -34,9 +35,24 @@ import { getSupabase } from '@/lib/supabase.js';
  * @property {'' | 'A' | 'B' | 'C' | 'D'} correct
  * @property {string} guide
  */
-/** @typedef {{ title: string, instructions: string, questions: EditorQuestion[] }} EditorSection */
+/**
+ * A section in the editor. mode is its one type of question (Step 11.2, ADR-021); null only for a section
+ * set before that step whose questions are of more than one kind, until the lecturer splits it.
+ * @typedef {{ title: string, instructions: string, mode: QuestionKind | null, questions: EditorQuestion[] }} EditorSection
+ */
 
-const EXAM_FIELDS = 'id, course_id, title, description, instructions, pass_mark, opens_at, closes_at, closed_at, publication_status, archived_at';
+/** The types of question, in their usual order. */
+export const EXAM_MODES = /** @type {const} */ (['MCQ', 'SHORT', 'ESSAY']);
+/** @type {Readonly<Record<QuestionKind, string>>} */
+export const MODE_LABEL = Object.freeze({ MCQ: 'Multiple choice', SHORT: 'Short answer', ESSAY: 'Essay' });
+
+/** The one kind all these questions share, or null (none, or more than one kind). @param {Array<{ kind: QuestionKind }>} questions @returns {QuestionKind | null} */
+export function singleKind(questions) {
+  const kinds = new Set(questions.map((q) => q.kind));
+  return kinds.size === 1 ? /** @type {QuestionKind} */ ([...kinds][0]) : null;
+}
+
+const EXAM_FIELDS = 'id, course_id, title, description, instructions, pass_mark, opens_at, closes_at, closed_at, publication_status, archived_at, modes';
 
 /** A course's examinations for its managers (RLS), newest opening first. @param {string} courseId */
 export async function fetchCourseExams(courseId) {
@@ -55,7 +71,7 @@ export async function fetchExamForEditing(examId) {
   const supabase = getSupabase();
   const [exam, sections, questions, attempts] = await Promise.all([
     supabase.from('examinations').select(EXAM_FIELDS).eq('id', examId).maybeSingle(),
-    supabase.from('exam_sections').select('id, title, instructions, position').eq('exam_id', examId).is('archived_at', null).order('position'),
+    supabase.from('exam_sections').select('id, title, instructions, position, mode').eq('exam_id', examId).is('archived_at', null).order('position'),
     supabase
       .from('exam_questions')
       .select('id, section_id, kind, prompt, option_a, option_b, option_c, option_d, marks, position, exam_question_keys(correct_option, marking_guide)')
@@ -68,10 +84,9 @@ export async function fetchExamForEditing(examId) {
   return {
     exam: /** @type {ExamRow | null} */ (exam.data),
     started: (attempts.count ?? 0) > 0,
-    sections: (sections.data ?? []).map((s) => ({
-      title: s.title,
-      instructions: s.instructions,
-      questions: (questions.data ?? [])
+    sections: (sections.data ?? []).map((/** @type {any} */ s) => {
+      /** @type {EditorQuestion[]} */
+      const own = (questions.data ?? [])
         .filter((q) => q.section_id === s.id)
         .map((/** @type {any} */ q) => {
           const key = Array.isArray(q.exam_question_keys) ? q.exam_question_keys[0] : q.exam_question_keys;
@@ -83,14 +98,15 @@ export async function fetchExamForEditing(examId) {
             correct: key?.correct_option ?? '',
             guide: key?.marking_guide ?? '',
           };
-        }),
-    })),
+        });
+      return { title: s.title, instructions: s.instructions, mode: /** @type {QuestionKind | null} */ (s.mode ?? singleKind(own)), questions: own };
+    }),
   };
 }
 
 /**
  * Creates or updates the examination's details. Times are ISO strings.
- * @param {{ courseId: string, examId?: string, fields: { title: string, description: string, instructions: string, pass_mark: number, opens_at: string, closes_at: string } }} r
+ * @param {{ courseId: string, examId?: string, fields: { title: string, description: string, instructions: string, pass_mark: number, opens_at: string, closes_at: string, modes?: QuestionKind[] } }} r
  * @returns {Promise<{ examId: string }>}
  */
 export function saveExam({ courseId, examId, fields }) {
@@ -105,6 +121,7 @@ export function saveExamStructure(examId, sections) {
     sections: sections.map((s) => ({
       title: s.title,
       instructions: s.instructions,
+      ...(s.mode ? { mode: s.mode } : {}),
       questions: s.questions.map((q) =>
         q.kind === 'MCQ'
           ? { kind: 'MCQ', prompt: q.prompt, marks: Number(q.marks), options: q.options, ...(q.correct ? { correct: q.correct } : {}) }

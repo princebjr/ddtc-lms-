@@ -56,13 +56,13 @@ Replacing a profile image or course cover creates a new `file_objects` row; the 
 |---|---|
 | grade_categories.part | ASSIGNMENTS, PRACTICALS or EXAMINATIONS: which of the three parts of the course grade (Weekly assignments 40, Local Assembly practicals 30, Final examinations 30). |
 | submissions.marked_in_person | true for a practical's mark typed by a lecturer (no answer sent; version 0). |
-| examinations | course_id, category_id (the course's Final examinations part), title, description, instructions (plain text), pass_mark (%), opens_at, closes_at, closed_at (closed early), publication_status, published_at, archived_at, created_by. |
-| exam_sections | exam_id, title, instructions, position, archived_at. |
+| examinations | course_id, category_id (the course's Final examinations part), title, description, instructions (plain text), pass_mark (%), opens_at, closes_at, closed_at (closed early), publication_status, published_at, archived_at, created_by, modes (the types of question the lecturer chose: one to three of MCQ, SHORT, ESSAY; Step 11.2, ADR-021). |
+| exam_sections | exam_id, title, instructions, position, archived_at, mode (the section's one type of question; null only for a section set before Step 11.2 that mixes kinds). |
 | exam_questions | exam_id, section_id, kind (MCQ, SHORT, ESSAY), prompt, option_a to option_d (multiple choice), marks, position, archived_at. |
 | exam_question_keys | question_id (PK), correct_option (A to D), marking_guide. Managers only. |
 | exam_extensions | exam_id, learner_id, closes_at, granted_by, reason, revoked_at; one per learner and examination. |
 | exam_attempts | exam_id, learner_id, attempt_number, status (NOT_STARTED, IN_PROGRESS, SUBMITTED), started_at, submitted_at, retake_reason, retake_authorised_by, feedback, grade_release_status, released_score, released_feedback, released_answers (snapshot per question), released_at, released_by. |
-| exam_answers | attempt_id, question_id, selected_option, text_answer (up to 50,000 characters), audio_file_id (an EXAM_ANSWER_AUDIO file), score, auto_marked, feedback, marked_by, marked_at. |
+| exam_answers | attempt_id, question_id, selected_option, text_answer (up to 50,000 characters), audio_file_ids (up to three EXAM_ANSWER_AUDIO files in the learner's order; migration 45, ADR-020 item 10) with audio_file_id kept as the first of them, document_file_id (an EXAM_ANSWER_DOCUMENT file; Step 10.3), score, auto_marked, feedback, marked_by, marked_at. |
 | exam_grade_history | attempt_id, question_id, event (SUBMITTED, MARKED, FEEDBACK, RELEASED, RETAKE_AUTHORISED), previous_score, new_score, reason, changed_by, changed_at. Never changed. |
 | file_objects.resource_type | adds EXAM_ANSWER_AUDIO (learner-submissions bucket, submission audio limits). |
 | notifications.related_entity_type | adds examination. |

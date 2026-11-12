@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.j
 import { Textarea } from '@/components/ui/textarea.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { formatDue } from '@/lib/assignments/due.js';
-import { audioUrl, fetchExamFiles, fetchMyExam, LEARNER_STATE, saveExamAnswers, startExam, submitExam } from '@/lib/exams/exams.js';
+import { audioUrl, fetchExamFiles, fetchMyExam, LEARNER_STATE, MODE_LABEL, saveExamAnswers, singleKind, startExam, submitExam } from '@/lib/exams/exams.js';
 import { formatPercentage } from '@/lib/grading/grading.js';
 import { LEARNER_RECORDING } from '@/lib/recording/format.js';
 import { limitFor, limitText, recordingLimits, useClientSettings } from '@/lib/settings/client-settings.js';
@@ -403,6 +403,9 @@ function Taking({ exam, userId, files, onSubmitted }) {
             <h2 id={`take-${s.id}`} className="m-0 text-title-3 text-ink">
               {s.title}
             </h2>
+            {singleKind(s.questions) ? (
+              <p className="m-0 text-body-sm text-ink-secondary" data-testid="section-mode">{`${MODE_LABEL[/** @type {keyof typeof MODE_LABEL} */ (singleKind(s.questions))]} · ${s.questions.length} ${s.questions.length === 1 ? 'question' : 'questions'}`}</p>
+            ) : null}
             {s.instructions ? <p className="m-0 whitespace-pre-wrap text-body-sm text-ink-secondary">{s.instructions}</p> : null}
             {s.questions.map((q, i) => (
               <Card key={q.id} className="flex flex-col gap-3" data-slot="exam-answer" data-kind={q.kind}>

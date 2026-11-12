@@ -26,6 +26,8 @@ const Question = z.discriminatedUnion('kind', [
   }),
 ]);
 
+const Mode = z.enum(['MCQ', 'SHORT', 'ESSAY']);
+
 const Body = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('save'),
@@ -38,6 +40,8 @@ const Body = z.discriminatedUnion('action', [
       pass_mark: z.number().int('The pass mark is a whole percentage from 0 to 100').min(0).max(100),
       opens_at: When,
       closes_at: When,
+      // Step 11.2 (ADR-021): the types of question the examination uses, one to three; left out, they stay as they are.
+      modes: z.array(Mode).min(1, 'Choose at least one type of question for the examination').max(3).optional(),
     }),
   }),
   z.object({
@@ -48,6 +52,8 @@ const Body = z.discriminatedUnion('action', [
         z.object({
           title: z.string().trim().min(1, 'Give each section a title').max(200),
           instructions: z.string().max(2000).default(''),
+          // Step 11.2 (ADR-021): the section's one type; the database checks it against the examination's types.
+          mode: Mode.optional(),
           questions: z.array(Question).min(1, 'Give each section at least one question').max(200),
         }),
       )

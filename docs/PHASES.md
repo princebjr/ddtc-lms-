@@ -63,7 +63,8 @@ Tracker (tick after sign-off):
 - [x] Step 10.2: Letter grades only on the course grade (`phase-10-2-done`)
 - [x] Step 10.3: Examination answers as uploaded audio, PDF or Word files (`phase-10-3-done`)
 - [x] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)
-- [ ] Step 11.1: Live presence, "Who's online" (`phase-11-1-done`)
+- [x] Step 11.1: Live presence, "Who's online"; settings that take effect; examination documents and audio answers (`phase-11-1-done`)
+- [ ] Step 11.2: Examination types and one type per section (`phase-11-2-done`)
 - [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
 - [ ] Phase 14: Staging acceptance and production release (`v1.0.0`)
@@ -74,6 +75,8 @@ Tracker (tick after sign-off):
 - 2026-11-10: end-of-course examinations (MCQ, short answer, essay; text and audio answers; no countdown timer; course grade weekly assignments 40%, Local Assembly practicals 30%, final examinations 30%), practical marks entered by the lecturer, and learners grouped by branch. Built in Phase 10.1 (ADR-016): `docs/requests/2026-11-10-examinations.md` and `docs/requests/2026-11-10-practical-marks-and-branch-groups.md`.
 - 2026-11-10: on the learner's examination page, upload an audio file or a PDF or Word file as an answer as well as recording, and a red-bordered Record button. Built in Step 10.3 (ADR-018).
 - 2026-11-11: administrators and lecturers send announcements to learners, in the app and by email. Built in Phase 11 (ADR-019): `docs/requests/2026-11-11-announcements.md`.
+- 2026-11-11: settings that take effect, arrow bullets on the dashboard introduction, the signed-out alert card, examination documents that open, up to three audio answers, and smaller wording changes. Built in Step 11.1 (ADR-020 items 7 to 12): `docs/requests/2026-11-11-settings-take-effect-intro-arrows-signed-out-alert.md`.
+- 2026-11-11: the lecturer chooses an examination's types of question, and each section has one type. Built in Step 11.2 (ADR-021): `docs/requests/2026-11-11-examination-types.md`.
 
 ## Session prompt for each phase
 
