@@ -128,7 +128,7 @@ export default function SettingsPage() {
               <ReadOnly label="Email retries (minutes after each failure)" value={(get('notification_retry_minutes')?.value ?? []).join(', ')} />
               <ReadOnly
                 label="Learner audio retention"
-                value={get('retention_enabled')?.value ? `On, ${get('retention_days')?.value} days after release` : 'Off (Phase 12)'}
+                value={`${get('retention_enabled')?.value ? 'On' : 'Off'}, ${get('retention_days')?.value ?? 180} days after release (holds and runs: Retention)`}
               />
               <ReadOnly label="Display time zone" value="Ghana time (Africa/Accra)" />
             </Group>

@@ -38,6 +38,7 @@ const GradebooksPage = lazy(() => import('./courses/GradebooksPage.jsx'));
 const NotificationsPage = lazy(() => import('./account/NotificationsPage.jsx'));
 const SettingsPage = lazy(() => import('./admin/SettingsPage.jsx'));
 const AuditLogsPage = lazy(() => import('./admin/AuditLogsPage.jsx'));
+const RetentionPage = lazy(() => import('./admin/RetentionPage.jsx'));
 const ReportsPage = lazy(() => import('./admin/ReportsPage.jsx'));
 const AnnouncementsPage = lazy(() => import('./courses/AnnouncementsPage.jsx'));
 
@@ -56,6 +57,7 @@ const BUILT = {
   'admin/notifications': () => <NotificationsPage />,
   'admin/settings': () => <SettingsPage />,
   'admin/audit-logs': () => <AuditLogsPage />,
+  'admin/retention': () => <RetentionPage />,
   'admin/reports': () => <ReportsPage />,
   'admin/announcements': () => <AnnouncementsPage role="admin" />,
   'lecturer/announcements': () => <AnnouncementsPage role="lecturer" />,

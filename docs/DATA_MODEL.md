@@ -33,7 +33,7 @@ All tables have `id uuid` primary keys (except where noted), `created_at`, and `
 | notification_reminders | kind (ASSIGNMENT, EXAMINATION), item_id, course_id, learner_id, effective_due_at, fire_at, status (PENDING, SENT, CANCELLED), deduplication_key (unique), created_at, updated_at. Phase 11 (ADR-019): kept by `private.schedule_reminders()`; no client access. |
 | announcements | author_id, course_id or branch_id or to_everyone (exactly one), title, body, recipients, archived_at, created_at. Phase 11 (ADR-019, owner request 2026-11-11): written only by `announcement_send`; learners read the ones meant for them, staff their courses' (administrators all); archived, never deleted. |
 | audit_logs | actor_id, action, entity_type, entity_id, metadata (jsonb), created_at. Insert by triggers and Edge Functions only; no UPDATE or DELETE for anyone. |
-| retention_holds | scope (SUBMISSION, LEARNER, COURSE), scope_id, reason, placed_by, placed_at, released_at. |
+| retention_holds | scope (SUBMISSION, EXAM_ATTEMPT, LEARNER, COURSE; EXAM_ATTEMPT added by ADR-022), scope_id, reason, placed_by, placed_at, released_by, released_at. One active hold per scope and id; released, never deleted. |
 | retention_runs | started_at, finished_at, mode (DRY_RUN, LIVE), eligible_count, deleted_count, failed_count, details (jsonb). |
 
 ## 6. Storage buckets (all private except noted)
