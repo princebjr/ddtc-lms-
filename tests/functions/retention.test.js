@@ -101,6 +101,7 @@ afterAll(async () => {
   // The launch values (D20): off, 180 days.
   await setSetting('retention_enabled', false);
   await setSetting('retention_days', 180);
+  await setSetting('retention_dry_run_days', 30);
 });
 
 describe('retention-runner', () => {
@@ -127,10 +128,16 @@ describe('retention-runner', () => {
   });
 
   it('switched on before 30 days of dry runs, it still only dry-runs', async () => {
+    // The period counts from the first dry run ever; a longer period than any earlier local run's history makes
+    // this test independent of what earlier runs left behind (a fresh database has no history at all).
+    await setSetting('retention_dry_run_days', 365);
     await setSetting('retention_enabled', true);
     const res = await runJob();
     expect(res.body.mode).toBe('DRY_RUN');
+    expect(res.body.deleted).toBe(0);
     expect(await stored(files.kwameAudio)).toBe(true);
+    await setSetting('retention_enabled', false);
+    await setSetting('retention_dry_run_days', 30);
   });
 
   it('after 30 days of dry runs, deletes only released, unheld learner audio, keeping every record', async () => {
@@ -144,6 +151,7 @@ describe('retention-runner', () => {
     expect(hold.ok, await hold.clone().text()).toBe(true);
     // Every dry run so far moved 31 days back, as if the 30-day dry run had passed.
     await serviceWrite(`retention_runs?mode=eq.DRY_RUN`, 'PATCH', { started_at: new Date(Date.now() - 31 * 86400000).toISOString() });
+    await setSetting('retention_enabled', true);
     const res = await runJob();
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(res.body.mode).toBe('LIVE');
