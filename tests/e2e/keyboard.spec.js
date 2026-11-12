@@ -72,7 +72,7 @@ test('sign in, open a lesson and mark it complete, all with the keyboard', async
   await expect(page.getByRole('button', { name: /Mark not complete|Completed/ })).toBeVisible();
 });
 
-test('play instruction audio and send a written answer with the keyboard', async ({ page }) => {
+test('play instruction audio and send a written answer with the keyboard', async ({ page, browserName }) => {
   const tag = unique();
   const lecturer = await createAccount({ role: 'LECTURER', first: 'Ama', second: `Boateng${tag}` });
   const kwame = await createAccount({ first: 'Kwame', second: `Mensah${tag}` });
@@ -91,12 +91,25 @@ test('play instruction audio and send a written answer with the keyboard', async
   await dismissToasts(page);
 
   // The instruction audio: Space plays and pauses; the arrow-key speed and skip buttons are reachable.
+  // Firefox on the CI machines has no sound output (NS_ERROR_DOM_MEDIA_MEDIASINK_ERR), so playback cannot
+  // start there; it must still be the keyboard that asks the player to play.
+  await page.evaluate(() => {
+    const original = HTMLMediaElement.prototype.play;
+    /** @type {any} */ (window).__playCalls = 0;
+    HTMLMediaElement.prototype.play = function (...args) {
+      /** @type {any} */ (window).__playCalls += 1;
+      return original.apply(this, args);
+    };
+  });
   const play = page.getByRole('button', { name: /^Play / }).first();
   await tabTo(page, play);
   await page.keyboard.press('Space');
-  await expect(page.getByRole('button', { name: /^Pause / }).first()).toBeVisible();
-  await page.keyboard.press('Space');
-  await expect(page.getByRole('button', { name: /^Play / }).first()).toBeVisible();
+  await expect.poll(() => page.evaluate(() => /** @type {any} */ (window).__playCalls)).toBeGreaterThan(0);
+  if (browserName !== 'firefox') {
+    await expect(page.getByRole('button', { name: /^Pause / }).first()).toBeVisible();
+    await page.keyboard.press('Space');
+    await expect(page.getByRole('button', { name: /^Play / }).first()).toBeVisible();
+  }
   await tabTo(page, page.getByRole('button', { name: 'Forward 15 seconds' }).first());
 
   // The answer: type it, then Submit with Enter.
