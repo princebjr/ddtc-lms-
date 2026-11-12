@@ -247,6 +247,10 @@ test("To grade lists the answers waiting and opens the grading screen; the learn
   await expect(kwamePage.getByTestId('course-grade')).toHaveText('75% · B');
   const essayRow = kwamePage.getByRole('listitem').filter({ hasText: 'Reformation essay' }).filter({ visible: true });
   const essayCells = kwamePage.getByRole('row').filter({ hasText: 'Reformation essay' }).filter({ visible: true });
+  // The list (phones) or the table (wider screens): wait for the essay to show in one of them before choosing.
+  // count() does not wait, and asked too early it found no list on a phone and looked for table rows instead
+  // (iphone-15 dark in CI, 2026-11-12).
+  await expect(essayRow.or(essayCells).first()).toBeVisible();
   const essay$ = (await essayRow.count()) ? essayRow : essayCells;
   await expect(essay$.getByText('15 / 20')).toBeVisible();
   await expect(essay$.getByText('Graded', { exact: true })).toBeVisible(); // the letter is on the course grade (Step 10.2)

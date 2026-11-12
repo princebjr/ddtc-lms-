@@ -36,6 +36,15 @@ The database tests were written first and seen to fail without the migration ("c
 
 Four older database test files (26, 27, 28, 35) set up one section holding two or three kinds of question. Their setup now uses one section per kind, as the rule requires; what each file tests is unchanged.
 
+## 2a. CI
+
+- Run 1 (pull request, commit `433de50`): https://github.com/princebjr/ddtc-lms-/actions/runs/43125278431
+  - Lint, types, unit, secret scan, audit, build: pass. Database, Edge Function and generated types: pass. gitleaks: pass. Lighthouse: pass.
+  - End to end: seven shards fully green. Shard 5: **386 passed, 1 failed**.
+  - The failure: `grading.spec.js`, "To grade lists the answers waiting... the learner's Grades and feedback shows released and awaiting answers", on iphone-15 dark only. Not a change of this step: the test and the Grades page were last changed in Step 10.2. The test chose between the phone list and the desktop table with `count()`, which does not wait; asked before the list had rendered, it found none on a phone and looked for table rows, which a phone never has.
+  - Fix: the test now waits for the essay to show in either layout before choosing. Every assertion is unchanged. Passed 4 of 4 locally afterwards (iphone-15 dark and desktop Chrome, twice each).
+- The run on the final commit is the pull request's CI gate; its result is in the pull request.
+
 ## 3. Screenshots
 
 `docs/acceptance/phase-11-2/screens/`, 30 images at 375, 768 and 1280 px in light and dark:
