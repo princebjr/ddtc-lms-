@@ -18,7 +18,8 @@ describe('security headers (vercel.json)', () => {
 
   it('locks down framing, objects, base and forms, and only talks to Supabase', () => {
     for (const d of ["default-src 'self'", "frame-ancestors 'none'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", 'upgrade-insecure-requests']) expect(csp).toContain(d);
-    expect(csp).toContain("connect-src 'self' https://*.supabase.co wss://*.supabase.co;");
+    // blob: = the page's own recordings and files: the audio player reads a fresh recording to draw its waveform.
+    expect(csp).toContain("connect-src 'self' blob: https://*.supabase.co wss://*.supabase.co;");
     expect(csp).toContain("media-src 'self' blob: https://*.supabase.co;");
   });
 
@@ -32,7 +33,7 @@ describe('security headers (vercel.json)', () => {
 
   it('the local preview serves the same policy with the local Supabase origin, over plain http', () => {
     const local = Object.fromEntries(previewHeaders('http://127.0.0.1:54321'));
-    expect(local['Content-Security-Policy']).toContain('connect-src \'self\' https://*.supabase.co wss://*.supabase.co http://127.0.0.1:54321 ws://127.0.0.1:54321');
+    expect(local['Content-Security-Policy']).toContain('connect-src \'self\' blob: https://*.supabase.co wss://*.supabase.co http://127.0.0.1:54321 ws://127.0.0.1:54321');
     expect(local['Content-Security-Policy']).toContain('media-src \'self\' blob: https://*.supabase.co http://127.0.0.1:54321');
     expect(local['Content-Security-Policy']).not.toContain('upgrade-insecure-requests');
     expect(local['Strict-Transport-Security']).toBeUndefined();
