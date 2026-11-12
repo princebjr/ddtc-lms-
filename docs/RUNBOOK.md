@@ -296,3 +296,64 @@ The change is audited (`setting.updated`). The database accepts 0 to 3650. Never
 **Staging test (BUILD_PLAN Phase 14, item 14).** On staging only: set `retention_days` to 0, seed answers with released grades, run the job (`select private.call_edge_function('retention-runner');`), and check that only eligible learner audio is removed and that holds work. Then restore `retention_days` to 180 and `retention_enabled` to false, and verify both on Retention.
 
 **After adding a new Edge Function locally.** The local stack lists its functions when it starts: run `npx supabase stop` and `npm run db:start` before testing a new function, or it answers 404 "Function not found".
+
+## Written in Phase 13
+
+### Backups (D34, ADR-023)
+
+**Targets (D34, kept by DDTC on 2026-11-04 and 2026-11-12).** Lose at most 24 hours of work (RPO), be back within 8 hours (RTO), keep backups 30 days, rehearse a restore before launch and every quarter after.
+
+**What runs.** The GitHub Actions workflow **Backup** (`.github/workflows/backup.yml`) runs every night at 01:30 Ghana time, and on demand from the Actions tab ("Run workflow"):
+- **Database:** `pg_dump` of the whole database, encrypted with `age` to DDTC's public key, uploaded to the private Cloudflare R2 bucket as `db/db-<env>-<date>.dump.age`. Without the private key the file is unreadable.
+- **Storage:** every file in the six buckets is copied to `storage/current/<bucket>`. A file changed or removed since the night before moves to `storage/history/<date>/<bucket>` instead of being lost.
+- Each run is recorded through `backup_report` in `backup_runs` (and audited as `backup.succeeded` or `backup.failed`). The daily health check (06:15) alerts administrators when a backup failed, never ran, or the newest good one is older than 26 hours.
+- Nothing is kept in GitHub (the repository is public). Until every secret below exists, the workflow only prints a warning, and the System health card shows the backups as missing.
+
+**One-time setup (owner, about 30 minutes).**
+1. **R2:** create a free Cloudflare account, then R2, then a bucket (for example `ddtc-lms-backups`). Leave public access off. Add two lifecycle rules: delete objects under `db/` after 30 days, and under `storage/history/` after 30 days.
+2. **R2 key:** R2, then Manage API tokens, then create a token with *Object Read & Write* on that bucket only. Note the access key ID, the secret and the S3 endpoint (`https://<account id>.r2.cloudflarestorage.com`).
+3. **Encryption key:** on a trusted computer, install `age` and run `age-keygen -o ddtc-backup-key.txt`. The line `# public key: age1...` is the recipient. Keep `ddtc-backup-key.txt` **offline** in two places (for example an encrypted USB drive in the office safe and a password manager). If it is lost, the database backups cannot be read.
+4. **Supabase Storage S3 key:** Supabase dashboard, then Project Settings, then Storage, then S3 Connection: enable it, note the endpoint, and create an access key.
+5. **Database URL:** Project Settings, then Database, then Connection string (session pooler, port 5432), with the database password.
+6. **GitHub secrets** (repository Settings, then Secrets and variables, then Actions): `BACKUP_DB_URL`, `BACKUP_AGE_RECIPIENT`, `BACKUP_SUPABASE_URL`, `BACKUP_SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_SUPABASE_S3_ENDPOINT`, `BACKUP_SUPABASE_S3_KEY_ID`, `BACKUP_SUPABASE_S3_SECRET`, `BACKUP_R2_ENDPOINT`, `BACKUP_R2_KEY_ID`, `BACKUP_R2_SECRET`, `BACKUP_R2_BUCKET`. Add the variable `BACKUP_ENV` (`staging` now, `production` at launch).
+7. Run the workflow by hand once. Check that the run is green, that both files appear in R2, and that the System health card on the administrator dashboard no longer lists the backups.
+
+At launch, point the secrets at production. Supabase Pro (about US$25 a month, ADR-023) adds Supabase's own daily backups as a second copy.
+
+### Restore drill (D34; before launch, then every quarter)
+
+Never restore over production or staging. Use a temporary project and delete it afterwards.
+
+1. **Prepare.** Pause `ddtc-lms-dev` (the free plan allows two active projects), create a temporary project `ddtc-restore-<date>` in the same region, and note the start time.
+2. **Schema and buckets.** From the repository: `npx supabase link --project-ref <temp ref>` then `npx supabase db push --linked --yes`. The migrations create the tables and the six buckets.
+3. **Data.** Download the newest `db/*.dump.age` from R2, then run:
+   - `age -d -i ddtc-backup-key.txt db-<env>-<date>.dump.age > restore.dump`
+   - `pg_restore --data-only --schema=public --schema=auth --file=data.sql restore.dump`
+   - `psql "<temp database URL>" -v ON_ERROR_STOP=1 -c "set session_replication_role = replica" -f data.sql`
+4. **Files.** Enable the temporary project's S3 connection, add it to rclone as `temp`, and for each of the six buckets run `rclone copy r2:<R2 bucket>/storage/current/<bucket> temp:<bucket>`.
+5. **Check.** `psql "<temp database URL>" -f scripts/verify-restore.sql`. It passes when "VALIDATED files without a stored object" and "released scores outside their assignment marks" are both 0. Compare the table sizes with the source's, and note the newest records: the gap between them and the failure time is the data-loss window (must be under 24 hours).
+6. **Journey.** Point a local build at the temporary project (`VITE_SUPABASE_URL` and the anon key in `.env.local`), sign in as an administrator, a lecturer and a learner, and open a course, a lesson's audio, a submitted answer and a gradebook.
+7. **Record** in `docs/acceptance/` (or the quarterly log): the backup used, start and finish times (must be under 8 hours), the data-loss window, the check output and any problems. Then delete the temporary project, resume `ddtc-lms-dev`, and delete `restore.dump`, `data.sql` and every decrypted copy.
+
+### Monitoring and the System health card (ADR-023)
+
+There is no error-reporting service (owner decision, 2026-11-12). Problems are found in three places:
+- **System health card** on the administrator dashboard, and a daily alert at 06:15 in every administrator's Notifications. It lists failed scheduled jobs or Edge Function calls in the last 24 hours, files that keep failing removal, failed emails, a retention job that has not run for 48 hours, and missing, failed or stale backups. Each issue is alerted once a day while it lasts.
+- **Server logs:** Supabase dashboard, then Logs (Edge Functions, Postgres, Auth, Storage); and Vercel, then the project, then Logs. Learner data and secrets are never logged.
+- **Uptime monitor (owner, free):** create a free account at an uptime service (for example UptimeRobot or Better Stack). Add an HTTPS check every 5 minutes on the production address and on `https://<project>.supabase.co/auth/v1/health`, and send alerts to the incident contact by email and SMS.
+
+**What to do with an issue.** Read the card's message, then the matching log. A failed job: run it again from the SQL editor (`select private.call_edge_function('<job>');`). Failed emails: the Resend dashboard. A backup issue: the Backup workflow run on GitHub.
+
+### Rate limits (ADR-023)
+
+- **Sign-in, sign-up and token refresh:** Supabase Auth limits per IP, set in `supabase/config.toml` under `[remotes.staging.auth.rate_limit]` (150 sign-ins or sign-ups and 300 token refreshes per 5 minutes) and pushed with `npx supabase config push --project-ref <ref>`. There is no CAPTCHA (owner change to D22, 2026-11-05), so these limits are the protection.
+- **Heavy actions** are limited per person in the Edge Functions (`supabase/functions/_shared/rate-limit.ts`): 30 gradebook exports per 10 minutes, 10 learner imports per hour, 120 upload starts per 10 minutes, 30 new accounts per hour, and 60 media removals per 10 minutes. Above a limit the person sees "Too many requests. Try again later." (HTTP 429). To change a limit, edit `LIMITS`, run the tests and deploy the function.
+- Counts older than a day are removed daily (`private.rate_limit_clean`).
+
+### Security headers
+
+Set for every page by `vercel.json`: Content-Security-Policy (scripts only from the site itself plus the inline theme script by its hash; images, audio and connections only from the site and Supabase; no framing), HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy (microphone for the site itself only) and Cross-Origin-Opener-Policy. If the inline theme script in `index.html` changes, the unit test `security-headers.test.js` fails and shows the new hash to put in `vercel.json`. After a deploy, check with `curl -sI https://<site>`.
+
+### Load and speed checks
+
+See `docs/CAPACITY.md` for the load seed, the load test and the throttled-phone budgets.

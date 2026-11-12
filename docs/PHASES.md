@@ -65,9 +65,10 @@ Tracker (tick after sign-off):
 - [x] Phase 11: Notifications, reports, audit viewer and settings (`phase-11-done`)
 - [x] Step 11.1: Live presence, "Who's online"; settings that take effect; examination documents and audio answers (`phase-11-1-done`)
 - [x] Step 11.2: Examination types and one type per section (`phase-11-2-done`)
-- [ ] Phase 12: Assignment-audio retention (`phase-12-done`)
+- [x] Phase 12: Assignment-audio retention (`phase-12-done`)
 - [ ] Phase 13: Hardening, accessibility, performance and recovery (`phase-13-done`)
-- [ ] Phase 14: Staging acceptance and production release (`v1.0.0`)
+- [ ] Phase 15: Stability and speed, on staging (`phase-15-done`); runs **before** Phase 14 (owner, 2026-11-12, ADR-023). Brief: `docs/requests/2026-11-12-phase-15-stability-and-speed.md`
+- [ ] Phase 14: Staging acceptance and production release (`v1.0.0`, the final tag)
 
 ### Owner requests waiting to be scheduled
 
@@ -77,6 +78,8 @@ Tracker (tick after sign-off):
 - 2026-11-11: administrators and lecturers send announcements to learners, in the app and by email. Built in Phase 11 (ADR-019): `docs/requests/2026-11-11-announcements.md`.
 - 2026-11-11: settings that take effect, arrow bullets on the dashboard introduction, the signed-out alert card, examination documents that open, up to three audio answers, and smaller wording changes. Built in Step 11.1 (ADR-020 items 7 to 12): `docs/requests/2026-11-11-settings-take-effect-intro-arrows-signed-out-alert.md`.
 - 2026-11-11: the lecturer chooses an examination's types of question, and each section has one type. Built in Step 11.2 (ADR-021): `docs/requests/2026-11-11-examination-types.md`.
+- 2026-11-12: Phase 15, stability and speed (stress, spike and soak tests, capacity, speed on low-end phones). Runs after Phase 13 and before Phase 14, on staging (ADR-023). Five questions go to the owner before its plan: `docs/requests/2026-11-12-phase-15-stability-and-speed.md`.
+- 2026-11-12: learners and lecturers clear notifications one at a time or all at once. Built in Phase 13 (ADR-024).
 
 ## Session prompt for each phase
 

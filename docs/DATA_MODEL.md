@@ -66,3 +66,11 @@ Replacing a profile image or course cover creates a new `file_objects` row; the 
 | exam_grade_history | attempt_id, question_id, event (SUBMITTED, MARKED, FEEDBACK, RELEASED, RETAKE_AUTHORISED), previous_score, new_score, reason, changed_by, changed_at. Never changed. |
 | file_objects.resource_type | adds EXAM_ANSWER_AUDIO (learner-submissions bucket, submission audio limits). |
 | notifications.related_entity_type | adds examination. |
+
+### Added in Phase 13 (ADR-023, ADR-024)
+
+| Table or column | Fields |
+|---|---|
+| notifications.cleared_at | When the recipient cleared it (ADR-024). Cleared notifications are hidden from that person's list and unread count; never deleted. Set and unset only by `notifications_clear` and `notifications_restore` (the caller's own, learners and lecturers). |
+| backup_runs | kind (DATABASE, STORAGE), succeeded, size_bytes, location (the R2 object or folder), error (required when a run failed), started_at, finished_at, created_at. Written only by `backup_report` (service role, the nightly Backup workflow); read by AAL2 administrators; never changed. |
+| private.rate_limit_hits | actor, action, window_start, hits: one fixed-window count per person and heavy action, written only by `rate_limit_take` (service role); counts older than a day removed daily. No client access. |
