@@ -104,12 +104,22 @@ const ACTION_LABEL = (action) =>
     'setting.updated': 'Setting changed',
     'profile.role_changed': 'Role changed',
     'profile.status_changed': 'Account status changed',
+    'profile.course_creation_changed': 'Course creation permission changed',
+    'profile.direct_publish_changed': 'Direct publishing permission changed',
+    'profile.branch_changed': 'Branch changed',
     'admin.mfa_reset': 'Two-step verification reset',
     'admin.sessions_revoked': 'Sessions signed out',
+    'admin.administrator_invited': 'Administrator invited',
+    'admin.administrator_promoted': 'Administrator added',
+    'admin.lecturer_invited': 'Lecturer invited',
+    'admin.learners_imported': 'Learners imported',
+    'admin.bootstrap': 'First administrator set up',
     'audit_log.exported': 'Audit log downloaded',
     'course.returned': 'Course returned',
     'course.archived': 'Course archived',
-  })[action] ?? action;
+    'course.unarchived': 'Course restored',
+    'grade_categories.standard_parts_applied': 'Standard grade parts applied',
+  })[action] ?? 'Administrative change';
 
 export function AdminActivity() {
   const page = useLoad(() => fetchDashboard('admin_dashboard'), []);

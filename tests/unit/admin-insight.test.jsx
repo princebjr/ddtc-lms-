@@ -226,4 +226,23 @@ describe('dashboard panels', () => {
     expect(screen.getByText('Setting changed')).toBeTruthy();
     expect(screen.getByText('No grades released yet.')).toBeTruthy();
   });
+
+  it('administrator: every event has a readable name, never an internal action key', async () => {
+    api.fetchDashboard.mockResolvedValue({
+      answers_sent_7d: 0,
+      grading_backlog: 0,
+      releases_7d: 0,
+      recent_releases: [],
+      recent_events: [
+        { at: '2026-11-12T09:00:00Z', action: 'profile.course_creation_changed', actor_name: 'System' },
+        { at: '2026-11-12T08:00:00Z', action: 'admin.learners_imported', actor_name: 'Prince Boateng' },
+        { at: '2026-11-12T07:00:00Z', action: 'profile.something_new', actor_name: 'System' },
+      ],
+    });
+    inRouter(<AdminActivity />);
+    expect(await screen.findByText('Course creation permission changed')).toBeTruthy();
+    expect(screen.getByText('Learners imported')).toBeTruthy();
+    expect(screen.getByText('Administrative change')).toBeTruthy();
+    expect(screen.queryByText(/^[a-z_]+\.[a-z_]+$/)).toBeNull();
+  });
 });
