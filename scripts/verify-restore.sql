@@ -10,12 +10,13 @@
 \pset footer off
 
 \echo '1. Table sizes'
-select relname as table_name, n_live_tup as rows
-  from pg_stat_user_tables
- where schemaname = 'public'
-   and relname in ('profiles', 'courses', 'course_enrollments', 'lessons', 'assignments', 'submissions', 'submission_versions',
-                   'submission_files', 'file_objects', 'examinations', 'exam_attempts', 'exam_answers', 'grade_change_history', 'exam_grade_history', 'audit_logs', 'notifications')
- order by relname;
+-- Exact counts (table statistics are empty right after a restore).
+select t as table_name,
+       (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from public.%I', t), false, true, '')))[1]::text::bigint as rows
+  from unnest(array['profiles', 'courses', 'course_enrollments', 'lessons', 'assignments', 'submissions', 'submission_versions',
+                    'submission_files', 'file_objects', 'examinations', 'exam_attempts', 'exam_answers', 'grade_change_history',
+                    'exam_grade_history', 'audit_logs', 'notifications']) t
+ order by t;
 
 \echo '2. Database and Storage agree'
 select 'VALIDATED files without a stored object' as check, count(*) as count
