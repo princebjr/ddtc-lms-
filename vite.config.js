@@ -2,8 +2,28 @@ import { fileURLToPath, URL } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { pwaOptions } from './pwa.config.js';
+import { previewHeaders } from './scripts/security-headers.mjs';
+
+/**
+ * The local preview (and so every end-to-end test) serves vercel.json's security headers, with this
+ * build's Supabase origin added to the CSP (Phase 13).
+ * @returns {import('vite').Plugin}
+ */
+function securityHeadersInPreview() {
+  return {
+    name: 'ddtc-security-headers-preview',
+    configurePreviewServer(server) {
+      const headers = previewHeaders(process.env.VITE_SUPABASE_URL ?? loadEnv('production', process.cwd(), 'VITE_').VITE_SUPABASE_URL);
+      server.middlewares.use((_req, res, next) => {
+        for (const [name, value] of headers) res.setHeader(name, value);
+        next();
+      });
+    },
+  };
+}
 
 /**
  * Preview-only routes (/dev/design and /dev/shell/...) are on for the dev server, CI and Vercel
@@ -22,7 +42,7 @@ function devRoutesFlag(command) {
 
 export default defineConfig(({ command }) => ({
   publicDir: 'public',
-  plugins: [react(), tailwindcss(), VitePWA(pwaOptions)],
+  plugins: [react(), tailwindcss(), VitePWA(pwaOptions), securityHeadersInPreview()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

@@ -46,32 +46,34 @@ export default function LearnerDashboardPage() {
                 <ExamDeadlines />
               </>
             }
+            tail={
+              <section aria-labelledby="my-courses-heading" className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <h2 id="my-courses-heading" className="m-0 text-title-3 text-ink">
+                    My courses
+                  </h2>
+                  <Link to="/learner/my-courses" className="inline-flex min-h-11 items-center text-label text-link hover:underline focus-visible:focus-ring">
+                    All courses
+                  </Link>
+                </div>
+                {rows.length ? (
+                  <InsetList>
+                    {rows.slice(0, 5).map(({ course, enrolment_status: status }) => (
+                      <InsetListLink
+                        key={course.id}
+                        to={`/learner/courses/${course.id}`}
+                        title={course.title}
+                        secondary={course.course_code}
+                        trailing={status === 'COMPLETED' ? <StatusChip tone="info">Completed</StatusChip> : course.status === 'ARCHIVED' ? <StatusChip>Archived</StatusChip> : null}
+                      />
+                    ))}
+                  </InsetList>
+                ) : (
+                  <p className="m-0 text-body-sm text-ink-secondary">You are not enrolled in any course yet. The DDTC office enrols you.</p>
+                )}
+              </section>
+            }
           />
-          <section aria-labelledby="my-courses-heading" className="mt-6 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h2 id="my-courses-heading" className="m-0 text-title-3 text-ink">
-                My courses
-              </h2>
-              <Link to="/learner/my-courses" className="inline-flex min-h-11 items-center text-label text-link hover:underline focus-visible:focus-ring">
-                All courses
-              </Link>
-            </div>
-            {rows.length ? (
-              <InsetList>
-                {rows.slice(0, 5).map(({ course, enrolment_status: status }) => (
-                  <InsetListLink
-                    key={course.id}
-                    to={`/learner/courses/${course.id}`}
-                    title={course.title}
-                    secondary={course.course_code}
-                    trailing={status === 'COMPLETED' ? <StatusChip tone="info">Completed</StatusChip> : course.status === 'ARCHIVED' ? <StatusChip>Archived</StatusChip> : null}
-                  />
-                ))}
-              </InsetList>
-            ) : (
-              <p className="m-0 text-body-sm text-ink-secondary">You are not enrolled in any course yet. The DDTC office enrols you.</p>
-            )}
-          </section>
         </LoadingRegion>
       )}
     </div>

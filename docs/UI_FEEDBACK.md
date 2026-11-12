@@ -31,6 +31,8 @@ Type: S = success, I = info, W = warning, E = error.
 | Everyone | Connection lost | "You are offline" (W, stays until back online) | none |
 | Everyone | Connection restored | "Back online" (S) | none |
 | Everyone | New notification arrives | Notification title (I) | Open |
+| Learner and lecturer | One notification cleared (ADR-024) | "Notification cleared" (S) | Undo |
+| Learner and lecturer | All notifications cleared (ADR-024) | "Notifications cleared" (S) | Undo |
 | Everyone | New app version ready | "New version available" (I, stays) | Refresh |
 | Everyone | Session about to reach its absolute limit (D32; inactivity warns with a dialog instead, D43) | "Your session ends in 2 minutes" (W) | none |
 | Everyone | Unsaved work put back into an editor after an idle sign-out (D43) | "Draft restored" (I) | none |

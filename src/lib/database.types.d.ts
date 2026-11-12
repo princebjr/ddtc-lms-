@@ -139,6 +139,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"backup_runs": {
+                  Row: {
+                    "created_at": string,"error": string | null,"finished_at": string,"id": string,"kind": string,"location": string | null,"size_bytes": number | null,"started_at": string,"succeeded": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"error"?: string | null,"finished_at"?: string,"id"?: string,"kind": string,"location"?: string | null,"size_bytes"?: number | null,"started_at"?: string,"succeeded": boolean
+                  }
+                  Update: {
+                    "created_at"?: string,"error"?: string | null,"finished_at"?: string,"id"?: string,"kind"?: string,"location"?: string | null,"size_bytes"?: number | null,"started_at"?: string,"succeeded"?: boolean
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"branches": {
                   Row: {
                     "created_at": string,"id": string,"is_active": boolean,"name": string,"position": number
@@ -767,14 +781,14 @@ isOneToOne: false
                   ]
                 },"notifications": {
                   Row: {
-                    "created_at": string,"deduplication_key": string | null,"id": string,"link_path": string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at": string | null,"recipient_id": string,"related_entity_id": string | null,"related_entity_type": string | null,"title": string
+                    "cleared_at": string | null,"created_at": string,"deduplication_key": string | null,"id": string,"link_path": string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at": string | null,"recipient_id": string,"related_entity_id": string | null,"related_entity_type": string | null,"title": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id": string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title": string
+                    "cleared_at"?: string | null,"created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id": string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title": string
                   }
                   Update: {
-                    "created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message"?: string,"notification_type"?: Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id"?: string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title"?: string
+                    "cleared_at"?: string | null,"created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message"?: string,"notification_type"?: Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id"?: string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title"?: string
                   }
                   Relationships: [
                     {
@@ -1080,6 +1094,9 @@ isOneToOne: false
               "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"created_at": string,"entity_id": string,"entity_type": string,"id": string,"metadata": Json
             }[]
                            },
+"backup_report":
+{ Args: { "p_error": string,"p_kind": string,"p_location": string,"p_size_bytes": number,"p_succeeded": boolean }; Returns: string
+                           },
 "bootstrap_first_admin":
 { Args: { "p_user": string }; Returns: undefined
                            },
@@ -1330,6 +1347,16 @@ isOneToOne: false
 "notification_delivery_result":
 { Args: { "p_delivery": string,"p_error": string,"p_ok": boolean,"p_permanent": boolean,"p_provider_id": string }; Returns: string
                            },
+"notifications_clear":
+{ Args: { "p_ids"?: (string)[] }; Returns: {
+              "id": string
+            }[]
+                           },
+"notifications_restore":
+{ Args: { "p_ids": (string)[] }; Returns: {
+              "id": string
+            }[]
+                           },
 "practical_marks":
 { Args: { "p_assignment": string }; Returns: {
               "feedback": string,"learner_id": string,"score": number
@@ -1345,6 +1372,9 @@ isOneToOne: false
 { Args: { "p_ids": (string)[] }; Returns: {
               "first_name": string,"id": string,"profile_image_file_id": string,"role": Database["public"]['Enums']["user_role"],"second_name": string
             }[]
+                           },
+"rate_limit_take":
+{ Args: { "p_action": string,"p_actor": string,"p_max": number,"p_window_seconds": number }; Returns: undefined
                            },
 "record_activity":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -1437,6 +1467,11 @@ isOneToOne: false
 "submission_submit":
 { Args: { "p_actor": string,"p_assignment": string,"p_files": (string)[],"p_request": string,"p_text": string }; Returns: {
               "is_late": boolean,"replayed": boolean,"resubmitted": boolean,"submission_id": string,"version_number": number
+            }[]
+                           },
+"system_health":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "key": string,"message": string,"severity": string,"title": string
             }[]
                            },
 "weights_impact_preview":

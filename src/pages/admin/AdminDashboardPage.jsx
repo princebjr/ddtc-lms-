@@ -6,6 +6,7 @@ import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeleton
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { AdminActivity } from '@/components/dashboard/DashboardPanels.jsx';
 import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
+import { SystemHealth } from '@/components/dashboard/SystemHealth.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { Card } from '@/components/ui/card.jsx';
 import { fetchUserCounts } from '@/lib/admin/users.js';
@@ -80,6 +81,7 @@ export default function AdminDashboardPage() {
           <RoleIntro role="admin" />
         </LoadingRegion>
       )}
+      <SystemHealth />
       <AdminActivity />
     </div>
   );

@@ -5,6 +5,7 @@ import { z } from 'npm:zod@4.6.7';
 import { requireAdmin, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { audit, findByEmail, invite, Person } from '../_shared/people.ts';
+import { takeRateLimit } from '../_shared/rate-limit.ts';
 
 const Body = Person.extend({ canCreateCourses: z.boolean().default(false) });
 
@@ -14,6 +15,7 @@ serve(async (req) => {
   if (!parsed.success) throw new HttpError(400, 'invalid', parsed.error.issues[0]?.message ?? 'Invalid request');
   const b = parsed.data;
   const admin = serviceClient();
+  await takeRateLimit(admin, caller.id, 'provision-account');
 
   let userId: string;
   let invited = false;

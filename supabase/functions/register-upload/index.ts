@@ -22,6 +22,7 @@ import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { requireCourseEditor } from '../_shared/courses.ts';
 import { contentTypeFor, extensionOf, MAX_LESSON_AUDIO, RESOURCES, safeName, submissionLimitKey, submissionRoleFor } from '../_shared/files.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
+import { takeRateLimit } from '../_shared/rate-limit.ts';
 
 const Body = z.object({
   resourceType: z.enum(['PROFILE_IMAGE', 'COURSE_COVER', 'LESSON_AUDIO', 'LESSON_ATTACHMENT', 'ASSIGNMENT_INSTRUCTION_AUDIO', 'SUBMISSION_FILE', 'EXAM_ANSWER_AUDIO', 'EXAM_ANSWER_DOCUMENT']),
@@ -42,6 +43,7 @@ serve(async (req) => {
   const b = parsed.data;
   const rule = RESOURCES[b.resourceType];
   const admin = serviceClient();
+  await takeRateLimit(admin, caller.id, 'register-upload');
   const ext = extensionOf(b.filename);
   let limitKey = rule.limitKey;
 

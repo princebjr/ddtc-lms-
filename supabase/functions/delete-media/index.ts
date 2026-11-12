@@ -12,6 +12,7 @@ import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
 import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { removeStoredFile } from '../_shared/remove-file.ts';
+import { takeRateLimit } from '../_shared/rate-limit.ts';
 
 const Body = z.object({
   kind: z.enum(['lesson-audio', 'lesson-attachment', 'course-cover']),
@@ -31,6 +32,7 @@ serve(async (req) => {
   if (!parsed.success) throw new HttpError(400, 'invalid', 'Choose what to delete');
   const [fn, param] = FUNCTIONS[parsed.data.kind];
   const admin = serviceClient();
+  await takeRateLimit(admin, caller.id, 'delete-media');
 
   const { data, error } = await admin.rpc(fn, { p_actor: caller.id, p_as_admin: caller.isAdmin, [param]: parsed.data.id });
   if (error) throw fromDbError(error);

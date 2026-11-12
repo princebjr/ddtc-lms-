@@ -42,7 +42,7 @@ export default [
     rules: { 'ddtc/no-hard-coded-design-values': 'error' },
   },
   {
-    files: ['scripts/**/*.{js,mjs}', 'tests/**/*.{js,jsx}', 'eslint-rules/**/*.js', '*.{js,cjs,mjs}'],
+    files: ['scripts/**/*.{js,mjs}', 'tests/**/*.{js,jsx,mjs}', 'eslint-rules/**/*.js', '*.{js,cjs,mjs}'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',

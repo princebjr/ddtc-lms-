@@ -113,6 +113,27 @@ const DISTRIBUTION = [
 
 beforeEach(() => vi.clearAllMocks());
 
+// Phase 13 (WCAG 1.1.1): the drawing is hidden from screen readers; a table they read gives every band.
+describe('the distribution chart for screen readers', () => {
+  it('lists every band with its count, and marks the learner\'s own band', () => {
+    render(
+      <DistributionChart
+        title="Score distribution"
+        summary="2 of 3 learners scored 70-79%, the largest group."
+        distribution={[{ band: '60-69%', count: 1 }, { band: '70-79%', count: 2 }]}
+        ownBand="70-79%"
+      />,
+    );
+    const table = screen.getByTestId('distribution-table');
+    // Hidden visually by its wrapper (a table ignores sr-only's 1 px box and would widen small phones' pages).
+    expect(table.parentElement?.className).toMatch(/\bsr-only\b/);
+    expect(table.className).not.toMatch(/sr-only/);
+    expect(within(table).getByText('Score distribution: learners in each band')).toBeTruthy();
+    const rows = within(table).getAllByRole('row').slice(1).map((r) => r.textContent);
+    expect(rows).toEqual(['60-69%1', '70-79% (your band)2']);
+  });
+});
+
 describe('Grades and feedback: one card per course (owner request)', () => {
   it('shows each course with its own grade and status, current and completed apart, each opening its own gradebook', async () => {
     api.fetchMyCourseGrades.mockResolvedValue([

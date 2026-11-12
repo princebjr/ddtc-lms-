@@ -1,0 +1,111 @@
+name: Backup
+
+# Nightly backups (D34: lose at most 24 hours; keep 30 days; Phase 13, owner decision ADR-023 item 2).
+#  - Database: pg_dump of the whole database, compressed and encrypted with age to DDTC's public key, so the
+#    file is unreadable without the private key DDTC keeps offline. Uploaded to a private Cloudflare R2 bucket.
+#  - Storage: every stored file copied to the same bucket; a file changed or removed since the last night is
+#    moved into a dated history folder instead of being lost.
+#  - Each run is recorded in the database (backup_report), so the daily health check alerts administrators when
+#    a backup fails, never ran, or is older than 26 hours.
+# Nothing is stored in GitHub: the repository is public. Secrets are masked in the logs. The job does nothing
+# until the secrets are set (runbook "Backups"). R2 lifecycle rules delete history older than 30 days.
+
+on:
+  schedule:
+    - cron: '30 1 * * *' # 01:30 UTC = 01:30 Ghana time, after the day's work
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  BACKUP_ENV: ${{ vars.BACKUP_ENV || 'staging' }}
+
+jobs:
+  backup:
+    name: Database and Storage backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DB_URL: ${{ secrets.BACKUP_DB_URL }}
+      AGE_RECIPIENT: ${{ secrets.AGE_PUBLIC_KEY }}
+      SUPABASE_URL: ${{ secrets.BACKUP_SUPABASE_URL }}
+      SERVICE_KEY: ${{ secrets.BACKUP_SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_S3_ENDPOINT: ${{ secrets.BACKUP_SUPABASE_S3_ENDPOINT }}
+      SUPABASE_S3_KEY_ID: ${{ secrets.BACKUP_SUPABASE_S3_KEY_ID }}
+      SUPABASE_S3_SECRET: ${{ secrets.BACKUP_SUPABASE_S3_SECRET }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+    steps:
+      - name: Check the backup is set up
+        id: ready
+        run: |
+          missing=""
+          for v in DB_URL AGE_RECIPIENT SUPABASE_URL SERVICE_KEY SUPABASE_S3_ENDPOINT SUPABASE_S3_KEY_ID SUPABASE_S3_SECRET R2_ENDPOINT R2_KEY_ID R2_SECRET R2_BUCKET; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::warning::Backups are not set up yet (missing:$missing). See docs/RUNBOOK.md, Backups."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install pg_dump 17, age and rclone
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 age rclone
+
+      - name: Configure the stores
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          mkdir -p ~/.config/rclone
+          printf '%s\n' \
+            "[supabase]" "type = s3" "provider = Other" "endpoint = ${SUPABASE_S3_ENDPOINT}" \
+            "access_key_id = ${SUPABASE_S3_KEY_ID}" "secret_access_key = ${SUPABASE_S3_SECRET}" "region = local" \
+            "[r2]" "type = s3" "provider = Cloudflare" "endpoint = ${R2_ENDPOINT}" \
+            "access_key_id = ${R2_KEY_ID}" "secret_access_key = ${R2_SECRET}" > ~/.config/rclone/rclone.conf
+
+      - name: Database
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          set -o pipefail
+          day=$(date -u +%Y-%m-%d)
+          file="db-${BACKUP_ENV}-${day}.dump.age"
+          report() { curl -fsS -X POST "${SUPABASE_URL}/rest/v1/rpc/backup_report" -H "apikey: ${SERVICE_KEY}" -H "Authorization: Bearer ${SERVICE_KEY}" -H 'Content-Type: application/json' -d "$1" > /dev/null; }
+          if pg_dump --format=custom --no-owner --no-privileges "${DB_URL}" | age -r "${AGE_RECIPIENT}" > "${file}"; then
+            size=$(stat -c %s "${file}")
+            rclone copyto "${file}" "r2:${R2_BUCKET}/db/${file}"
+            report "{\"p_kind\":\"DATABASE\",\"p_succeeded\":true,\"p_size_bytes\":${size},\"p_location\":\"r2://${R2_BUCKET}/db/${file}\",\"p_error\":null}"
+          else
+            report "{\"p_kind\":\"DATABASE\",\"p_succeeded\":false,\"p_size_bytes\":null,\"p_location\":null,\"p_error\":\"pg_dump or encryption failed (see the Backup workflow run)\"}"
+            exit 1
+          fi
+
+      - name: Storage
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          day=$(date -u +%Y-%m-%d)
+          report() { curl -fsS -X POST "${SUPABASE_URL}/rest/v1/rpc/backup_report" -H "apikey: ${SERVICE_KEY}" -H "Authorization: Bearer ${SERVICE_KEY}" -H 'Content-Type: application/json' -d "$1" > /dev/null; }
+          failed=0
+          for bucket in profile-images course-covers lesson-audio lesson-attachments assignment-instructions-audio learner-submissions; do
+            rclone sync "supabase:${bucket}" "r2:${R2_BUCKET}/storage/current/${bucket}" \
+              --backup-dir "r2:${R2_BUCKET}/storage/history/${day}/${bucket}" --transfers 4 --checksum || failed=1
+          done
+          size=$(rclone size --json "r2:${R2_BUCKET}/storage/current" | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])')
+          if [ "$failed" = 0 ]; then
+            report "{\"p_kind\":\"STORAGE\",\"p_succeeded\":true,\"p_size_bytes\":${size},\"p_location\":\"r2://${R2_BUCKET}/storage/current\",\"p_error\":null}"
+          else
+            report "{\"p_kind\":\"STORAGE\",\"p_succeeded\":false,\"p_size_bytes\":${size},\"p_location\":null,\"p_error\":\"copying one or more buckets failed (see the Backup workflow run)\"}"
+            exit 1
+          fi
