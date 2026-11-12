@@ -41,7 +41,17 @@ Branch `phase-13-hardening`. Plan approved 2026-11-12 with the five recommendati
 | Database (pgTAP) | 44 files, **1,536 passed** |
 | Edge Functions | 158 tests. Local runs failed on the local runtime, not the code: the container had grown to 1.2 GB and hit its CPU limit (503, 546, connection resets). After a restart: **155 of 158**, the 3 failures being one runtime 546 (passed on rerun) and the retention test depending on earlier local runs' history (fixed: the test no longer depends on it; passed 3 runs in a row). CI runs the whole suite on a fresh stack. |
 | Secret scan, dependency audit | Pass (no high) |
-| End to end, all 24 device projects, light and dark; Lighthouse | CI on the pull request |
+| End to end, all 24 device projects, light and dark; Lighthouse | **CI run 43279044357: every job green.** 3,205 end-to-end tests passed over 8 shards, none failed and none passed only on a retry (device-specific tests skipped by design). Lighthouse, pgTAP with the Edge Function suite, lint, types, unit, audit, build and gitleaks all pass. |
+
+**What the CI runs found (and what was done).** The first two runs of the pull request failed; each cause was found before changing anything:
+
+| Found | Cause | Fix |
+|---|---|---|
+| `/dev/audio` logged a CSP error on all 24 projects | The new CSP blocked the audio player reading the page's own fresh recordings (`blob:`) to draw their waveform. In production every recording preview would have lost its waveform and logged an error. | `connect-src` allows `blob:`; unit test. **Real bug, fixed.** |
+| The gradebook analytics page scrolled 18 px sideways on 320 and 375 px phones | The chart's new screen-reader table: a table ignores `sr-only`'s 1 px box. | `sr-only` on a wrapper; unit test. **Real bug, fixed.** |
+| Firefox dark: the theme test saw light mode, twice | The preview now sent `Cross-Origin-Opener-Policy`, which moves the page into a new Firefox process that the test browser's emulated dark mode does not reach (proved by removing only that header). Real devices are not affected. | The local preview leaves COOP out; production keeps it, checked by a unit test. |
+| Firefox: the new keyboard audio test could not play | The CI machines' Firefox has no sound output (`NS_ERROR_DOM_MEDIA_MEDIASINK_ERR`); the player then shows its error state and disables its controls, as it should. | Firefox checks that the keyboard asks the player to play; Chromium and WebKit check play, pause and skip in full. |
+| iPad landscape dark: two upload tests, once | The runner failed to load one of the app's own scripts and reported a WebKit internal error. | None (passed on the next run and on every other project). |
 
 **Query timings** on the load seed (database time, median of three; laptop Docker with 2.8 GB):
 
@@ -92,7 +102,7 @@ Each capture checked for sideways scrolling (none). Console errors: one capture 
 ## 7. Owner steps
 
 1. **Budgets:** decide whether load-time and blocking-time budgets block the release now, or (recommended) move to Phase 15, which is about speed on low-end phones and measures on staging.
-2. **Backups:** create the Cloudflare R2 account and bucket, the `age` key (kept offline), the Supabase S3 key, and the GitHub secrets (runbook "Backups", about 30 minutes). Then run the Backup workflow once.
+2. **Backups:** R2 account, bucket and its four secrets done (2026-11-12; the workflow uses the owner's names `R2_*`). Still to do: the `age` key (kept offline), the Supabase S3 key and the other seven `BACKUP_*` secrets, the `BACKUP_ENV` variable and the 30-day lifecycle rules. The first run is after the merge and the staging migrations, because GitHub runs the workflow only from `main` and it reports into `backup_runs` (migration 51).
 3. **Restore drill:** pause `ddtc-lms-dev`, create a temporary project, and run the drill from the R2 backup (runbook "Restore drill"). This closes the second exit-gate line.
 4. **Uptime monitor:** a free account with two checks (runbook "Monitoring").
 5. **Retention schedule:** review and approve `docs/RETENTION_SCHEDULE.md` (O21), with a legal or privacy adviser where needed.
