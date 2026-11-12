@@ -66,7 +66,7 @@ test('a learner reads notifications, turns course emails off and opens one', asy
   await expectNoAxeViolations(page);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
   await dismissToasts(page);
-  await page.getByTestId('notice').filter({ hasText: 'New assignment' }).getByRole('button').click();
+  await page.getByTestId('notice').filter({ hasText: 'New assignment' }).getByRole('button').first().click();
   await expect(page).toHaveURL(new RegExp(`/learner/courses/${course.id}/assignments/${a.id}$`));
   await expect(page.getByTestId('notification-bell')).toHaveAttribute('aria-label', 'Notifications, 1 unread');
 });
@@ -144,4 +144,41 @@ test('an administrator changes a setting, finds it in the audit logs and reads a
   await expect(page.getByText('Released course grades only.', { exact: false })).toBeVisible();
   await expectNoAxeViolations(page);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+});
+
+// Owner request of 2026-11-12 (ADR-024): a learner clears one notification, undoes it, then clears them all;
+// the bell's unread count follows, and nothing comes back after a reload.
+test('a learner clears one notification, undoes it, and clears them all', async ({ page }) => {
+  const tag = unique();
+  const lecturer = await createAccount({ role: 'LECTURER', first: 'Ama', second: `Boateng${tag}` });
+  const kwame = await createAccount({ first: 'Kwame', second: `Mensah${tag}` });
+  const course = await createCourseFixture({ ownerId: lecturer.id, title: `Clearing ${tag}` });
+  await enrolFixture(course.id, kwame.id, lecturer.id);
+  await createAssignmentFixture({ courseId: course.id, ownerId: lecturer.id, title: `Reflection ${tag}`, dueAt: new Date(Date.now() + 5 * 86400000).toISOString() });
+
+  await signIn(page, kwame.email, kwame.password);
+  await expect(page).toHaveURL(/\/learner\/dashboard$/);
+  await page.goto('/learner/notifications');
+  await dismissToasts(page);
+  const notices = page.getByTestId('notice');
+  await expect(notices).toHaveCount(2);
+
+  const first = await notices.first().getByRole('button', { name: /^Clear notification: / }).getAttribute('aria-label');
+  await notices.first().getByRole('button', { name: /^Clear notification: / }).click();
+  await expect(notices).toHaveCount(1);
+  const cleared = toast(page, 'Notification cleared');
+  await expect(cleared).toBeVisible();
+  await cleared.getByRole('button', { name: 'Undo' }).click();
+  await expect(notices).toHaveCount(2);
+  await expect(page.getByRole('button', { name: first ?? '' })).toBeVisible();
+  await dismissToasts(page);
+
+  await page.getByRole('button', { name: 'Clear all' }).click();
+  await expect(toast(page, 'Notifications cleared')).toBeVisible();
+  await expect(page.getByText('No notifications yet')).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Notifications, \d+ unread/ })).toHaveCount(0);
+  await expectNoAxeViolations(page);
+  expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
+  await page.reload();
+  await expect(page.getByText('No notifications yet')).toBeVisible();
 });

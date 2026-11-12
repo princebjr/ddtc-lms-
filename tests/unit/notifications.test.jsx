@@ -85,7 +85,7 @@ describe('the notification centre', () => {
     page();
     await screen.findByText('New assignment');
     await settled();
-    fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Mark all read' })[0]);
     await waitFor(() => expect(api.markAllRead).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull());
     expect(screen.getByTestId('notice').dataset.unread).toBeUndefined();

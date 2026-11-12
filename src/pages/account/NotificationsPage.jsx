@@ -1,4 +1,4 @@
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
@@ -14,11 +14,13 @@ import { useLoad } from '@/hooks/use-load.js';
 import { formatDueShort } from '@/lib/assignments/due.js';
 import {
   announceNoticesChanged,
+  clearNotices,
   fetchEmailEnabled,
   fetchNotifications,
   markAllRead,
   markRead,
   PAGE_SIZE,
+  restoreNotices,
   setEmailEnabled,
 } from '@/lib/notifications/notifications.js';
 import { cn } from '@/lib/utils.js';
@@ -44,6 +46,50 @@ export default function NotificationsPage() {
 
   const items = page.data?.items ?? [];
   const unread = items.filter((n) => !n.read_at).length;
+  // Learners and lecturers clear notifications (owner request 2026-11-12, ADR-024); administrators keep
+  // their system alerts until they act on them.
+  const canClear = profile?.role === 'LEARNER' || profile?.role === 'LECTURER';
+
+  /** Puts cleared notifications back in the list, newest first (Undo). @param {Notice[]} back */
+  const putBack = (back) =>
+    page.setData((d) => ({ ...d, items: [...d.items, ...back.filter((b) => !d.items.some((x) => x.id === b.id))].sort((a, b) => b.created_at.localeCompare(a.created_at)) }));
+  /** @param {Notice[]} gone @param {string[]} ids @param {'notification.cleared' | 'notification.cleared-all'} key */
+  const offerUndo = (gone, ids, key) =>
+    toast.show(key, {
+      onAction: () =>
+        void restoreNotices(ids)
+          .then(() => {
+            putBack(gone);
+            announceNoticesChanged();
+          })
+          .catch(() => toast.show('request.failed')),
+    });
+  const clearOne = async (/** @type {Notice} */ n) => {
+    page.setData((d) => ({ ...d, items: d.items.filter((x) => x.id !== n.id) }));
+    try {
+      const ids = await clearNotices([n.id]);
+      announceNoticesChanged();
+      offerUndo([{ ...n, read_at: n.read_at ?? new Date().toISOString() }], ids, 'notification.cleared');
+    } catch {
+      putBack([n]);
+      toast.show('request.failed', { onAction: () => void clearOne(n) });
+    }
+  };
+  const clearAll = async () => {
+    const shown = items;
+    setBusy(true);
+    try {
+      const ids = await clearNotices(null);
+      page.setData((d) => ({ ...d, items: [], more: false }));
+      announceNoticesChanged();
+      const now = new Date().toISOString();
+      offerUndo(shown.filter((n) => ids.includes(n.id)).map((n) => ({ ...n, read_at: n.read_at ?? now })), ids, 'notification.cleared-all');
+    } catch {
+      toast.show('request.failed', { onAction: () => void clearAll() });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const open = async (/** @type {Notice} */ n) => {
     if (!n.read_at) {
@@ -90,20 +136,34 @@ export default function NotificationsPage() {
     }
   };
 
+  // The same buttons in the header on desktop and above the list on phones and tablets (the header shows
+  // actions only from lg; these are not floating buttons).
+  const actions =
+    unread || (canClear && items.length) ? (
+      <>
+        {unread ? (
+          <Button variant="outline" onClick={() => void allRead()} loading={busy} loadingLabel="Marking as read">
+            <CheckCheck aria-hidden="true" />
+            Mark all read
+          </Button>
+        ) : null}
+        {canClear && items.length ? (
+          <Button variant="outline" onClick={() => void clearAll()} disabled={busy}>
+            <Trash2 aria-hidden="true" />
+            Clear all
+          </Button>
+        ) : null}
+      </>
+    ) : null;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Notifications"
         description="Grades, new work, reminders and changes to your courses."
-        actions={
-          unread ? (
-            <Button variant="outline" onClick={() => void allRead()} loading={busy} loadingLabel="Marking as read">
-              <CheckCheck aria-hidden="true" />
-              Mark all read
-            </Button>
-          ) : null
-        }
+        actions={actions}
       />
+      {actions ? <div className="flex flex-wrap gap-2 lg:hidden" data-slot="notice-actions">{actions}</div> : null}
       <LoadingRegion loading={page.state === 'loading'} skeleton={<NotificationsSkeleton />} label="Loading notifications">
         {page.state === 'error' ? (
           <ErrorState onRetry={page.reload} />
@@ -134,11 +194,11 @@ export default function NotificationsPage() {
             ) : (
               <ul className="m-0 list-none divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-card p-0" aria-label="Notifications">
                 {items.map((n) => (
-                  <li key={n.id} data-testid="notice" data-unread={n.read_at ? undefined : 'true'}>
+                  <li key={n.id} data-testid="notice" data-unread={n.read_at ? undefined : 'true'} className="flex items-stretch">
                     <button
                       type="button"
                       onClick={() => void open(n)}
-                      className="flex min-h-16 w-full items-start gap-3 px-4 py-3 text-left hover:bg-fill focus-visible:focus-ring"
+                      className="flex min-h-16 min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left hover:bg-fill focus-visible:focus-ring"
                     >
                       <span aria-hidden="true" className={cn('mt-2 size-2.5 shrink-0 rounded-full', n.read_at ? 'bg-transparent' : 'bg-primary')} />
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -152,6 +212,11 @@ export default function NotificationsPage() {
                         <span className="break-words text-body-sm text-ink-secondary">{n.message}</span>
                       </span>
                     </button>
+                    {canClear ? (
+                      <Button variant="ghost" size="icon" className="m-1 self-center text-ink-secondary" onClick={() => void clearOne(n)} aria-label={`Clear notification: ${n.title}`}>
+                        <X aria-hidden="true" />
+                      </Button>
+                    ) : null}
                   </li>
                 ))}
               </ul>

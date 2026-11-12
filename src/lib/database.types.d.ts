@@ -781,14 +781,14 @@ isOneToOne: false
                   ]
                 },"notifications": {
                   Row: {
-                    "created_at": string,"deduplication_key": string | null,"id": string,"link_path": string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at": string | null,"recipient_id": string,"related_entity_id": string | null,"related_entity_type": string | null,"title": string
+                    "cleared_at": string | null,"created_at": string,"deduplication_key": string | null,"id": string,"link_path": string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at": string | null,"recipient_id": string,"related_entity_id": string | null,"related_entity_type": string | null,"title": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id": string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title": string
+                    "cleared_at"?: string | null,"created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message": string,"notification_type": Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id": string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title": string
                   }
                   Update: {
-                    "created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message"?: string,"notification_type"?: Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id"?: string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title"?: string
+                    "cleared_at"?: string | null,"created_at"?: string,"deduplication_key"?: string | null,"id"?: string,"link_path"?: string | null,"message"?: string,"notification_type"?: Database["public"]['Enums']["notification_type"],"read_at"?: string | null,"recipient_id"?: string,"related_entity_id"?: string | null,"related_entity_type"?: string | null,"title"?: string
                   }
                   Relationships: [
                     {
@@ -1346,6 +1346,16 @@ isOneToOne: false
                            },
 "notification_delivery_result":
 { Args: { "p_delivery": string,"p_error": string,"p_ok": boolean,"p_permanent": boolean,"p_provider_id": string }; Returns: string
+                           },
+"notifications_clear":
+{ Args: { "p_ids"?: (string)[] }; Returns: {
+              "id": string
+            }[]
+                           },
+"notifications_restore":
+{ Args: { "p_ids": (string)[] }; Returns: {
+              "id": string
+            }[]
                            },
 "practical_marks":
 { Args: { "p_assignment": string }; Returns: {

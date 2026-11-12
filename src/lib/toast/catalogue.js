@@ -32,6 +32,8 @@ export const TOASTS = Object.freeze({
   'network.offline': { type: 'warning', text: fixed('You are offline'), sticky: true },
   'network.online': { type: 'success', text: fixed('Back online') },
   'notification.new': { type: 'info', text: (p) => str(p, 'title'), action: 'Open', params: ['title'] },
+  'notification.cleared': { type: 'success', text: fixed('Notification cleared'), undo: true },
+  'notification.cleared-all': { type: 'success', text: fixed('Notifications cleared'), undo: true },
   'app.update-ready': { type: 'info', text: fixed('New version available'), action: 'Refresh', sticky: true },
   'session.expiring': { type: 'warning', text: fixed('Your session ends in 2 minutes') },
   'draft.restored': { type: 'info', text: fixed('Draft restored') },
