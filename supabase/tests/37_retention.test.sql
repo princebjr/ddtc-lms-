@@ -15,6 +15,10 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(39);
 
+-- Start from no runs and no holds (left by earlier local runs; rolled back with the rest of this test).
+delete from public.retention_runs;
+delete from public.retention_holds;
+
 select set_config('t.a1', tests.create_user('a1@example.test', 'Prince', 'Boateng', 'ADMIN')::text, true);
 select set_config('t.t1', tests.create_user('t1@example.test', 'Ama', 'Boateng', 'LECTURER')::text, true);
 select set_config('t.l1', tests.create_user('l1@example.test', 'Kwame', 'Mensah')::text, true);
@@ -103,6 +107,7 @@ update public.exam_attempts set grade_release_status = 'RELEASED', released_at =
 create function tests.candidates() returns text[] language sql stable security definer set search_path = '' as $$
   select coalesce(array_agg(f.original_filename order by f.original_filename), '{}')
     from public.retention_candidates(500) c join public.file_objects f on f.id = c.file_id
+   where f.storage_path like 'fixtures/%' -- this test's own files (answers from earlier local runs may exist)
 $$;
 grant execute on function tests.candidates() to service_role;
 

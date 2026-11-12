@@ -115,7 +115,7 @@ describe('the Retention page', () => {
     fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'Learner asked to keep their recordings' } });
     fireEvent.click(screen.getByRole('button', { name: 'Place hold' }));
     await waitFor(() => expect(api.placeHold).toHaveBeenCalledWith('LEARNER', 'l1', 'Learner asked to keep their recordings'));
-    const [key, options] = toast.show.mock.calls.at(-1);
+    const [key, options] = /** @type {[string, { onAction: () => void }]} */ (toast.show.mock.calls.at(-1));
     expect(key).toBe('admin.hold-placed');
     options.onAction();
     await waitFor(() => expect(api.releaseHold).toHaveBeenCalledWith('h9'));
@@ -145,7 +145,7 @@ describe('the Retention page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Release the hold on HIS101 Church History' }));
     await waitFor(() => expect(api.releaseHold).toHaveBeenCalledWith('h1'));
-    const [key, options] = toast.show.mock.calls.at(-1);
+    const [key, options] = /** @type {[string, { onAction: () => void }]} */ (toast.show.mock.calls.at(-1));
     expect(key).toBe('admin.hold-released');
     options.onAction();
     await waitFor(() => expect(api.placeHold).toHaveBeenCalledWith('COURSE', 'c2', 'Appeal under review'));
@@ -165,7 +165,7 @@ describe('Hold this answer\'s audio', () => {
     api.fetchAnswerHold.mockResolvedValue({ answer_id: 's1', hold_id: 'h5', reason: 'Grade appeal' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Place hold' }));
     await waitFor(() => expect(api.placeHold).toHaveBeenCalledWith('SUBMISSION', 's1', 'Grade appeal'));
-    expect(toast.show.mock.calls.at(-1)[0]).toBe('admin.hold-placed');
+    expect(toast.show.mock.calls.at(-1)?.[0]).toBe('admin.hold-placed');
     expect(await screen.findByText(/Held: Grade appeal/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Release hold' })).toBeTruthy();
   });
