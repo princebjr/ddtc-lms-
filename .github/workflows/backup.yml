@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 60
     env:
       DB_URL: ${{ secrets.BACKUP_DB_URL }}
-      AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+      AGE_RECIPIENT: ${{ secrets.AGE_PUBLIC_KEY }}
       SUPABASE_URL: ${{ secrets.BACKUP_SUPABASE_URL }}
       SERVICE_KEY: ${{ secrets.BACKUP_SUPABASE_SERVICE_ROLE_KEY }}
       SUPABASE_S3_ENDPOINT: ${{ secrets.BACKUP_SUPABASE_S3_ENDPOINT }}
