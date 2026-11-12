@@ -101,7 +101,7 @@ Each capture checked for sideways scrolling (none). Console errors: one capture 
 
 ## 7. Owner steps
 
-1. **Budgets:** decide whether load-time and blocking-time budgets block the release now, or (recommended) move to Phase 15, which is about speed on low-end phones and measures on staging.
+1. **Budgets:** decided by the owner on 2026-11-12 (approval of the pull request): the load-time and blocking-time budgets move to Phase 15, which is about speed on low-end phones and measures on staging. Layout shift stays enforced.
 2. **Backups:** R2 account, bucket and its four secrets done (2026-11-12; the workflow uses the owner's names `R2_*`). Still to do: the `age` key (kept offline), the Supabase S3 key and the other seven `BACKUP_*` secrets, the `BACKUP_ENV` variable and the 30-day lifecycle rules. The first run is after the merge and the staging migrations, because GitHub runs the workflow only from `main` and it reports into `backup_runs` (migration 51).
 3. **Restore drill:** pause `ddtc-lms-dev`, create a temporary project, and run the drill from the R2 backup (runbook "Restore drill"). This closes the second exit-gate line.
 4. **Uptime monitor:** a free account with two checks (runbook "Monitoring").
