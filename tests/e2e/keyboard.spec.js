@@ -109,8 +109,10 @@ test('play instruction audio and send a written answer with the keyboard', async
     await expect(page.getByRole('button', { name: /^Pause / }).first()).toBeVisible();
     await page.keyboard.press('Space');
     await expect(page.getByRole('button', { name: /^Play / }).first()).toBeVisible();
+    // In Firefox the audio fails to play, the player shows its error state, and its controls are disabled
+    // (correctly), so the skip buttons are only reachable where the audio can play.
+    await tabTo(page, page.getByRole('button', { name: 'Forward 15 seconds' }).first());
   }
-  await tabTo(page, page.getByRole('button', { name: 'Forward 15 seconds' }).first());
 
   // The answer: type it, then Submit with Enter.
   await tabTo(page, page.getByLabel('Text answer'));
