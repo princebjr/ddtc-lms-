@@ -10,9 +10,10 @@ import { Card, CardTitle } from '@/components/ui/card.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { UserAvatar } from '@/components/UserAvatar.jsx';
 import { useCourseCovers } from '@/hooks/use-course-covers.js';
-import { useLoad } from '@/hooks/use-load.js';
+import { useCachedLoad } from '@/hooks/use-load.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
-import { fetchCoursePage } from '@/lib/pages/page-reads.js';
+import { prefetchOnIntent } from '@/lib/data-cache.js';
+import { pageQueries } from '@/lib/pages/page-reads.js';
 import { CONTENT_TYPE_LABEL } from '@/lib/assignments/assignments.js';
 import { LEARNER_STATE } from '@/lib/exams/exams.js';
 import { courseGradeTag } from '@/lib/gradebook/gradebook.js';
@@ -25,8 +26,9 @@ import { dueStatus, formatDue } from '@/lib/assignments/due.js';
 
 export default function LearnerCoursePage() {
   const { courseId = '' } = useParams();
-  // One call for the whole screen (Phase 15, D45); the assignments are already this course's.
-  const { state, data, reload } = useLoad(() => fetchCoursePage(courseId), [courseId]);
+  // One call for the whole screen, through the data layer (Phase 15, D45); the assignments are already this course's.
+  const query = pageQueries.course(courseId);
+  const { state, data, reload } = useCachedLoad(query.key, query.fetch);
   const covers = useCourseCovers(data?.course?.cover_image_file_id ? [courseId] : []);
 
   if (state === 'error') return <ErrorState title="The course could not be loaded" onRetry={reload} />;
@@ -138,7 +140,7 @@ function Lessons({ courseId, lessons, progress }) {
       <ol className="m-0 flex list-none flex-col divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-card p-0">
         {lessons.map((l, i) => (
           <li key={l.id}>
-            <Link to={`/learner/courses/${courseId}/lessons/${l.id}`} className="flex min-h-14 items-center gap-3 px-4 py-2 hover:bg-fill focus-visible:focus-ring">
+            <Link to={`/learner/courses/${courseId}/lessons/${l.id}`} {...prefetchOnIntent(pageQueries.lesson(courseId, l.id))} className="flex min-h-14 items-center gap-3 px-4 py-2 hover:bg-fill focus-visible:focus-ring">
               {progress[l.id] ? (
                 <CircleCheck className="size-5 shrink-0 text-success" aria-hidden="true" />
               ) : (
@@ -183,7 +185,7 @@ function Assignments({ courseId, assignments }) {
         <ul className="m-0 flex list-none flex-col divide-y divide-hairline rounded-md border border-hairline bg-card p-0">
           {rows.map((a) => (
             <li key={a.id}>
-              <Link to={`/learner/courses/${courseId}/assignments/${a.id}`} className="flex min-h-14 flex-col gap-1 px-4 py-2 hover:bg-fill focus-visible:focus-ring sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <Link to={`/learner/courses/${courseId}/assignments/${a.id}`} {...prefetchOnIntent(pageQueries.assignment(courseId, a.id))} className="flex min-h-14 flex-col gap-1 px-4 py-2 hover:bg-fill focus-visible:focus-ring sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate text-label text-ink">{a.title}</span>
                   <span className="text-body-sm text-ink-secondary">{CONTENT_TYPE_LABEL[a.content_type]} instructions</span>

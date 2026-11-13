@@ -1,3 +1,4 @@
+import { markAllStale } from '@/lib/data-cache.js';
 import { callFunction } from '@/lib/functions.js';
 import { getStorage, signedUrl } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
@@ -136,6 +137,7 @@ export async function reorderAudio(lessonId, audioIds) {
 export async function markLesson(lessonId, completed) {
   const { error } = await getSupabase().rpc('mark_lesson', { p_lesson: lessonId, p_completed: completed });
   if (error) throw error;
+  markAllStale(); // the course page's progress is asked again next time it opens
 }
 
 /** A playback URL (one hour, the user's own session, D19). @param {LessonMedia} media */

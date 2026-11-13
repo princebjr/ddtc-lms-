@@ -1,6 +1,8 @@
 import { createBrowserRouter } from 'react-router';
 import { ProtectedRoute, RootRedirect, SignedOutRoute, StepRoute } from '@/components/auth/Guards.jsx';
+import { prefetch } from '@/lib/data-cache.js';
 import { devRoutesEnabled } from '@/lib/flags.js';
+import { pageQueries } from '@/lib/pages/page-reads.js';
 import RouteErrorPage from '@/pages/RouteErrorPage.jsx';
 
 // Routes, code-split per page (RESPONSIVE.md 15.5; ARCHITECTURE.md section 5).
@@ -23,6 +25,18 @@ const coursePage = (name) => async () => ({ Component: (await import('@/pages/co
 
 /** @param {'AdminPage' | 'LecturerPage' | 'LearnerPage'} name */
 const rolePage = (name) => async () => ({ Component: (await import('@/pages/RolePage.jsx'))[name] });
+
+/**
+ * Starts a learner screen's data as navigation begins (Phase 15, D45), alongside the page's code and the
+ * profile instead of after them. Never waits: the screen shares the request through the data layer. Signed out,
+ * nothing is fetched (no session, no cache key).
+ * @param {(params: Record<string, string | undefined>) => { key: string, fetch: () => Promise<unknown> } | null} query
+ */
+const startData = (query) => (/** @type {{ params: Record<string, string | undefined> }} */ { params }) => {
+  const q = query(params);
+  if (q) prefetch(q.key, q.fetch);
+  return null;
+};
 
 /** @type {import('react-router').RouteObject[]} */
 const authRoutes = [
@@ -84,12 +98,12 @@ const roleRoutes = [
     path: 'learner',
     element: <ProtectedRoute role="LEARNER" />,
     children: [
-      { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LearnerLesson') },
-      { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LearnerAssignment') },
+      { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LearnerLesson'), loader: startData((p) => pageQueries.lesson(p.courseId ?? '', p.lessonId ?? '')) },
+      { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LearnerAssignment'), loader: startData((p) => pageQueries.assignment(p.courseId ?? '', p.assignmentId ?? '')) },
       { path: 'courses/:courseId/grades', lazy: coursePage('LearnerCourseGrades') },
       { path: 'courses/:courseId/exams/:examId', lazy: coursePage('LearnerExam') },
-      { path: 'courses/:courseId', lazy: coursePage('LearnerCourse') },
-      { path: ':slug?', lazy: rolePage('LearnerPage') },
+      { path: 'courses/:courseId', lazy: coursePage('LearnerCourse'), loader: startData((p) => pageQueries.course(p.courseId ?? '')) },
+      { path: ':slug?', lazy: rolePage('LearnerPage'), loader: startData((p) => (p.slug === 'assignments' ? pageQueries.myAssignments() : null)) },
     ],
   },
 ];

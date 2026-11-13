@@ -1,3 +1,4 @@
+import { warmSignedUrl, warmStorage } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
 
 // One round trip per learner screen (Phase 15, D45; migration 55). Each read returns what the screen used to
@@ -25,8 +26,10 @@ async function read(fn, args) {
  * progress in the course and their enrolment. @param {string} courseId @param {string} lessonId
  */
 export async function fetchLessonPage(courseId, lessonId) {
+  warmStorage(); // the Storage client loads while the data is on its way
   const d = await read('get_lesson_page', { p_course: courseId, p_lesson: lessonId });
   const media = /** @type {LessonMedia[]} */ (d.media ?? []);
+  warmSignedUrl(media.find((m) => m.kind === 'AUDIO')); // the first audio's link, before the screen draws
   return {
     course: /** @type {Course | null} */ (d.course ?? null),
     lessons: /** @type {LessonSummary[]} */ (d.lessons ?? []),
@@ -60,12 +63,30 @@ export async function fetchCoursePage(courseId) {
  * @param {string} courseId @param {string} assignmentId
  */
 export async function fetchAssignmentPage(courseId, assignmentId) {
+  warmStorage();
   const d = await read('get_assignment_page', { p_course: courseId, p_assignment: assignmentId });
+  warmSignedUrl(d.audio); // the instruction audio's link, before the screen draws
   return {
     course: /** @type {Course | null} */ (d.course ?? null),
     assignment: /** @type {Awaited<ReturnType<typeof import('@/lib/assignments/assignments.js').fetchAssignment>>} */ (d.assignment ?? null),
     audio: /** @type {Awaited<ReturnType<typeof import('@/lib/assignments/assignments.js').fetchInstructionAudio>>} */ (d.audio ?? null),
     mine: /** @type {Awaited<ReturnType<typeof import('@/lib/submissions/submissions.js').fetchMySubmission>>} */ (d.mine ?? null),
     grade: /** @type {Awaited<ReturnType<typeof import('@/lib/grading/grading.js').fetchMyGrade>>} */ (d.grade ?? null),
+    /** The learner's own extended due date, when they have one (D13). */
+    extendedTo: /** @type {string | null} */ (d.mine?.extended ? d.mine.effective_due_at : null),
   };
 }
+
+/**
+ * Each screen's read with its cache key (src/lib/data-cache.js): the screen loads it with useCachedLoad, its
+ * route starts it as navigation begins, and links prefetch it on intent; all three share one request.
+ */
+export const pageQueries = {
+  /** @param {string} courseId @param {string} lessonId */
+  lesson: (courseId, lessonId) => ({ key: `lesson:${courseId}:${lessonId}`, fetch: () => fetchLessonPage(courseId, lessonId) }),
+  /** @param {string} courseId */
+  course: (courseId) => ({ key: `course:${courseId}`, fetch: () => fetchCoursePage(courseId) }),
+  /** @param {string} courseId @param {string} assignmentId */
+  assignment: (courseId, assignmentId) => ({ key: `assignment:${courseId}:${assignmentId}`, fetch: () => fetchAssignmentPage(courseId, assignmentId) }),
+  myAssignments: () => ({ key: 'my-assignments', fetch: () => import('@/lib/assignments/assignments.js').then((m) => m.fetchMyAssignments()) }),
+};
