@@ -146,6 +146,20 @@ export default function SettingsPage() {
             <Group title="Upload limits" description="The largest file, and the longest recording, for each kind of upload.">
               <FileLimitsSetting setting={get('file_limits')} onSaved={replace} />
             </Group>
+            <Group title="Heavy features" description="Pause these if DDTC LMS is slow for everyone. Sign-in, lessons and answers are never paused.">
+              <SwitchSetting
+                setting={get('exports_enabled')}
+                label="Exports"
+                help="Gradebook and report downloads. Off: people asking for one are told exports are paused for now."
+                onSaved={replace}
+              />
+              <SwitchSetting
+                setting={get('reports_enabled')}
+                label="Reports"
+                help="The administrators' reports. Off: the Reports page says they are paused."
+                onSaved={replace}
+              />
+            </Group>
             <Group title="Plan limits" description="What DDTC's Supabase plan allows. System health warns at 80% and again at 95%.">
               <NumberSetting
                 setting={get('plan_storage_limit_mb')}

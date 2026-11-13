@@ -194,6 +194,8 @@ export default function ReportsPage() {
               >
                 {report.state === 'error' ? (
                   <ErrorState onRetry={report.reload} />
+                ) : /** @type {any} */ (report.data)?.paused ? (
+                  <EmptyState title="Reports are paused" description="DDTC has paused reports for now. Turn them on again on Settings, Heavy features." />
                 ) : rows.length === 0 ? (
                   <EmptyState title="Nothing to report" description="No learners match these filters." />
                 ) : (

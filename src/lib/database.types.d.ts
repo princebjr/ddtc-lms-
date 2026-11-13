@@ -1233,6 +1233,9 @@ isOneToOne: false
               "attempt_id": string,"status": Database["public"]['Enums']["exam_attempt_status"],"submitted_at": string
             }[]
                            },
+"exports_enabled":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "files_due_for_cleanup":
 { Args: { "p_limit"?: number }; Returns: {
               "bucket_name": string,"id": string,"reason": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string

@@ -10,7 +10,7 @@
 // caller's own token, so its checks apply; anyone else is refused first, and each export is audited.
 import { z } from 'npm:zod@4.6.7';
 import { requireStaff, serviceClient } from '../_shared/auth.ts';
-import { HttpError, json, readJson, serve } from '../_shared/http.ts';
+import { fromDbError, HttpError, json, readJson, serve } from '../_shared/http.ts';
 import { buildXlsx } from '../_shared/xlsx.ts';
 import { takeRateLimit } from '../_shared/rate-limit.ts';
 
@@ -100,6 +100,10 @@ function base64(bytes: Uint8Array): string {
 
 serve(async (req) => {
   const caller = await requireStaff(req);
+  // DDTC can pause exports when the system is under strain (Phase 15, migration 58; Settings, Heavy features).
+  const { data: exportsOn, error: switchError } = await serviceClient().rpc('exports_enabled');
+  if (switchError) throw fromDbError(switchError);
+  if (exportsOn === false) throw new HttpError(503, 'paused', 'Exports are paused by DDTC for now. Try again later.');
   await takeRateLimit(serviceClient(), caller.id, 'export-gradebook');
   const parsed = Body.safeParse(await readJson(req));
   if (!parsed.success) throw new HttpError(400, 'invalid', parsed.error.issues[0]?.message ?? 'Invalid request');
