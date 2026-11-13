@@ -56,16 +56,6 @@ export default defineConfig(({ command }) => ({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    rolldownOptions: {
-      output: {
-        codeSplitting: {
-          // React, React DOM and the scheduler always share one chunk (Phase 15). React is a CommonJS package;
-          // when the automatic split put React DOM in a chunk apart from React's other users, two copies started
-          // and the app failed at start ("Cannot read properties of null (reading 'useState')").
-          groups: [{ name: 'react', test: /[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 100 }],
-        },
-      },
-    },
   },
   test: {
     include: ['tests/unit/**/*.test.{js,jsx}', 'src/**/*.test.{js,jsx}'],
