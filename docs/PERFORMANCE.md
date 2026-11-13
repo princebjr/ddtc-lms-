@@ -164,3 +164,54 @@ Measured with the same tool, 3 runs each (`docs/performance/after-step2-2026-11-
 **Cost noted:** the first call on each database connection takes about 200 ms while Postgres warms its caches; after that the combined reads take 15–50 ms (`get_lesson_page` 29 ms, `get_assignment_page` 15 ms, `get_course_page` 50 ms, `list_my_assignments` 62 ms on the load seed's sizes). This shows as slower repeat visits on desktop (about 0.1 s → 0.48 s). To check on staging, where connections stay warm.
 
 **A local pitfall found on the way:** a build made from Git Bash (`/c/dev/...`) reached the same files under two names, `c:` and `C:`. React was bundled twice and the app failed at start ("Cannot read properties of null (reading 'useState')"). Building from PowerShell in `C:devddtc-lms` gives one copy (`scripts/perf-preview.ps1`). CI and Vercel build on Linux and are not affected. The starting code stays about 124 KB compressed, under the 200 KB budget.
+
+### Change 2: in-memory data layer, data started by the route, prefetch on intent, audio link signed early
+
+`src/lib/data-cache.js`:
+- stale-while-revalidate, memory only, per person;
+- emptied on every sign-out, including the idle sign-out, and when another person signs in;
+- at most 50 answers; one request per key at a time;
+- every write marks the cache old, so the next screen asks again.
+
+The learner routes start their screen's read as navigation begins, alongside the page's code and the profile. Lesson, next/previous and assignment links prefetch on touch, hover or focus, and the next lesson is fetched quietly 1.5 s after a lesson is on screen. The screen's first audio link is signed as soon as its data arrives, and the Storage client loads alongside the data. Unit tests: `tests/unit/data-cache.test.js`.
+
+Compared with the baseline (`docs/performance/after-step3-2026-11-13.json`).
+
+**Notes on this run:**
+- 6 of 120 measurements failed: the laptop suspended its network during the slow-3G lecturer pages, which this change does not touch. The WebKit runs near that moment were erratic; the unchanged lecturer pages moved by up to +116% there.
+- Data calls now include the quiet prefetch of the next lesson, so the lesson page shows more calls than after change 1. Its own screen still makes one.
+**android-4g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 3.6 s → 3.2 s (−10%) | 1.1 s → 1.0 s (−7%) | – | – | 8 → 8 |
+| lesson list (course) | 2.9 s → 2.0 s (−30%) | 748 ms → 142 ms (−81%) | – | – | 17 → 10 |
+| lesson | 3.8 s → 2.3 s (−40%) | 1.4 s → 261 ms (−81%) | 5.5 s → 2.4 s (−57%) | 1.4 s → 1.4 s (+0%) | 10 → 9 |
+| assignment list | 2.5 s → 1.8 s (−28%) | 571 ms → 55 ms (−90%) | – | – | 8 → 5 |
+| assignment (instruction audio) | 3.5 s → 2.7 s (−23%) | 762 ms → 217 ms (−72%) | 4.0 s → 2.8 s (−30%) | 1.5 s → 1.5 s (+4%) | 10 → 9 |
+| lecturer dashboard | 2.7 s → 2.5 s (−6%) | 625 ms → 579 ms (−7%) | – | – | 8 → 8 |
+| grading (one answer) | 3.3 s → 2.8 s (−15%) | 567 ms → 551 ms (−3%) | – | – | 6 → 6 |
+| gradebook | 4.9 s → 3.9 s (−20%) | 1.8 s → 1.1 s (−39%) | – | – | 9 → 9 |
+
+**android-3g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 23.4 s → 23.8 s (+2%) | 4.4 s → 4.3 s (−2%) | – | – | 8 → 7 |
+| lesson list (course) | 25.2 s → 17.0 s (−33%) | 7.3 s → 152 ms (−98%) | – | – | 17 → 14 |
+| lesson | 23.5 s → 17.6 s (−25%) | 5.5 s → 352 ms (−94%) | 27.7 s → 17.7 s (−36%) | 6.9 s → 7.3 s (+6%) | 10 → 13 |
+| assignment list | 17.1 s → 14.9 s (−13%) | 2.2 s → 75 ms (−97%) | – | – | 8 → 8 |
+| assignment (instruction audio) | 29.3 s → 23.5 s (−20%) | 5.4 s → 261 ms (−95%) | 33.5 s → 23.5 s (−30%) | 6.9 s → 6.9 s (+0%) | 11 → 13 |
+| lecturer dashboard | 21.1 s → 21.7 s (+3%) | 2.2 s → 2.2 s (−1%) | – | – | 9 → 9 |
+| grading (one answer) | 27.0 s → – () | 3.3 s → – () | – | – | 6 → null |
+| gradebook | 35.4 s → – () | 4.5 s → – () | – | – | 9 → null |
+
+
+**Result (budget Android):**
+- **Repeat visits are now near-instant:** on slow 4G 0.06–0.26 s instead of 0.6–1.4 s; on slow 3G 0.08–0.35 s instead of 2.2–7.3 s.
+- **First visits on slow 4G:**
+  - the lesson page is readable in 2.3 s (was 3.8 s), with its audio ready at 2.4 s (was 5.5 s);
+  - the lesson list in 2.0 s (was 2.9 s), the assignment list in 1.8 s (was 2.5 s), the assignment page in 2.7 s (was 3.5 s).
+- **First visits on slow 3G:** the lesson page in 17.6 s (was 23.5 s) and the lesson list in 17.0 s (was 25.2 s).
+- **Audio start after a tap is unchanged** at about 1.4 s on slow 4G. It is the audio file itself arriving; covered by the audio step.
+- **Kept.**
