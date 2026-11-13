@@ -2,7 +2,7 @@
 // imports, so the first route's validation can use them; the values come from client-settings.js.
 
 /** @typedef {'lesson_audio' | 'instruction_audio' | 'submission_audio' | 'submission_document' | 'lesson_attachment' | 'profile_image' | 'course_cover'} FileKind */
-/** @typedef {{ file_limits: Partial<Record<FileKind, { max_bytes?: number, max_seconds?: number }>>, pass_mark: number, require_course_approval: boolean }} ClientSettings */
+/** @typedef {{ file_limits: Partial<Record<FileKind, { max_bytes?: number, max_seconds?: number }>>, pass_mark: number, require_course_approval: boolean, support?: { email: string, phone: string } }} ClientSettings */
 
 const MB = 1024 * 1024;
 

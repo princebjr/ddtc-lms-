@@ -121,6 +121,28 @@ export default function SettingsPage() {
                 onSaved={replace}
               />
             </Group>
+            <Group title="Help & Support" description="The contact learners and lecturers see in Help & Support. Leave empty to show none.">
+              <TextSetting
+                setting={get('support_email')}
+                label="Support email"
+                type="email"
+                help="Learners and lecturers tap it to write to DDTC support."
+                check={(v) => (v === '' || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) ? null : 'Enter an email address like support@ddtc.org, or leave it empty.')}
+                onSaved={replace}
+              />
+              <TextSetting
+                setting={get('support_phone')}
+                label="Support phone and WhatsApp"
+                type="tel"
+                help="With the country code, for example +233 24 123 4567. Learners and lecturers can call it or open it in WhatsApp."
+                check={(v) => {
+                  if (v === '') return null;
+                  const digits = v.replace(/[^0-9]/g, '').length;
+                  return /^\+?[0-9 ]+$/.test(v) && digits >= 7 && digits <= 15 ? null : 'Enter 7 to 15 digits, with an optional + and spaces, or leave it empty.';
+                }}
+                onSaved={replace}
+              />
+            </Group>
             <Group title="Upload limits" description="The largest file, and the longest recording, for each kind of upload.">
               <FileLimitsSetting setting={get('file_limits')} onSaved={replace} />
             </Group>
@@ -217,6 +239,55 @@ function NumberSetting({ setting, label, unit, min, max, help, onSaved }) {
         />
         <span className="text-body-sm text-ink-secondary">{unit}</span>
         <Button variant="outline" onClick={() => void save()} loading={busy} loadingLabel="Saving" disabled={draft === null || draft === String(setting.value)}>
+          <Save aria-hidden="true" />
+          Save
+        </Button>
+      </div>
+    </Row>
+  );
+}
+
+/**
+ * A text setting (Phase 15: the support contact). The same rule as the database, so a mistake shows here first.
+ * @param {{ setting?: Setting, label: string, type: 'email' | 'tel', help: string, check: (v: string) => string | null, onSaved: (k: string, v: any) => void }} props
+ */
+function TextSetting({ setting, label, type, help, check, onSaved }) {
+  const toast = useToast();
+  const [draft, setDraft] = useState(/** @type {string | null} */ (null));
+  const [message, setMessage] = useState(/** @type {string | null} */ (null));
+  const [busy, setBusy] = useState(false);
+  if (!setting) return null;
+  const saved = typeof setting.value === 'string' ? setting.value : '';
+  const value = draft ?? saved;
+  const save = async () => {
+    const v = value.trim();
+    const problem = check(v);
+    if (problem) {
+      setMessage(problem);
+      return;
+    }
+    setBusy(true);
+    setMessage(await persist(setting.key, v, onSaved, toast));
+    setDraft(null);
+    setBusy(false);
+  };
+  return (
+    <Row id={`s-${setting.key}`} label={label} help={help} updatedAt={setting.updated_at} message={message}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          id={`s-${setting.key}`}
+          aria-describedby={`s-${setting.key}-help`}
+          type={type}
+          inputMode={type}
+          autoComplete="off"
+          className="w-full max-w-sm"
+          value={value}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setMessage(null);
+          }}
+        />
+        <Button variant="outline" onClick={() => void save()} loading={busy} loadingLabel="Saving" disabled={draft === null || draft.trim() === saved}>
           <Save aria-hidden="true" />
           Save
         </Button>

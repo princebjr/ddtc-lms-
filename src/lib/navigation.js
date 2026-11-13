@@ -1,4 +1,4 @@
-import { Archive, Bell, BookOpen, ChartColumn, ClipboardCheck, ClipboardList, GraduationCap, LayoutDashboard, Megaphone, ScrollText, Settings, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-react';
+import { Archive, Bell, BookOpen, ChartColumn, ClipboardCheck, ClipboardList, GraduationCap, LayoutDashboard, LifeBuoy, Megaphone, ScrollText, Settings, ShieldCheck, UserRound, Users, UsersRound } from 'lucide-react';
 
 // Navigation per role (D40, DESIGN.md 12.4, prototype in docs/prototype/).
 // Phone: exactly three destination icons plus a permanent More button. Destinations that are not
@@ -62,6 +62,7 @@ export const NAVIGATION = Object.freeze({
       { slug: 'announcements', label: 'Announcements', title: 'Announcements', description: 'Tell your learners something.', icon: Megaphone, group: 'Teaching', under: 'more', phase: 11 },
       { slug: 'notifications', label: 'Notifications', title: 'Notifications', description: 'Latest alerts.', icon: Bell, group: 'Account', under: 'more', phase: 11 },
       { slug: 'profile', label: 'Profile', title: 'Profile settings', description: 'Your account.', icon: UserRound, group: 'Account', under: 'more', phase: 4 },
+      { slug: 'help', label: 'Help & Support', title: 'Help & Support', description: 'Getting started, how to use DDTC, questions and support.', icon: LifeBuoy, group: 'Account', under: 'more', phase: 15 },
     ],
   },
   learner: {
@@ -74,6 +75,7 @@ export const NAVIGATION = Object.freeze({
       { slug: 'grades', label: 'Grades', title: 'Grades and feedback', description: 'Your released results.', icon: ClipboardCheck, group: 'Results', under: 'more', phase: 9 },
       { slug: 'notifications', label: 'Notifications', title: 'Notifications', description: 'Latest alerts.', icon: Bell, group: 'Account', under: 'more', phase: 11 },
       { slug: 'profile', label: 'Profile', title: 'Profile settings', description: 'Your account.', icon: UserRound, group: 'Account', under: 'more', phase: 4 },
+      { slug: 'help', label: 'Help & Support', title: 'Help & Support', description: 'Getting started, how to use DDTC, questions and support.', icon: LifeBuoy, group: 'Account', under: 'more', phase: 15 },
     ],
   },
 });

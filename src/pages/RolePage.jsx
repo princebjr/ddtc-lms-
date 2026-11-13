@@ -41,6 +41,7 @@ const AuditLogsPage = lazy(() => import('./admin/AuditLogsPage.jsx'));
 const RetentionPage = lazy(() => import('./admin/RetentionPage.jsx'));
 const ReportsPage = lazy(() => import('./admin/ReportsPage.jsx'));
 const AnnouncementsPage = lazy(() => import('./courses/AnnouncementsPage.jsx'));
+const HelpPage = lazy(() => import('./help/HelpPage.jsx'));
 
 /** @type {Record<string, () => import('react').ReactNode>} */
 const BUILT = {
@@ -73,6 +74,8 @@ const BUILT = {
   'learner/grades': () => <LearnerGradesPage />,
   'lecturer/profile': () => <ProfilePage />,
   'learner/profile': () => <ProfilePage />,
+  'learner/help': () => <HelpPage role="learner" />,
+  'lecturer/help': () => <HelpPage role="lecturer" />,
 };
 
 /**
