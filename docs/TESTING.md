@@ -77,6 +77,7 @@ Seed data (development and staging only, never real learner data): two administr
 | 12 | Retention never touches non-eligible files; dry run changes nothing; failures retried |
 | 13 | Policy review; axe clean in both themes; Lighthouse budgets; ~~VoiceOver and TalkBack~~ (dropped, ADR-026); restore drill (deferred to Phase 14, ADR-025) |
 | 14 | Full acceptance journey on staging then production; rollback test |
+| 15 | Speed measured before and after each change (`tests/perf/baseline.mjs`, side by side in one session); data calls per screen and layout shift on the throttled phone; bundle budgets; load, spike and soak tests on staging (`tests/load/`, free-plan scale, test data removed afterwards) |
 
 ## 7. Rules for tests
 
