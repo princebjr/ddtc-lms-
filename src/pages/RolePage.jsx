@@ -1,8 +1,9 @@
 import { lazy, Suspense } from 'react';
-import { useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { useAuth } from '@/components/auth/AuthProvider.jsx';
 import { IdleSessionProvider } from '@/components/auth/IdleSessionProvider.jsx';
 import { SessionWatcher } from '@/components/auth/SessionWatcher.jsx';
+import { PageErrorBoundary } from '@/components/feedback/PageErrorBoundary.jsx';
 import { DashboardSkeleton } from '@/components/feedback/Skeletons.jsx';
 import { GradeNotices } from '@/components/grading/GradeNotices.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
@@ -86,6 +87,7 @@ export function RoleShell({ role, slug, children }) {
   const auth = useAuth();
   const toast = useToast();
   const imageUrl = useAvatarUrl(auth.profile?.profile_image_file_id);
+  const { pathname } = useLocation();
   if (!auth.profile) return <NotFoundPage />;
 
   const onSignOut = async () => {
@@ -107,11 +109,16 @@ export function RoleShell({ role, slug, children }) {
       <IdleSessionProvider />
       {role === 'learner' ? <GradeNotices /> : null}
       {role === 'admin' ? (
-        <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+        <PageErrorBoundary resetKey={pathname}>
+          <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+        </PageErrorBoundary>
       ) : (
         // Step 11.1: learners and lecturers are announced on their courses' presence channels on every page.
         <PresenceProvider userId={auth.profile.id}>
-          <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+          {/* A failing screen shows its own error with Try again; the menus stay (Phase 15). */}
+          <PageErrorBoundary resetKey={pathname}>
+            <Suspense fallback={<DashboardSkeleton />}>{children}</Suspense>
+          </PageErrorBoundary>
         </PresenceProvider>
       )}
     </AppShell>
