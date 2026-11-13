@@ -215,3 +215,22 @@ Compared with the baseline (`docs/performance/after-step3-2026-11-13.json`).
 - **First visits on slow 3G:** the lesson page in 17.6 s (was 23.5 s) and the lesson list in 17.0 s (was 25.2 s).
 - **Audio start after a tap is unchanged** at about 1.4 s on slow 4G. It is the audio file itself arriving; covered by the audio step.
 - **Kept.**
+
+### Change 3: screen code alongside its route module, no forced layout in the waveform, cleaned HTML remembered
+
+- **Screen code:** the learner screens' code is fetched together with `CourseRoutes`, which imported them only after it had loaded itself.
+- **Waveform:** takes its width from the ResizeObserver report instead of reading `clientWidth` on mount. That read forced a layout of the whole page, long lesson included, before its first paint: about 200 ms of the lesson load's CPU on the 4× slower phone (found with a CPU profile).
+- **Cleaned HTML:** the lesson and instruction text cleaned for display is remembered (the last 8 texts, emptied on sign-out), so redraws do not clean it again (10–100 ms each on that phone). `tests/unit/sanitize-display.test.js` covers the cleaning, since it is a security defence and had no tests.
+
+**How it was measured, and why:** a first run hours after change 2 looked 11–76% slower on every row. Every row moved the same way, including parts this change does not touch, which suggested the laptop had drifted. Both versions were then built and measured in the same session, alternating (change 2, this change, change 2, this change; 4 runs each on the budget Android over slow 4G; `docs/performance/ab-change2-2026-11-13.json` and `ab-change3-2026-11-13.json`):
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts |
+|---|---|---|---|---|
+| lesson list (course) | 2.7 s → 2.8 s (+4%) | 225 ms → 136 ms (−40%) | – | – |
+| lesson | 2.6 s → 2.5 s (−5%) | 271 ms → 144 ms (−47%) | 2.8 s → 2.8 s | 1.8 s → 1.7 s |
+| assignment list | 2.3 s → 2.1 s (−7%) | 66 ms → 62 ms | – | – |
+| assignment (instruction audio) | 3.6 s → 3.4 s (−7%) | 299 ms → 276 ms (−8%) | 3.8 s → 3.5 s (−8%) | 2.0 s → 1.5 s (−27%) |
+
+**Result:** first visits are the same or slightly faster, and repeat visits to the lesson and lesson list are 40–47% faster. **Kept.**
+
+**Lesson for later measurements:** the same build measured 2.0–2.3 s at one time and 2.6–2.8 s hours later, so runs taken hours apart are not comparable on this laptop. From here on, every change is measured side by side with the version before it, in the same session.
