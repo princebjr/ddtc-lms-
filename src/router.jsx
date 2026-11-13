@@ -21,7 +21,12 @@ const page = (load) => async () => ({ Component: (await load()).default });
 /** @param {'AdminNewCourse' | 'AdminCourse' | 'LecturerNewCourse' | 'LecturerCourse' | 'LearnerCourse' | 'AdminLesson' | 'LecturerLesson' | 'LearnerLesson' | 'AdminAssignment' | 'LecturerAssignment' | 'LearnerAssignment'
  *   | 'AdminSubmissions' | 'LecturerSubmissions' | 'AdminSubmission' | 'LecturerSubmission' | 'LearnerCourseGrades'
  *   | 'AdminExam' | 'LecturerExam' | 'AdminExamResults' | 'LecturerExamResults' | 'AdminExamScript' | 'LecturerExamScript' | 'LearnerExam'} name */
-const coursePage = (name) => async () => ({ Component: (await import('@/pages/courses/CourseRoutes.jsx'))[name] });
+const coursePage = (name, /** @type {(() => Promise<unknown>) | undefined} */ screen = undefined) => async () => {
+  // A learner screen's own code is fetched together with CourseRoutes (Phase 15), not after it: CourseRoutes
+  // imports its screens lazily, and that import then finds the code already loaded.
+  const [routes] = await Promise.all([import('@/pages/courses/CourseRoutes.jsx'), screen?.()]);
+  return { Component: routes[name] };
+};
 
 /** @param {'AdminPage' | 'LecturerPage' | 'LearnerPage'} name */
 const rolePage = (name) => async () => ({ Component: (await import('@/pages/RolePage.jsx'))[name] });
@@ -98,11 +103,11 @@ const roleRoutes = [
     path: 'learner',
     element: <ProtectedRoute role="LEARNER" />,
     children: [
-      { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LearnerLesson'), loader: startData((p) => pageQueries.lesson(p.courseId ?? '', p.lessonId ?? '')) },
-      { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LearnerAssignment'), loader: startData((p) => pageQueries.assignment(p.courseId ?? '', p.assignmentId ?? '')) },
+      { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LearnerLesson', () => import('@/pages/learner/LearnerLessonPage.jsx')), loader: startData((p) => pageQueries.lesson(p.courseId ?? '', p.lessonId ?? '')) },
+      { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LearnerAssignment', () => import('@/pages/learner/LearnerAssignmentPage.jsx')), loader: startData((p) => pageQueries.assignment(p.courseId ?? '', p.assignmentId ?? '')) },
       { path: 'courses/:courseId/grades', lazy: coursePage('LearnerCourseGrades') },
       { path: 'courses/:courseId/exams/:examId', lazy: coursePage('LearnerExam') },
-      { path: 'courses/:courseId', lazy: coursePage('LearnerCourse'), loader: startData((p) => pageQueries.course(p.courseId ?? '')) },
+      { path: 'courses/:courseId', lazy: coursePage('LearnerCourse', () => import('@/pages/learner/LearnerCoursePage.jsx')), loader: startData((p) => pageQueries.course(p.courseId ?? '')) },
       { path: ':slug?', lazy: rolePage('LearnerPage'), loader: startData((p) => (p.slug === 'assignments' ? pageQueries.myAssignments() : null)) },
     ],
   },
