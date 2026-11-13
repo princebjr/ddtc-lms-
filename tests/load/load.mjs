@@ -5,8 +5,10 @@
 //   lecturers - dashboard, the grading queue, a course gradebook, one assignment's answers.
 // It reports, per request: count, errors, median, 95th and 99th percentile response time, and the overall
 // requests per second. Plain Node 22+ (fetch), no extra tools.
-// Usage: node tests/load/load.mjs [--learners 150] [--lecturers 10] [--seconds 120] [--think 1000] [--json out.json]
-// Defaults hit the local stack (127.0.0.1:54321). LOCAL OR A THROWAWAY COPY ONLY: never production.
+// Usage: node tests/load/load.mjs [--learners 150] [--lecturers 10] [--seconds 120] [--think 1000] [--signins-per-minute 25] [--json out.json]
+// Staging (with the owner's go-ahead): SUPABASE_URL and SUPABASE_ANON_KEY point it at the project; seed it with
+// tests/load/seed-staging.sql first and remove the data with tests/load/cleanup.sql afterwards.
+// Defaults hit the local stack (127.0.0.1:54321). Local, a throwaway copy, or staging with the owner's go-ahead: never production.
 import { writeFileSync } from 'node:fs';
 import { localSupabase } from '../e2e/support/local-supabase.js';
 
@@ -18,6 +20,9 @@ const LEARNERS = arg('learners', 150);
 const LECTURERS = arg('lecturers', 10);
 const SECONDS = arg('seconds', 120);
 const THINK = arg('think', 1000);
+// Sign-ins spread out to stay under Supabase Auth's limit (staging and production: 150 per 5 minutes from one
+// address); 0 = all at the start (local).
+const SIGNINS_PER_MINUTE = arg('signins-per-minute', 0);
 const PASSWORD = 'Load-Password-2026';
 const s = localSupabase();
 if (!s.url || !s.anonKey) throw new Error('Local Supabase is not running');
@@ -33,6 +38,9 @@ const record = (/** @type {string} */ name, /** @type {number} */ ms, /** @type 
   }
 };
 
+/** Response bytes downloaded (counts against the plan's monthly downloads on a hosted project). */
+let bytes = 0;
+
 /** One timed request. @param {string} name @param {string} path @param {string} token @param {RequestInit} [init] */
 async function hit(name, path, token, init = {}) {
   const t0 = performance.now();
@@ -41,7 +49,13 @@ async function hit(name, path, token, init = {}) {
   try {
     const res = await fetch(`${s.url}${path}`, { ...init, headers: { apikey: s.anonKey, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...init.headers } });
     status = res.status;
-    body = await res.json().catch(() => null);
+    const text = await res.text();
+    bytes += text.length;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = null;
+    }
     record(name, performance.now() - t0, res.ok, status);
   } catch {
     record(name, performance.now() - t0, false, 0);
@@ -62,7 +76,7 @@ async function signIn(email) {
 
 const end = Date.now() + SECONDS * 1000;
 
-/** @param {number} n */
+/** A learner going through the screens, with the one-call screen reads of Phase 15 (migration 55). @param {number} n */
 async function learner(n) {
   const session = await signIn(`load-learner-${n}@ddtc.test`);
   const token = session.access_token;
@@ -71,19 +85,17 @@ async function learner(n) {
   while (Date.now() < end) {
     await rpc('learner_dashboard', token);
     await sleep(THINK);
-    const lessons = (await hit('lesson list', `/rest/v1/lessons?select=id,title,position&course_id=eq.${course}&order=position`, token)) ?? [];
+    const page = await rpc('get_course_page', token, { p_course: course });
+    const lessons = /** @type {any[]} */ (page?.lessons ?? []);
     await sleep(THINK);
     const lesson = lessons[Math.floor(Math.random() * Math.max(1, lessons.length))];
-    if (lesson) {
-      await hit('lesson', `/rest/v1/lessons?select=id,title,content&id=eq.${lesson.id}`, token);
-      await rpc('lesson_media', token, { p_lesson: lesson.id });
-    }
+    if (lesson) await rpc('get_lesson_page', token, { p_course: course, p_lesson: lesson.id });
     await sleep(THINK);
     await rpc('my_grades', token);
     await sleep(THINK);
-    const assignments = (await hit('assignment list', `/rest/v1/assignments?select=id,title,due_at&course_id=eq.${course}&order=due_at`, token)) ?? [];
+    const assignments = /** @type {any[]} */ ((await rpc('list_my_assignments', token, { p_course: course })) ?? []);
     const a = assignments[Math.floor(Math.random() * Math.max(1, assignments.length))];
-    if (a) await rpc('my_submission', token, { p_assignment: a.id });
+    if (a) await rpc('get_assignment_page', token, { p_course: course, p_assignment: a.id });
     await sleep(THINK);
   }
 }
@@ -109,12 +121,19 @@ async function lecturer(n) {
 
 const started = Date.now();
 console.log(`Load: ${LEARNERS} learners and ${LECTURERS} lecturers for ${SECONDS} s against ${s.url}`);
-// Users arrive over the first fifth of the run, not all at once.
+// Users arrive over the first fifth of the run, not all at once; with --signins-per-minute, one sign-in every
+// 60/N seconds (lecturers first), so a hosted project's Auth rate limit is never reached.
 const ramp = (SECONDS * 1000) / 5;
-const users = [
-  ...Array.from({ length: LEARNERS }, (_, i) => sleep((ramp * i) / LEARNERS).then(() => learner((i % 300) + 1))),
-  ...Array.from({ length: LECTURERS }, (_, i) => sleep((ramp * i) / LECTURERS).then(() => lecturer((i % 20) + 1))),
-];
+const paced = (/** @type {number} */ slot) => new Promise((r) => setTimeout(r, (slot * 60_000) / SIGNINS_PER_MINUTE));
+const users = SIGNINS_PER_MINUTE > 0
+  ? [
+      ...Array.from({ length: LECTURERS }, (_, i) => paced(i).then(() => lecturer((i % 20) + 1))),
+      ...Array.from({ length: LEARNERS }, (_, i) => paced(LECTURERS + i).then(() => learner((i % 300) + 1))),
+    ]
+  : [
+      ...Array.from({ length: LEARNERS }, (_, i) => sleep((ramp * i) / LEARNERS).then(() => learner((i % 300) + 1))),
+      ...Array.from({ length: LECTURERS }, (_, i) => sleep((ramp * i) / LECTURERS).then(() => lecturer((i % 20) + 1))),
+    ];
 const outcomes = await Promise.allSettled(users);
 const failedUsers = outcomes.filter((o) => o.status === 'rejected');
 const seconds = (Date.now() - started) / 1000;
@@ -136,7 +155,7 @@ const total = rows.reduce((n, r) => n + r.count, 0);
 const errors = rows.reduce((n, r) => n + r.errors, 0);
 // eslint-disable-next-line no-console -- a measuring tool prints its results as a table
 console.table(rows);
-console.log(`${total} requests in ${seconds.toFixed(0)} s (${(total / seconds).toFixed(1)}/s); errors ${errors} (${((100 * errors) / Math.max(1, total)).toFixed(2)}%); users that failed to start ${failedUsers.length}`);
+console.log(`${total} requests in ${seconds.toFixed(0)} s (${(total / seconds).toFixed(1)}/s); errors ${errors} (${((100 * errors) / Math.max(1, total)).toFixed(2)}%); users that failed to start ${failedUsers.length}; downloaded ${(bytes / 1048576).toFixed(1)} MB`);
 if (process.argv.includes('--json')) {
-  writeFileSync(process.argv[process.argv.indexOf('--json') + 1], JSON.stringify({ learners: LEARNERS, lecturers: LECTURERS, seconds, total, errors, rows }, null, 2));
+  writeFileSync(process.argv[process.argv.indexOf('--json') + 1], JSON.stringify({ learners: LEARNERS, lecturers: LECTURERS, seconds, total, errors, downloadedMb: Math.round(bytes / 10485.76) / 100, rows }, null, 2));
 }
