@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button.jsx';
 import { Card, CardTitle } from '@/components/ui/card.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { fileSize } from '@/lib/audio/format.js';
-import { fetchCourse, fetchMyEnrolment } from '@/lib/courses/courses.js';
-import { downloadMedia, fetchLesson, fetchLessonMedia, fetchLessons, fetchMyProgress, markLesson, playbackUrl } from '@/lib/lessons/lessons.js';
+import { downloadMedia, markLesson, playbackUrl } from '@/lib/lessons/lessons.js';
+import { fetchLessonPage } from '@/lib/pages/page-reads.js';
 import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
 
 // The learner's lesson page (Phase 6; RESPONSIVE.md 15.2 "Lesson page"): the lesson text first at
@@ -22,17 +22,8 @@ import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
 export default function LearnerLessonPage() {
   const { courseId = '', lessonId = '' } = useParams();
   const toast = useToast();
-  const page = useLoad(async () => {
-    const [course, lessons, lesson, media, progress, enrolment] = await Promise.all([
-      fetchCourse(courseId),
-      fetchLessons(courseId),
-      fetchLesson(lessonId),
-      fetchLessonMedia(lessonId),
-      fetchMyProgress(courseId),
-      fetchMyEnrolment(courseId),
-    ]);
-    return { course, lessons, lesson, media, progress, enrolment };
-  }, [courseId, lessonId]);
+  // One call for the whole screen (Phase 15, D45).
+  const page = useLoad(() => fetchLessonPage(courseId, lessonId), [courseId, lessonId]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
 

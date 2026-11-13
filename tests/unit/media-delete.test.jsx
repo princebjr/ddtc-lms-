@@ -41,6 +41,17 @@ vi.mock('@/lib/courses/courses.js', async (importOriginal) => ({
   fetchMyEnrolment: vi.fn(async () => 'ACTIVE'),
 }));
 vi.mock('@/hooks/use-course-covers.js', () => ({ useCourseCovers: () => ({ 'course-1': 'https://example.test/cover.png' }) }));
+// The learner's lesson screen reads everything in one call since Phase 15 (get_lesson_page).
+vi.mock('@/lib/pages/page-reads.js', () => ({
+  fetchLessonPage: vi.fn(async () => ({
+    course: { id: 'course-1', title: 'Introduction to Biblical Studies', status: 'PUBLISHED' },
+    lessons: [{ id: 'lesson-1', title: 'Welcome and overview', position: 1, publication_status: 'PUBLISHED', audio_count: 2 }],
+    lesson: { id: 'lesson-1', course_id: 'course-1', title: 'Welcome and overview', content: '<p>Welcome</p>', position: 1, publication_status: 'PUBLISHED' },
+    media: structuredClone(api.media),
+    progress: {},
+    enrolment: 'ACTIVE',
+  })),
+}));
 
 const { AttachmentsCard, AudioCard } = await import('@/pages/courses/LessonMediaCards.jsx');
 const { CoverCard } = await import('@/pages/courses/CourseWorkspacePage.jsx');

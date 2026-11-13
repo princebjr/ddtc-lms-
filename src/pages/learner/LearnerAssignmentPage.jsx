@@ -11,14 +11,13 @@ import { VersionList } from '@/components/submissions/VersionList.jsx';
 import { Card, CardTitle } from '@/components/ui/card.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
 import { useLoad } from '@/hooks/use-load.js';
-import { fetchAssignment, fetchInstructionAudio } from '@/lib/assignments/assignments.js';
+import { fetchAssignmentPage } from '@/lib/pages/page-reads.js';
 import { dueStatus, formatDue } from '@/lib/assignments/due.js';
 import { fileSize } from '@/lib/audio/format.js';
-import { fetchCourse } from '@/lib/courses/courses.js';
-import { fetchMyGrade, markGradeNotificationsRead } from '@/lib/grading/grading.js';
+import { markGradeNotificationsRead } from '@/lib/grading/grading.js';
 import { downloadMedia, playbackUrl } from '@/lib/lessons/lessons.js';
 import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
-import { blockedMessage, fetchMySubmission } from '@/lib/submissions/submissions.js';
+import { blockedMessage } from '@/lib/submissions/submissions.js';
 
 // The learner's assignment page (prototype `nsub`; Phase 7): the instructions (text, audio, or
 // both), then the details: due date in Ghana time with their own extension (D13), whether late
@@ -39,13 +38,8 @@ export default function LearnerAssignmentPage() {
   const { courseId = '', assignmentId = '' } = useParams();
   const toast = useToast();
   const page = useLoad(async () => {
-    const [course, assignment, audio, mine, grade] = await Promise.all([
-      fetchCourse(courseId),
-      fetchAssignment(assignmentId),
-      fetchInstructionAudio(assignmentId),
-      fetchMySubmission(assignmentId),
-      fetchMyGrade(assignmentId),
-    ]);
+    // One call for the whole screen (Phase 15, D45).
+    const { course, assignment, audio, mine, grade } = await fetchAssignmentPage(courseId, assignmentId);
     return {
       course,
       assignment,

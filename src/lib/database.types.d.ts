@@ -1238,6 +1238,15 @@ isOneToOne: false
               "bucket_name": string,"id": string,"reason": string,"status": Database["public"]['Enums']["file_status"],"storage_path": string
             }[]
                            },
+"get_assignment_page":
+{ Args: { "p_assignment": string,"p_course": string }; Returns: Json
+                           },
+"get_course_page":
+{ Args: { "p_course": string }; Returns: Json
+                           },
+"get_lesson_page":
+{ Args: { "p_course": string,"p_lesson": string }; Returns: Json
+                           },
 "grade_categories_save":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_categories": Json,"p_course": string,"p_reason"?: string }; Returns: Json
                            },
@@ -1311,6 +1320,9 @@ isOneToOne: false
                            },
 "lesson_set_publication":
 { Args: { "p_actor": string,"p_as_admin": boolean,"p_lesson": string,"p_publish": boolean }; Returns: Json
+                           },
+"list_my_assignments":
+{ Args: { "p_course"?: string }; Returns: Json
                            },
 "mark_lesson":
 { Args: { "p_completed": boolean,"p_lesson": string }; Returns: string

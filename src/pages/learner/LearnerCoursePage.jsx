@@ -12,12 +12,11 @@ import { UserAvatar } from '@/components/UserAvatar.jsx';
 import { useCourseCovers } from '@/hooks/use-course-covers.js';
 import { useLoad } from '@/hooks/use-load.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
-import { fetchCourse, fetchMyEnrolment, fetchTeachers } from '@/lib/courses/courses.js';
-import { CONTENT_TYPE_LABEL, fetchMyAssignments } from '@/lib/assignments/assignments.js';
-import { fetchMyExams, LEARNER_STATE } from '@/lib/exams/exams.js';
-import { courseGradeTag, fetchMyCourseGrade } from '@/lib/gradebook/gradebook.js';
+import { fetchCoursePage } from '@/lib/pages/page-reads.js';
+import { CONTENT_TYPE_LABEL } from '@/lib/assignments/assignments.js';
+import { LEARNER_STATE } from '@/lib/exams/exams.js';
+import { courseGradeTag } from '@/lib/gradebook/gradebook.js';
 import { dueStatus, formatDue } from '@/lib/assignments/due.js';
-import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 
 // A course as a learner sees it (Phase 5 overview; Phase 6 lessons with progress; Phase 7 its
 // assignments with due dates). A COMPLETED
@@ -26,19 +25,8 @@ import { fetchLessons, fetchMyProgress } from '@/lib/lessons/lessons.js';
 
 export default function LearnerCoursePage() {
   const { courseId = '' } = useParams();
-  const { state, data, reload } = useLoad(async () => {
-    const [course, teachers, enrolment, lessons, progress, assignments, exams, grade] = await Promise.all([
-      fetchCourse(courseId),
-      fetchTeachers(courseId),
-      fetchMyEnrolment(courseId),
-      fetchLessons(courseId),
-      fetchMyProgress(courseId),
-      fetchMyAssignments(),
-      fetchMyExams(courseId),
-      fetchMyCourseGrade(courseId),
-    ]);
-    return { course, teachers, enrolment, lessons, progress, assignments: assignments.filter((a) => a.course_id === courseId), exams, grade };
-  }, [courseId]);
+  // One call for the whole screen (Phase 15, D45); the assignments are already this course's.
+  const { state, data, reload } = useLoad(() => fetchCoursePage(courseId), [courseId]);
   const covers = useCourseCovers(data?.course?.cover_image_file_id ? [courseId] : []);
 
   if (state === 'error') return <ErrorState title="The course could not be loaded" onRetry={reload} />;
@@ -179,7 +167,7 @@ function Teacher({ first, second, path }) {
 /**
  * The course's published assignments, soonest due first, each with its due-date chip (Ghana time,
  * with the learner's own extension; D13).
- * @param {{ courseId: string, assignments: Awaited<ReturnType<typeof fetchMyAssignments>> }} props
+ * @param {{ courseId: string, assignments: Awaited<ReturnType<typeof import('@/lib/assignments/assignments.js').fetchMyAssignments>> }} props
  */
 function Assignments({ courseId, assignments }) {
   const now = new Date();
