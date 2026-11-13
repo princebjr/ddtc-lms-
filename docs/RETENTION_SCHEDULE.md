@@ -1,6 +1,6 @@
 # DDTC LMS: Retention schedule
 
-**Status: approved** by DDTC's privacy and incident contact, Prince Boateng, on 2026-11-12 (ADR-023 item 5; INPUTS 7 and 8, O21). Nothing here is a legal conclusion: DDTC's legal or privacy adviser still reviews it and decides what Ghanaian and other law requires (BUILD_PLAN section 13, D25); a change from that review is a new approval. The "Proposed period" column is the approved period. Periods marked "not built until approved" (notifications) are built in a later phase; until then the system keeps those records as today ("As built"), which loses nothing.
+**Status: approved** by DDTC's privacy and incident contact, Prince Boateng, on 2026-11-12 (ADR-023 item 5; INPUTS 7 and 8, O21). Nothing here is a legal conclusion: DDTC's legal or privacy adviser still reviews it and decides what Ghanaian and other law requires (BUILD_PLAN section 13, D25); a change from that review is a new approval. The "Proposed period" column is the approved period. The notifications period is applied by a daily job since Phase 15.
 
 Rules that apply to every row (D25): academic and audit records are never hard-deleted by the app; courses and content are archived and accounts deactivated; any legally required erasure is done by a documented, audited administrator procedure that anonymises personal fields and keeps the academic rows; a hold (Retention page) stops any automatic removal.
 
@@ -15,7 +15,7 @@ Rules that apply to every row (D25): academic and audit records are never hard-d
 | Temporary uploads | Uploads never finished, rejected files | Removed after 24 hours by the hourly cleanup (D18) | 24 hours | Already in force. |
 | Audit and security logs | Who did what and when (`audit_logs`), grade and exam history | Kept indefinitely; no one can change or delete them | At least 7 years | DDTC to confirm; never shorter than academic disputes may need. |
 | Server logs | Supabase and Vercel request and function logs | Kept by the providers for their plan's period (days) | Provider default | No learner content or secrets are logged. |
-| Notifications and emails | In-app notifications, email delivery records, reminders, announcements | Kept; a cleared notification is only hidden (ADR-024) | 2 years, then remove | Would need a small scheduled job; not built until approved. |
+| Notifications and emails | In-app notifications, email delivery records, reminders, announcements | Kept; a cleared notification is only hidden (ADR-024) | 2 years, then remove | A daily job (03:20, Ghana time) removes them since Phase 15 (migration 59); anything still waiting to be sent is kept, and each run is audited. |
 | Rate-limit counts | Per-person counts of heavy actions | Removed after 1 day | 1 day | Already in force. |
 | Backups | Encrypted database dumps and Storage copies in R2 | 30 days (R2 lifecycle rules, D34) | 30 days | A deleted file may survive in backups for up to 30 days; the privacy notice should say so. |
 
