@@ -27,9 +27,9 @@ function medians(file) {
 const before = medians(process.argv[2]);
 const after = medians(process.argv[3]);
 /** @param {number | null} v */
-const t = (v) => (v == null ? '–' : v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${v} ms`);
+const t = (v) => (v === null || v === undefined ? '–' : v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${v} ms`);
 /** @param {number | null} b @param {number | null} a */
-const pct = (b, a) => (b && a != null ? `${a <= b ? '−' : '+'}${Math.abs(Math.round((100 * (a - b)) / b))}%` : '');
+const pct = (b, a) => (b && a !== null && a !== undefined ? `${a <= b ? '−' : '+'}${Math.abs(Math.round((100 * (a - b)) / b))}%` : '');
 const md = process.argv.includes('--markdown');
 let profile = '';
 for (const [k, b] of before) {
@@ -39,7 +39,7 @@ for (const [k, b] of before) {
     profile = b.profile;
     process.stdout.write(`\n**${profile}**\n\n| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |\n|---|---|---|---|---|---|\n`);
   }
-  const cells = ['readable', 'repeat', 'audioReady', 'audioStart'].map((x) => (b[x] == null ? '–' : `${t(b[x])} → ${t(a[x])} (${pct(b[x], a[x])})`));
+  const cells = ['readable', 'repeat', 'audioReady', 'audioStart'].map((x) => (b[x] === null || b[x] === undefined ? '–' : `${t(b[x])} → ${t(a[x])} (${pct(b[x], a[x])})`));
   const line = md ? `| ${b.page} | ${cells.join(' | ')} | ${b.api} → ${a.api} |\n` : `${b.profile.padEnd(10)} ${b.page.padEnd(31)} ${cells.join('  ')}  api ${b.api}→${a.api}\n`;
   process.stdout.write(line);
 }
