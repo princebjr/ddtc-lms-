@@ -234,3 +234,29 @@ Compared with the baseline (`docs/performance/after-step3-2026-11-13.json`).
 **Result:** first visits are the same or slightly faster, and repeat visits to the lesson and lesson list are 40–47% faster. **Kept.**
 
 **Lesson for later measurements:** the same build measured 2.0–2.3 s at one time and 2.6–2.8 s hours later, so runs taken hours apart are not comparable on this laptop. From here on, every change is measured side by side with the version before it, in the same session.
+
+## Stability (Phase 15)
+
+### Graceful degradation order
+
+When part of the system struggles, what gives way first, and what is protected last:
+1. **Exports and reports pause first:** an administrator turns them off on Settings, Heavy features (migration 58). People asking for them are told plainly that they are paused.
+2. **Live presence falls back quietly:** if the Realtime connection fails, "Who's online" shows nobody and nothing else is affected.
+3. **Audio falls back to text:** if a lesson's audio cannot load, the player shows its error with Retry and the lesson text is still there to read.
+4. **Slow pages keep loading:** after 10 seconds a page keeps its skeleton and shows "Still loading. Your connection seems slow." with Retry (owner decision, ADR-028).
+5. **Protected last:** sign-in, lessons and sending answers are never paused. Answers keep drafts on the device, and recordings are kept until they upload.
+
+### What protects each part
+
+| Brief item | How | Since |
+|---|---|---|
+| A user never sees a blank screen | A failing screen shows its own error with Try again inside the app frame (`PageErrorBoundary`); the route error page catches everything else | Phase 15; Phase 1 |
+| Time limits on every request | Database requests stop after 45 s; Edge Function calls after their own limit (`functions.js`) | Phase 15; Phase 6 |
+| Retries only for safe reads | Up to 2 retries with growing, spread-out waits, only for reads and only after a network failure or 502/503/504 (`resilient-fetch.js`) | Phase 15 |
+| Writes are never repeated | Answers carry a client request id (`submission_versions.client_request_id`, unique); grade release, enrolment and imports are idempotent in the database | Phases 8–10 |
+| Scheduled jobs never overlap harmfully | Emails are claimed with `FOR UPDATE SKIP LOCKED` and a 15-minute lease; reminders and health alerts have unique keys; retention re-checks each file before deleting | Phases 11–13 |
+| No duplicate notifications | Unique `deduplication_key` | Phase 9 |
+| Failed jobs and emails are visible | Daily health check and System health card; failed emails retried on the D31 schedule, then marked FAILED and alerted | Phases 11 and 13 |
+| Database safety | Statement limits (3 s signed out, 8 s signed in, 60 s for the Edge Functions), idle-transaction limit 60 s for every app role (migration 60); slow queries visible in `pg_stat_statements` | Phase 15 |
+| Plan limits | Warnings at 80% and 95% of file storage and database size (migration 57) | Phase 15 |
+| Speed stays within budget | Bundle budgets in verify and CI; layout shift and data calls per page in the throttled-phone test | Phase 15 |

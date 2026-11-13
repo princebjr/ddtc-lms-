@@ -25,3 +25,18 @@ See `docs/acceptance/phase-13.md` section 4 for the figures of the Phase 13 read
 - A policy must never call a function per row on a large table. Compute the set once (`col in (select private.set_fn())`) or wrap a row-independent check as `(select private.fn(x))`. A SECURITY DEFINER function is never inlined by the planner.
 - Join to a table instead of calling a function per row in a read function (migration 50).
 - Every new policy or read function on a large table gets a line in `policy-timings.mjs` or `timings.mjs`.
+
+## Growth plan (Phase 15, ADR-028)
+
+DDTC runs on the Supabase free plan (no paid services). Each row is a step DDTC may need as it grows: the sign that it is needed, the action, the cost, and who decides. Plan prices are approximate (late 2026) and must be checked on Supabase's pricing page before deciding. The System health card and the monthly usage check (runbook "Plan limits") show the first three signs.
+
+| Sign (trigger) | Action | Cost | Decides |
+|---|---|---|---|
+| File storage over 80% of 1 GB (System health warning) | Switch on learner-audio retention after review; ask lecturers for MP3/M4A at about 64 kbit/s mono; then Supabase Pro (100 GB) | Free, then about US$25 a month | Owner |
+| Downloads over 4 GB in a month (Supabase usage page) | Same audio advice; then Pro (250 GB of downloads) | Free, then about US$25 a month | Owner |
+| Database over 400 MB (System health warning at 80% of 500 MB) | Check what grew (audit logs, notifications; the 2-year cleanup runs daily); then Pro (8 GB) | Free, then about US$25 a month | Owner |
+| More than about 150 people online at once (the free plan's Realtime limit is 200 connections; "Who's online" uses one per open app) | Pro (500 connections), or turn presence off for some screens | About US$25 a month | Owner |
+| Screens slow for everyone at peak (p95 of the page reads over 1 s, database CPU high on the Supabase dashboard) | Pause exports and reports (Settings, Heavy features); then a larger database computer on Pro | Free; then about US$15–60 a month more | Owner |
+| Learners far from Europe complain of slow audio | Supabase Smart CDN for Storage (Pro) | Included in Pro | Owner |
+| Most uploads are large WAV files despite the guidance | A transcoding worker (an ADR first: cost and complexity) | A paid worker, about US$5–20 a month | Owner |
+| The administrators' all-courses grade report over 4 s (about 185 ms per course; DDTC has about 20 courses, so about 40 times today's number) | Precompute the report nightly, or calculate several courses in one pass (an ADR first: grades are only calculated by `calculate_course_grades`) | Free (development) | Owner, with an ADR |
