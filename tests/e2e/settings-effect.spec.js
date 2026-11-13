@@ -10,7 +10,7 @@ import { signIn, signInNewAdmin } from './support/ui.js';
 // Owner request of 2026-11-11 (ADR-020 item 7): what an administrator changes on Settings takes effect.
 // The owner raised an upload limit from 2 MB to 5 MB and uploads were still refused at 2 MB. Here an
 // administrator raises the course cover limit to 5 MB; a lecturer then sees "up to 5 MB" and uploads a
-// cover of about 3 MB, which the screen, the upload functions and Storage all accept.
+// cover of about 3 MB, which the screen accepts. Since Phase 15 the browser shrinks it before uploading (checked below).
 //
 // The cover limit is used (not the profile photo limit) because users.spec.js relies on the 2 MB photo
 // limit while it runs beside this test. Every device project sets the same 5 MB in the one local
@@ -54,4 +54,14 @@ test('an administrator raises the course cover limit to 5 MB and a lecturer uplo
   await teaching.locator('input[type="file"][accept="image/jpeg,image/png,image/webp"]').setInputFiles({ name: 'large-cover.png', mimeType: 'image/png', buffer: cover });
   await expect(teaching.getByRole('img', { name: /^Cover of / })).toBeVisible({ timeout: 60_000 });
   await expect(teaching.getByRole('button', { name: 'Replace cover' })).toBeVisible();
+  // Since Phase 15 the browser makes the picture smaller before uploading it (WebP, or JPEG in Safari), so what is
+  // stored is far below the old 2 MB limit. The server's own limits are checked by pgTAP 34 and the function tests.
+  const s = requireSupabase();
+  const [stored] = await (
+    await fetch(`${s.url}/rest/v1/file_objects?select=file_size,detected_mime_type&resource_type=eq.COURSE_COVER&resource_id=eq.${course.id}&status=eq.VALIDATED&order=created_at.desc&limit=1`, {
+      headers: { apikey: s.serviceKey, Authorization: `Bearer ${s.serviceKey}` },
+    })
+  ).json();
+  expect(stored.file_size).toBeLessThan(1024 * 1024);
+  expect(['image/webp', 'image/jpeg']).toContain(stored.detected_mime_type);
 });

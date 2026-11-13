@@ -26,6 +26,7 @@ import { useCourseCovers } from '@/hooks/use-course-covers.js';
 import { useLoad } from '@/hooks/use-load.js';
 import { useMediaDelete } from '@/hooks/use-media-delete.js';
 import { useProfileImage } from '@/hooks/use-profile-image.js';
+import { IMAGE_SIZES, shrinkImage } from '@/lib/images/shrink.js';
 import { validate } from '@/lib/auth/schemas.js';
 import { BranchGroups, GroupByBranchSwitch } from '@/components/branches/BranchGroups.jsx';
 import { useGroupByBranch } from '@/lib/branch-groups.js';
@@ -387,10 +388,12 @@ export function CoverCard({ course, canEdit, onChanged }) {
   const remover = useMediaDelete({ kind: 'course-cover', onDeleted: () => onChanged() });
   const limit = limitFor(useClientSettings(), 'course_cover');
 
-  /** @param {File} file */
-  const upload = async (file) => {
+  /** @param {File} picked */
+  const upload = async (picked) => {
     setNote(null);
-    if (!COVER_TYPES.includes(file.type)) return setNote({ tone: 'error', text: 'Use a JPG, PNG or WebP image.' });
+    if (!COVER_TYPES.includes(picked.type)) return setNote({ tone: 'error', text: 'Use a JPG, PNG or WebP image.' });
+    // Made smaller in the browser first (Phase 15): the limit applies to what is uploaded.
+    const file = await shrinkImage(picked, IMAGE_SIZES.COURSE_COVER);
     if (limit.maxBytes && file.size > limit.maxBytes) return setNote({ tone: 'error', text: `Use an image of ${sizeText(limit.maxBytes)} or less.` });
     setBusy(true);
     try {

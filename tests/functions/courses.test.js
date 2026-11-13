@@ -152,14 +152,14 @@ describe('course covers (D18)', () => {
   // A 1x1 PNG.
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 
-  /** @param {string} token @param {string} courseId @param {Buffer} bytes @param {string} name */
-  async function upload(token, courseId, bytes, name) {
+  /** @param {string} token @param {string} courseId @param {Buffer} bytes @param {string} name @param {string} [type] */
+  async function upload(token, courseId, bytes, name, type = 'image/png') {
     const reg = await call('register-upload', token, { resourceType: 'COURSE_COVER', courseId, filename: name, size: bytes.length });
     if (reg.status !== 200) return reg;
     const s = requireSupabase();
     const put = await fetch(`${s.url}/storage/v1/object/upload/sign/${reg.body.bucket}/${reg.body.path}?token=${reg.body.token}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'image/png', 'x-upsert': 'false' },
+      headers: { 'Content-Type': type, 'x-upsert': 'false' },
       body: new Blob([new Uint8Array(bytes)]),
     });
     expect(put.ok).toBe(true);
@@ -175,6 +175,16 @@ describe('course covers (D18)', () => {
     const fake = await upload(lecturerA.token, id, Buffer.from('not an image at all'), 'fake.png');
     expect(fake.status).toBe(422);
     expect((await courseRow(id)).cover_image_file_id).toBe(ok.body.fileId);
+  });
+
+  // Since Phase 15 browsers shrink covers to WebP (JPEG in Safari) before uploading them.
+  it('accepts a WebP cover, the format browsers now upload', async () => {
+    const webp = Buffer.from('UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA=', 'base64');
+    const id = await createCourse(lecturerA.token);
+    const ok = await upload(lecturerA.token, id, webp, 'cover.webp', 'image/webp');
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    const [file] = await serviceGet(`file_objects?select=detected_mime_type,status&id=eq.${ok.body.fileId}`);
+    expect(file).toMatchObject({ detected_mime_type: 'image/webp', status: 'VALIDATED' });
   });
 });
 
