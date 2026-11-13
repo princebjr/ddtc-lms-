@@ -115,3 +115,52 @@ Medians of 3 runs. Targets (D45, p75, first visit on a mid-range Android over 4G
 ## Changes
 
 Each change is measured with the same tool on the same machine, kept only if it improves the numbers and every test passes.
+
+### Change 1: one call per learner screen (migration 55)
+
+`get_lesson_page`, `get_course_page`, `get_assignment_page` and `list_my_assignments` return what each screen fetched with 4 to 17 separate calls:
+- They run with the caller's rights, so the same RLS policies and read functions decide what comes back.
+- pgTAP 44 proves, for every role, that each part equals the separate reads.
+
+Measured with the same tool, 3 runs each (`docs/performance/after-step2-2026-11-13.json`, with the desktop and WebKit rows). Columns show before → after; the tables below are the budget Android profiles.
+
+**Reading the numbers:** the lecturer pages (dashboard, grading, gradebook) did not change in this step, so they act as a control. On desktop and iPad they moved by up to ±40–120% between runs, so differences of that size on short times are noise on this laptop. The larger, consistent effects are on the budget Android profiles, the target devices.
+**android-4g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 3.6 s → 3.2 s (−13%) | 1.1 s → 1.1 s (−1%) | – | – | 8 → 8 |
+| lesson list (course) | 2.9 s → 2.7 s (−8%) | 748 ms → 795 ms (+6%) | – | – | 17 → 7 |
+| lesson | 3.8 s → 2.7 s (−28%) | 1.4 s → 763 ms (−44%) | 5.5 s → 3.4 s (−39%) | 1.4 s → 1.4 s (−4%) | 10 → 5 |
+| assignment list | 2.5 s → 2.3 s (−8%) | 571 ms → 569 ms (−0%) | – | – | 8 → 5 |
+| assignment (instruction audio) | 3.5 s → 3.4 s (−2%) | 762 ms → 724 ms (−5%) | 4.0 s → 4.0 s (+2%) | 1.5 s → 1.4 s (−7%) | 10 → 6 |
+| lecturer dashboard | 2.7 s → 2.6 s (−4%) | 625 ms → 567 ms (−9%) | – | – | 8 → 9 |
+| grading (one answer) | 3.3 s → 2.9 s (−10%) | 567 ms → 560 ms (−1%) | – | – | 6 → 6 |
+| gradebook | 4.9 s → 4.1 s (−15%) | 1.8 s → 1.1 s (−37%) | – | – | 9 → 9 |
+
+**android-3g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 23.4 s → 23.8 s (+2%) | 4.4 s → 4.3 s (−1%) | – | – | 8 → 8 |
+| lesson list (course) | 25.2 s → 23.0 s (−9%) | 7.3 s → 3.4 s (−54%) | – | – | 17 → 7 |
+| lesson | 23.5 s → 21.9 s (−7%) | 5.5 s → 4.0 s (−27%) | 27.7 s → 26.3 s (−5%) | 6.9 s → 7.6 s (+12%) | 10 → 6 |
+| assignment list | 17.1 s → 17.2 s (+0%) | 2.2 s → 2.3 s (+1%) | – | – | 8 → 5 |
+| assignment (instruction audio) | 29.3 s → 27.6 s (−6%) | 5.4 s → 3.5 s (−35%) | 33.5 s → 31.8 s (−5%) | 6.9 s → 7.0 s (+2%) | 11 → 6 |
+| lecturer dashboard | 21.1 s → 21.2 s (+0%) | 2.2 s → 2.2 s (+1%) | – | – | 9 → 9 |
+| grading (one answer) | 27.0 s → 27.3 s (+1%) | 3.3 s → 3.3 s (+1%) | – | – | 6 → 6 |
+| gradebook | 35.4 s → 35.4 s (+0%) | 4.5 s → 5.5 s (+22%) | – | – | 9 → 9 |
+
+
+**Result:**
+- **Data calls fell as designed:** the lesson list from 17 to 7, the lesson page from 10 to 5, the assignment page from 10 to 6, the assignment list from 8 to 5. The remaining ones are the app frame (profile, settings, notifications, who's online) plus, on audio screens, signing the audio link.
+- **On the budget Android over slow 4G, the lesson page:**
+  - readable 3.8 s → 2.7 s (−28%);
+  - repeat visit 1.4 s → 0.76 s (−44%);
+  - audio ready 5.5 s → 3.4 s (−39%).
+- **On slow 3G, repeat visits:** the lesson list 7.3 s → 3.4 s, the assignment page 5.4 s → 3.5 s.
+- **Kept.**
+
+**Cost noted:** the first call on each database connection takes about 200 ms while Postgres warms its caches; after that the combined reads take 15–50 ms (`get_lesson_page` 29 ms, `get_assignment_page` 15 ms, `get_course_page` 50 ms, `list_my_assignments` 62 ms on the load seed's sizes). This shows as slower repeat visits on desktop (about 0.1 s → 0.48 s). To check on staging, where connections stay warm.
+
+**Also fixed on the way:** the automatic code splitting put React DOM in a chunk of its own and the app failed to start ("Cannot read properties of null (reading 'useState')"). React, React DOM and the scheduler are now kept in one chunk (`vite.config.js`). The starting code is 128 KB compressed, under the 200 KB budget.
