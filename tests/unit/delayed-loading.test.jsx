@@ -92,16 +92,28 @@ describe('LoadingRegion', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows an error state with Retry after 10 seconds, clearly different from loading', () => {
+  // Owner decision of 2026-11-13 (Phase 15, ADR-028): on a slow connection the page is usually still on its
+  // way after 10 seconds, so the skeleton stays and a calm notice with Retry appears beneath it (no error).
+  it('after 10 seconds keeps the skeleton and adds a calm "still loading" notice with Retry, then shows the page', () => {
     const retry = vi.fn();
-    render(
-      <LoadingRegion loading skeleton={<div />} onRetry={retry}>
+    const { rerender } = render(
+      <LoadingRegion loading skeleton={<div data-testid="skeleton" />} onRetry={retry}>
         <p>Ready</p>
       </LoadingRegion>,
     );
     advance(10_000);
-    expect(screen.getByRole('alert')).toHaveTextContent('This is taking too long');
+    expect(screen.getByTestId('skeleton')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Still loading. Your connection seems slow.');
+    expect(screen.queryByRole('alert')).toBeNull();
     act(() => screen.getByRole('button', { name: 'Retry' }).click());
     expect(retry).toHaveBeenCalledTimes(1);
+    rerender(
+      <LoadingRegion loading={false} skeleton={<div data-testid="skeleton" />} onRetry={retry}>
+        <p>Ready</p>
+      </LoadingRegion>,
+    );
+    advance(300);
+    expect(screen.getByText('Ready')).toBeInTheDocument();
+    expect(screen.queryByText('Still loading. Your connection seems slow.')).toBeNull();
   });
 });

@@ -78,17 +78,20 @@ test('a load under 150 ms never flashes a skeleton', async ({ page }) => {
   expect(phases).not.toContain('skeleton');
 });
 
-test('after 10 seconds the skeleton becomes an error state with Retry', async ({ page }) => {
+// Owner decision of 2026-11-13 (Phase 15, ADR-028): on a slow connection the page is usually still on its way
+// after 10 seconds, so the skeleton stays and a calm notice with Retry appears beneath it; no error.
+test('after 10 seconds the skeleton stays and a calm "still loading" notice with Retry appears', async ({ page }) => {
   await pausedClock(page);
   await page.goto('/dev/shell/learner/dashboard?delay=never');
   await expect(page.locator('[data-loading-phase="blank"]')).toBeAttached();
   await advanceUntilVisible(page, page.locator('[data-skeleton="dashboard"]'), 400);
-  const error = page.getByRole('alert');
+  const notice = page.locator('[data-slot="slow-notice"]');
   // Jump most of the way (the 10-second timer already exists), then step to the boundary.
   await page.clock.runFor(9_000);
-  await expect(error).toHaveCount(0);
-  await advanceUntilVisible(page, error, 2_000);
-  await expect(error).toContainText('This is taking too long');
-  await expect(error.getByRole('button', { name: 'Retry' })).toBeVisible();
-  await expect(page.locator('[data-skeleton="dashboard"]')).toHaveCount(0);
+  await expect(notice).toHaveCount(0);
+  await advanceUntilVisible(page, notice, 2_000);
+  await expect(notice).toContainText('Still loading. Your connection seems slow.');
+  await expect(notice.getByRole('button', { name: 'Retry' })).toBeVisible();
+  await expect(page.locator('[data-skeleton="dashboard"]')).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });
