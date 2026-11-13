@@ -31,6 +31,7 @@ jobs:
       - run: npm run scan:secrets
       - run: npm run audit:deps
       - run: npm run build
+      - run: npm run check:bundle
 
   gitleaks:
     name: Secret scan (gitleaks, full history)
