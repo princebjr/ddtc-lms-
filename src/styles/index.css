@@ -153,6 +153,14 @@
 @utility pb-safe {
   padding-bottom: var(--safe-bottom);
 }
+/* A dialog or sheet edge on a phone: the usual 1rem gap plus the safe area, so its first or last control never
+   touches the edge (owner, 2026-11-13: the idle warning's Continue Session button touched the card's edge). */
+@utility pt-sheet {
+  padding-top: calc(var(--safe-top) + var(--spacing) * 4);
+}
+@utility pb-sheet {
+  padding-bottom: calc(var(--safe-bottom) + var(--spacing) * 4);
+}
 @utility pl-safe {
   padding-left: var(--safe-left);
 }

@@ -1,4 +1,4 @@
-import { TriangleAlert } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { AuthLayout, FormMessage } from '@/components/auth/AuthLayout.jsx';
@@ -93,15 +93,21 @@ export default function LoginPage() {
         </p>
       }
     >
-      {/* Owner request 2026-11-11 (second): the inactivity sign-out notice is an alert card in the error colour:
-          tinted background, a red left edge, a filled warning icon, a bold title and the reason beneath. */}
+      {/* Owner request 2026-11-13 (Phase 15, ADR-027): the inactivity sign-out notice as an info alert: a soft card
+          tinted with the primary colour, large rounded corners and the overlay shadow, a round filled badge with an
+          info icon, a bold title with the reason beneath, and a close button. Still a status, not an error. */}
       {notice ? (
-        <div role="status" data-slot="signed-out-notice" className="flex items-start gap-3 rounded-md border-l-4 border-error status-tint-error p-3">
-          <TriangleAlert className="mt-0.5 size-5 shrink-0 fill-error stroke-error [&>path:nth-child(n+2)]:stroke-on-error" aria-hidden="true" />
-          <div className="flex min-w-0 flex-col gap-0.5">
+        <div role="status" data-slot="signed-out-notice" className="flex items-center gap-3 rounded-lg status-tint-primary py-3 pr-1 pl-3 shadow-overlay">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary" aria-hidden="true">
+            <Info className="size-5" />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <p className="m-0 text-body-sm font-semibold text-ink">You have been signed out</p>
             <p className="m-0 text-body-sm text-ink-secondary">{notice}</p>
           </div>
+          <Button variant="ghost" size="icon" className="shrink-0 rounded-full" aria-label="Dismiss" onClick={() => setNotice(null)}>
+            <X className="size-5" aria-hidden="true" />
+          </Button>
         </div>
       ) : null}
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4" aria-describedby={message ? 'login-message' : undefined}>

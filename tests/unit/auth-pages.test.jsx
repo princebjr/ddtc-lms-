@@ -126,18 +126,25 @@ describe('Sign In', () => {
     expect(idleMessage(10)).toBe('You were signed out after 10 minutes of inactivity.');
     const idle = renderPage(<LoginPage />, '/login?idle=10&next=%2Flearner%2Fdashboard');
     const notice = screen.getByText('You were signed out after 10 minutes of inactivity.');
-    // Owner request 2026-11-11 (second): an alert card in the error colour: tinted background, a red left
-    // edge, a filled warning icon, a bold title and the reason beneath it. Still a status, not an error.
+    // Owner request 2026-11-13 (Phase 15, ADR-027): an info alert: a soft primary-tinted card with large rounded
+    // corners and the overlay shadow, a round filled badge with an info icon, a bold title with the reason
+    // beneath, and a close button. Still a status, not an error.
     const card = /** @type {HTMLElement} */ (notice.closest('[data-slot="signed-out-notice"]'));
     expect(card.getAttribute('role')).toBe('status');
-    expect(card.className).toMatch(/status-tint-error/);
-    expect(card.className).toMatch(/border-l-4 border-error/);
-    expect(card.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(card.className).toMatch(/status-tint-primary/);
+    expect(card.className).toMatch(/rounded-lg/);
+    expect(card.className).toMatch(/shadow-overlay/);
+    expect(card.querySelector('.rounded-full.bg-primary svg[aria-hidden="true"]')).not.toBeNull();
     expect(within(card).getByText('You have been signed out').className).toMatch(/font-semibold/);
     expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.submit(/** @type {HTMLFormElement} */ (idle.container.querySelector('form')));
     expect(screen.queryByText('You were signed out after 10 minutes of inactivity.')).toBeNull();
     idle.unmount();
+    // The close button dismisses it.
+    const again = renderPage(<LoginPage />, '/login?idle=10');
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByText('You were signed out after 10 minutes of inactivity.')).toBeNull();
+    again.unmount();
     renderPage(<LoginPage />, '/login?idle=0');
     expect(screen.queryByText(/signed out after/)).toBeNull();
   });

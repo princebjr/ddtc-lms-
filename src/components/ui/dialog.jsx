@@ -30,7 +30,7 @@ export function DialogContent({ className, children, showClose = true, closeLabe
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'fixed inset-0 z-50 flex flex-col gap-4 overflow-y-auto bg-card p-4 pt-safe pb-safe text-ink outline-none',
+          'fixed inset-0 z-50 flex flex-col gap-4 overflow-y-auto bg-card p-4 pt-sheet pb-sheet text-ink outline-none',
           'data-[state=open]:animate-fade-in',
           'sm:inset-auto sm:top-1/2 sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2',
           'sm:max-h-dvh-screen sm:rounded-lg sm:border sm:border-hairline sm:p-6 sm:shadow-overlay sm:data-[state=open]:animate-dialog-in',
