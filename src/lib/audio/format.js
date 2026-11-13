@@ -31,3 +31,10 @@ export function fileSize(bytes) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/**
+ * Upload guidance for lecturers' teaching audio (Phase 15, ADR-028): the free plan allows 1 GB of files and 5 GB
+ * of downloads a month, and small files also start faster on slow connections.
+ */
+export const AUDIO_SIZE_TIP =
+  'Tip: for teaching and talks, MP3 or M4A at about 64 kbit/s mono sounds clear and keeps files small, so they start quickly on slow connections. A WAV file is about ten times larger. Recording in the app already saves a small file.';

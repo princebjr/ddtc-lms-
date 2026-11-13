@@ -31,6 +31,7 @@ import {
 } from '@/lib/assignments/assignments.js';
 import { fromGhanaInput, toGhanaInput } from '@/lib/assignments/due.js';
 import { answerFormats, assignmentSchema, publishProblem } from '@/lib/assignments/schemas.js';
+import { AUDIO_SIZE_TIP } from '@/lib/audio/format.js';
 import { computePeaks } from '@/lib/audio/peaks.js';
 import { validate } from '@/lib/auth/schemas.js';
 import { fetchCourse } from '@/lib/courses/courses.js';
@@ -515,6 +516,7 @@ function InstructionAudioCard({ assignmentId, courseId, title, readOnly, onAttac
           <CardDescription>{`No audio yet. MP3, M4A or WAV${limit.maxBytes ? `, ${limitText(limit)}` : ''}.`}</CardDescription>
         )}
       </LoadingRegion>
+      <p className="m-0 text-body-sm text-ink-secondary" data-slot="audio-size-tip">{AUDIO_SIZE_TIP}</p>
       {progress ? (
         <div className="flex flex-col gap-2" role="status">
           <span className="text-body-sm text-ink-secondary">
