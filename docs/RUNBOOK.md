@@ -370,3 +370,16 @@ Learners and lecturers find Help & Support on their dashboard and under More. It
 Leave a field empty to hide it. With both empty, the page tells people to speak to their lecturer or a DDTC administrator. The database refuses a malformed email or a number that is not 7 to 15 digits.
 
 The help text lives in `src/lib/help/content.js`, one set for learners and one for lecturers. When a screen's button or rule changes, change the text with it.
+
+### Plan limits (ADR-028)
+
+DDTC runs on the Supabase free plan, which allows 1 GB of stored files, a 500 MB database and 5 GB of downloads a month. The project pauses after 7 days without activity; the uptime monitor's checks keep it active.
+
+- **Warnings:** the System health card and the daily alert warn when files or the database reach 80% of the limit, and raise an error at 95%, with what is used and what is left. The limits are on **Settings, Plan limits**; change them only when the plan changes.
+- **Downloads (egress) cannot be measured from the app.** Once a month, open the Supabase dashboard, then the project, then **Usage**, and check "Egress". Lesson and answer audio are most of it.
+- **When files near the limit:**
+  1. Check that the cleanup job is removing replaced and unused files (System health shows if it is failing).
+  2. Consider switching learner-audio retention on (runbook "Learner-audio retention") after DDTC's review.
+  3. Ask lecturers to upload speech audio as MP3 or M4A at about 64 kbit/s mono rather than WAV.
+  4. Otherwise decide on a paid plan (the growth plan in `docs/CAPACITY.md`).
+- **When downloads near the limit:** the same audio advice applies; smaller audio files are the main saving.

@@ -146,6 +146,26 @@ export default function SettingsPage() {
             <Group title="Upload limits" description="The largest file, and the longest recording, for each kind of upload.">
               <FileLimitsSetting setting={get('file_limits')} onSaved={replace} />
             </Group>
+            <Group title="Plan limits" description="What DDTC's Supabase plan allows. System health warns at 80% and again at 95%.">
+              <NumberSetting
+                setting={get('plan_storage_limit_mb')}
+                label="File storage"
+                unit="MB"
+                min={100}
+                max={10000000}
+                help="All uploaded files together: lesson audio, attachments, covers, photos and answers. The free plan allows 1024 MB."
+                onSaved={replace}
+              />
+              <NumberSetting
+                setting={get('plan_database_limit_mb')}
+                label="Database"
+                unit="MB"
+                min={100}
+                max={10000000}
+                help="The free plan allows 500 MB. Change these only when DDTC changes its Supabase plan."
+                onSaved={replace}
+              />
+            </Group>
             <Group title="Fixed here" description="Shown for reference. These change in a later phase or with the owner's decision.">
               <ReadOnly label="Email retries (minutes after each failure)" value={(get('notification_retry_minutes')?.value ?? []).join(', ')} />
               <ReadOnly
