@@ -24,6 +24,8 @@ Owner decision of 2026-11-14 (ADR-029): go straight to production without the pi
 |---|---|
 | Security headers on https://ddtc-lms.vercel.app (CSP, HSTS, nosniff, frame DENY, Referrer-Policy, Permissions-Policy) | **Pass**, all present; CSP `connect-src` allows only the app and `*.supabase.co` |
 | Sign In and Sign Up at 375 px | **Pass:** headings "Welcome back" and "Create your account", brand line "from gölarae" under each form, no Continue with Google, no console errors |
+| Continue with Google (turned on 2026-11-14) | **Pass:** Google provider on in production; button on Sign In and Sign Up; it reaches Google's sign-in with production's callback; no console errors |
+| Invitation flow | **Pass:** a test invitation on production landed on "Choose a new password" (test account removed). The owner's own link had been used 22 s after sending, most likely by Gmail's link scanner; the owner uses Forgot password instead |
 | Rollback | **Pass:** `vercel rollback` to the previous deployment took 21 s with the database untouched; `vercel promote` restored the current one |
 | Sign in as each role, acceptance journey on production | **Open:** waits for the owner's administrator account (invitation) and the first lecturer and learners |
 

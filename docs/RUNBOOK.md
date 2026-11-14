@@ -394,7 +394,7 @@ DDTC runs on the Supabase free plan, which allows 1 GB of stored files, a 500 MB
 | Supabase | `ddtc-lms-production`, ref `gajmtqnvfjyvrhzjjcum`, eu-west-1, free plan (ADR-028) |
 | Staging | `ddtc-lms-staging` (`iybsnzrkkddkqnhfqykv`). `ddtc-lms-dev` is paused to stay within the free plan's two active projects; development uses the local stack |
 | Database password | Held by the owner in a password manager; never in the repository |
-| Vercel production variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (public by design), `VITE_GOOGLE_SIGN_IN=false` |
+| Vercel production variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (public by design). `VITE_GOOGLE_SIGN_IN=false` was removed on 2026-11-14 once Google was configured |
 | Function secrets | `APP_URL`; `RESEND_API_KEY` and `EMAIL_FROM` once the domain exists |
 | Vault | `project_url`, `service_role_key` (scheduled jobs) |
 
@@ -402,7 +402,8 @@ DDTC runs on the Supabase free plan, which allows 1 GB of stored files, a 500 MB
 
 **Launch decisions (owner, 2026-11-14):**
 - Straight to production, without the pilot. The restore drill (ADR-025) did not run before launch; run it in the first week ("Restore drill").
-- Email and password only: Continue with Google is hidden (`VITE_GOOGLE_SIGN_IN=false`) until DDTC's Google OAuth setup exists (INPUTS item 11). To turn it on: configure the Google provider in the production project, then remove the variable and redeploy.
+- Continue with Google: hidden at launch, then turned on the same day (2026-11-14). The owner created the production OAuth client (redirect URI `https://gajmtqnvfjyvrhzjjcum.supabase.co/auth/v1/callback`, origin `https://ddtc-lms.vercel.app`) and enabled the Google provider in the production project; the variable was removed and production redeployed. While Google's consent screen is in Testing mode, only the Google accounts listed as test users can use it; publishing it needs the privacy notice and terms pages (INPUTS items 5 and 11). To hide it again: set `VITE_GOOGLE_SIGN_IN=false` in Vercel production and redeploy.
+- An invitation link works once. Gmail's link scanner can use it before the person clicks (the owner's first invitation, 2026-11-14). The person then uses Forgot password on the app, in one browser from request to link.
 - No domain yet. Until it exists, email confirmation on sign-up is off (`[remotes.production.auth.email] enable_confirmations = false`), and Supabase's built-in sender only reaches members of the Supabase organisation, a few emails an hour. Learners do not receive notification emails or password-reset links. An administrator resets a learner's password in the Supabase dashboard (Authentication, Users, the person, Send password recovery, or set a new password).
 - Retention stays off (`retention_enabled = false`) for at least the first 30 days.
 
