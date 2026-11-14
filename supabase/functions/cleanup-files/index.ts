@@ -5,14 +5,11 @@
 // which never returns lesson audio or attachments in use, instruction audio or submitted answers'
 // files. Outcomes are audited; each failed removal is counted with its error (D18), so files that
 // keep failing appear in public.cleanup_failures() for administrators.
-import { serviceClient } from '../_shared/auth.ts';
+import { requireScheduler, serviceClient } from '../_shared/auth.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
 
-const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
 serve(async (req) => {
-  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
-  if (!SERVICE_KEY || token !== SERVICE_KEY) throw new HttpError(403, 'forbidden', 'Scheduled job only');
+  await requireScheduler(req);
 
   const admin = serviceClient();
   const { data: due, error } = await admin.rpc('files_due_for_cleanup', { p_limit: 200 });
