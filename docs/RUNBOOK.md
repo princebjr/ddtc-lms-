@@ -383,3 +383,35 @@ DDTC runs on the Supabase free plan, which allows 1 GB of stored files, a 500 MB
   3. Ask lecturers to upload speech audio as MP3 or M4A at about 64 kbit/s mono rather than WAV.
   4. Otherwise decide on a paid plan (the growth plan in `docs/CAPACITY.md`).
 - **When downloads near the limit:** the same audio advice applies; smaller audio files are the main saving.
+
+## Written in Phase 14
+
+### Production (launched 2026-11-14)
+
+| Item | Value |
+|---|---|
+| App | https://ddtc-lms.vercel.app (Vercel project `ddtc-lms`, production environment) |
+| Supabase | `ddtc-lms-production`, ref `gajmtqnvfjyvrhzjjcum`, eu-west-1, free plan (ADR-028) |
+| Staging | `ddtc-lms-staging` (`iybsnzrkkddkqnhfqykv`). `ddtc-lms-dev` is paused to stay within the free plan's two active projects; development uses the local stack |
+| Database password | Held by the owner in a password manager; never in the repository |
+| Vercel production variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (public by design), `VITE_GOOGLE_SIGN_IN=false` |
+| Function secrets | `APP_URL`; `RESEND_API_KEY` and `EMAIL_FROM` once the domain exists |
+| Vault | `project_url`, `service_role_key` (scheduled jobs) |
+
+**How it was set up** (repeatable, all from the repository): `supabase link --project-ref <ref>`, `supabase db push --linked` (every migration, buckets and policies included, no seed), `supabase config push --project-ref <ref>` (`[remotes.production]` in `supabase/config.toml`), `supabase functions deploy --project-ref <ref>`, the vault secrets and `APP_URL` as above, then the bootstrap (section "Bootstrap") for the first administrator. Re-link the CLI to staging afterwards (`supabase link --project-ref iybsnzrkkddkqnhfqykv`) before any staging work.
+
+**Launch decisions (owner, 2026-11-14):**
+- Straight to production, without the pilot. The restore drill (ADR-025) did not run before launch; run it in the first week ("Restore drill").
+- Email and password only: Continue with Google is hidden (`VITE_GOOGLE_SIGN_IN=false`) until DDTC's Google OAuth setup exists (INPUTS item 11). To turn it on: configure the Google provider in the production project, then remove the variable and redeploy.
+- No domain yet. Until it exists, email confirmation on sign-up is off (`[remotes.production.auth.email] enable_confirmations = false`), and Supabase's built-in sender only reaches members of the Supabase organisation, a few emails an hour. Learners do not receive notification emails or password-reset links. An administrator resets a learner's password in the Supabase dashboard (Authentication, Users, the person, Send password recovery, or set a new password).
+- Retention stays off (`retention_enabled = false`) for at least the first 30 days.
+
+**The day the domain exists:**
+1. Add the domain to Vercel (project `ddtc-lms`, Domains) and to Resend (verify its DNS records).
+2. `npx supabase secrets set RESEND_API_KEY=<key> EMAIL_FROM="DDTC LMS <noreply@<domain>>" APP_URL=https://<domain> --project-ref gajmtqnvfjyvrhzjjcum`.
+3. Supabase dashboard, Authentication, Emails, SMTP settings: Resend's SMTP (host `smtp.resend.com`, port 465, user `resend`, password the API key, sender `noreply@<domain>`), so sign-in emails come from the domain too.
+4. In `supabase/config.toml`, `[remotes.production.auth]`: `site_url` and `additional_redirect_urls` to the domain, `enable_confirmations = true`; `supabase config push --project-ref gajmtqnvfjyvrhzjjcum`.
+
+**Backups for production:** in GitHub (repository Settings, Secrets and variables, Actions) replace the `BACKUP_*` secrets with production's values (database URL, project URL, service-role key, Storage S3 endpoint and keys from Project Settings, Storage, S3 Connection) and set the variable `BACKUP_ENV` to `production`. Until then the nightly backup copies staging, not production.
+
+**Rollback:** the app goes back with Vercel (Deployments, the previous production deployment, Promote to Production, or `vercel rollback`); the database is not touched. A migration is never rolled back on production: a fix goes forward as a new numbered migration.
