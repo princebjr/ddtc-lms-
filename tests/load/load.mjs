@@ -71,7 +71,17 @@ async function signIn(email) {
   const res = await fetch(`${s.url}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: s.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: PASSWORD }) });
   record('sign-in', performance.now() - t0, res.ok, res.status);
   if (!res.ok) throw new Error(`sign-in ${email}: ${res.status}`);
-  return /** @type {{ access_token: string, user: { id: string } }} */ (await res.json());
+  return /** @type {{ access_token: string, refresh_token: string, expires_at: number, user: { id: string } }} */ (await res.json());
+}
+
+/** Refreshes the session a minute before its access token expires, as the app does (staging tokens last 10 minutes).
+ * @param {{ access_token: string, refresh_token: string, expires_at: number, user: { id: string } }} session */
+async function fresh(session) {
+  if (session.expires_at * 1000 - Date.now() > 60_000) return session;
+  const t0 = performance.now();
+  const res = await fetch(`${s.url}/auth/v1/token?grant_type=refresh_token`, { method: 'POST', headers: { apikey: s.anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: session.refresh_token }) });
+  record('token refresh', performance.now() - t0, res.ok, res.status);
+  return res.ok ? Object.assign(session, await res.json()) : session;
 }
 
 const end = Date.now() + SECONDS * 1000;
@@ -79,10 +89,20 @@ const end = Date.now() + SECONDS * 1000;
 /** A learner going through the screens, with the one-call screen reads of Phase 15 (migration 55). @param {number} n */
 async function learner(n) {
   const session = await signIn(`load-learner-${n}@ddtc.test`);
-  const token = session.access_token;
-  const [enrolment] = (await hit('my enrolments', `/rest/v1/course_enrollments?select=course_id&learner_id=eq.${session.user.id}&limit=1`, token)) ?? [];
-  const course = enrolment?.course_id;
+  let token;
+  /** @type {string | undefined} */
+  let course;
   while (Date.now() < end) {
+    token = (await fresh(session)).access_token;
+    // Until it is known (a timed-out first read is asked again, never sent on as an empty course).
+    if (!course) {
+      const rows = await hit('my enrolments', `/rest/v1/course_enrollments?select=course_id&learner_id=eq.${session.user.id}&limit=1`, token);
+      course = Array.isArray(rows) ? rows[0]?.course_id : undefined;
+      if (!course) {
+        await sleep(THINK);
+        continue;
+      }
+    }
     await rpc('learner_dashboard', token);
     await sleep(THINK);
     const page = await rpc('get_course_page', token, { p_course: course });
@@ -103,10 +123,19 @@ async function learner(n) {
 /** @param {number} n */
 async function lecturer(n) {
   const session = await signIn(`load-lecturer-${n}@ddtc.test`);
-  const token = session.access_token;
-  const [course] = (await hit('my courses', `/rest/v1/course_lecturers?select=course_id&lecturer_id=eq.${session.user.id}&limit=1`, token)) ?? [];
-  const courseId = course?.course_id;
+  let token;
+  /** @type {string | undefined} */
+  let courseId;
   while (Date.now() < end) {
+    token = (await fresh(session)).access_token;
+    if (!courseId) {
+      const rows = await hit('my courses', `/rest/v1/course_lecturers?select=course_id&lecturer_id=eq.${session.user.id}&limit=1`, token);
+      courseId = Array.isArray(rows) ? rows[0]?.course_id : undefined;
+      if (!courseId) {
+        await sleep(THINK);
+        continue;
+      }
+    }
     await rpc('lecturer_dashboard', token);
     await sleep(THINK);
     await rpc('grading_queue', token);

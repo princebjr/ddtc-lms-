@@ -20,6 +20,8 @@ Measured on the developer's laptop (Docker limited to 2.8 GB), so absolute times
 
 See `docs/acceptance/phase-13.md` section 4 for the figures of the Phase 13 readiness run.
 
+**Staging, Supabase free plan (Phase 15, 2026-11-13/14).** Figures and method in `docs/acceptance/phase-15.md` section 3. In short: at 3× the expected peak (150 test users, about 12 requests a second) errors stayed at 0.48% (time limits only) and nobody failed to sign in; responses slowed (p95 30–40 s) rather than failed. The limit is the free plan's small database computer; the most expensive read under load is `get_course_page` (about 1 s database time each, 50 ms when idle). A test user with 1 s think time makes 20–30 times the requests of a real person, so the free plan carries about 240 people actively using the app at once. Past that, the "Screens slow for everyone at peak" row of the growth plan applies.
+
 ## Rules learned
 
 - A policy must never call a function per row on a large table. Compute the set once (`col in (select private.set_fn())`) or wrap a row-independent check as `(select private.fn(x))`. A SECURITY DEFINER function is never inlined by the planner.
