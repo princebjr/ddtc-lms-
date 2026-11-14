@@ -3,6 +3,7 @@
 // verification; scheduled jobs refuse everyone but the service role; a signed file link stops working
 // when it expires; and a learner's session cannot read another learner's stored file even with its path.
 // The database side (RLS, grants, tampering) is pgTAP 38.
+import { createHmac } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createAccount } from '../e2e/support/accounts.js';
 import { requireSupabase } from '../e2e/support/local-supabase.js';
@@ -68,10 +69,33 @@ describe('administrator functions refuse everyone else', () => {
   });
 });
 
+/** An HS256 token for the local project. @param {object} claims @param {string} secret */
+function mint(claims, secret) {
+  const part = (/** @type {object} */ o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const body = `${part({ alg: 'HS256', typ: 'JWT' })}.${part({ iss: 'supabase-demo', iat: Math.floor(Date.now() / 1000) - 5, exp: Math.floor(Date.now() / 1000) + 600, ...claims })}`;
+  return `${body}.${createHmac('sha256', secret).update(body).digest('base64url')}`;
+}
+
 describe('scheduled jobs refuse everyone but the service role', () => {
   it.each(SCHEDULED)('%s', async (name) => {
+    const s = requireSupabase();
     expect((await call(name, learner.token, {})).status).toBe(403);
     expect((await call(name, admin.token, {})).status).toBe(403);
+    expect((await call(name, s.anonKey, {})).status, 'the public key').toBe(403);
+    // A token that claims the service role but is not signed by the project: refused (gateway 401 or function 403).
+    expect([401, 403], 'a forged service-role token').toContain((await call(name, mint({ role: 'service_role' }, 'not-the-project-secret-but-long-enough-0000'), {})).status);
+  });
+
+  // Phase 14 (production, 2026-11-14): projects created now give Edge Functions a different service key from the
+  // legacy one the scheduler sends. A genuine service-role token of the project, not byte-equal to the function's
+  // own key, must still run the job.
+  it.each(SCHEDULED)('%s accepts a genuine service-role token that is not the same string as its own key', async (name) => {
+    const s = requireSupabase();
+    const token = mint({ role: 'service_role' }, s.jwtSecret);
+    expect(token).not.toBe(s.serviceKey);
+    const status = (await call(name, token, {})).status;
+    expect(status).not.toBe(401);
+    expect(status).not.toBe(403);
   });
 });
 

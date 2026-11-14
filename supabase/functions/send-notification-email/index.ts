@@ -3,11 +3,10 @@
 // suppressed by the claim), sends each through Resend and reports the result, which applies the retry
 // schedule (1, 5, 15, 60, 240 minutes, then FAILED with an alert to administrators; a permanent failure
 // is FAILED at once). Without RESEND_API_KEY it sends nothing and leaves the emails queued.
-import { serviceClient } from '../_shared/auth.ts';
+import { requireScheduler, serviceClient } from '../_shared/auth.ts';
 import { classifyResponse, renderEmail, type SendOutcome } from '../_shared/email.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
 
-const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
 // Without a verified DDTC domain, staging uses Resend's test sender (owner answer 5 of 2026-11-10).
 const FROM = Deno.env.get('EMAIL_FROM') ?? 'DDTC LMS <onboarding@resend.dev>';
@@ -31,8 +30,7 @@ async function send(row: Claimed): Promise<SendOutcome> {
 }
 
 serve(async (req) => {
-  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
-  if (!SERVICE_KEY || token !== SERVICE_KEY) throw new HttpError(403, 'forbidden', 'Scheduled job only');
+  await requireScheduler(req);
   if (!RESEND_KEY) return json(req, 200, { sent: 0, failed: 0, skipped: 'Email is not configured' });
 
   const admin = serviceClient();

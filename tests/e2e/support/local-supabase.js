@@ -25,6 +25,8 @@ export function localSupabase() {
     url: process.env.SUPABASE_URL ?? env.API_URL ?? '',
     anonKey: process.env.SUPABASE_ANON_KEY ?? env.ANON_KEY ?? '',
     serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? env.SERVICE_ROLE_KEY ?? '',
+    // Signs test tokens (the scheduled-job tests mint a second, genuine service-role token).
+    jwtSecret: process.env.SUPABASE_JWT_SECRET ?? env.JWT_SECRET ?? '',
     mailpit: process.env.MAILPIT_URL ?? 'http://127.0.0.1:54324',
   };
   return cached;

@@ -6,10 +6,9 @@
 // object at a time by its exact stored path and records each outcome (retention_record: DELETED keeps
 // the row with deleted_at; DELETE_FAILED is retried by the next run, after holds are checked again).
 // retention_run_finish closes the run with the per-file details and audits it.
-import { serviceClient } from '../_shared/auth.ts';
+import { requireScheduler, serviceClient } from '../_shared/auth.ts';
 import { HttpError, json, serve } from '../_shared/http.ts';
 
-const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 /** At most this many files a run (the next run takes the rest). */
 const BATCH = 500;
 
@@ -17,8 +16,7 @@ type Candidate = { file_id: string; bucket_name: string; storage_path: string; s
 type Outcome = { file_id: string; source: string; answer_id: string; outcome: 'ELIGIBLE' | 'DELETED' | 'FAILED'; error?: string };
 
 serve(async (req) => {
-  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
-  if (!SERVICE_KEY || token !== SERVICE_KEY) throw new HttpError(403, 'forbidden', 'Scheduled job only');
+  await requireScheduler(req);
 
   const admin = serviceClient();
   const { data: begun, error: beginError } = await admin.rpc('retention_run_begin');
