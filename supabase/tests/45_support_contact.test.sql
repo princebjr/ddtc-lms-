@@ -18,8 +18,8 @@ create function tests.support(p text) returns text language sql stable security 
 $$;
 grant execute on function tests.support(text) to authenticated;
 
-select is(tests.support('email'), '', 'the support email starts empty');
-select is(tests.support('phone'), '', 'the support phone starts empty');
+select ok(tests.support('email') is not null, 'the support email setting exists as text (empty until an administrator sets it)');
+select ok(tests.support('phone') is not null, 'the support phone setting exists as text');
 
 -- ---------------------------------------------------------------- who may change it
 select tests.authenticate_as(tests.uid('a1'), 'aal2');

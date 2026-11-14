@@ -131,7 +131,7 @@ select tests.authenticate_as(tests.uid('a1'), 'aal2');
 select is((select count(*)::int from public.profiles), current_setting('t.user_count')::int, 'admin AAL2: reads all profiles');
 select throws_ok($$ update public.profiles set role = 'LECTURER' where id = tests.uid('l1') $$, '42501', NULL, 'admin AAL2: cannot change a role directly (Edge Function only)');
 select throws_ok($$ update public.profiles set account_status = 'SUSPENDED' where id = tests.uid('l1') $$, '42501', NULL, 'admin AAL2: cannot change a status directly (Edge Function only)');
-select is((select count(*)::int from public.system_settings), 19, 'admin AAL2: reads all settings (18 defaults, D43''s two idle settings and Phase 10''s missing_as_zero included, and bootstrap_completed)');
+select is((select count(*)::int from public.system_settings), 25, 'admin AAL2: reads all settings (18 defaults, D43''s two idle settings and Phase 10''s missing_as_zero included, bootstrap_completed, and Phase 15''s support contact, plan limits and feature switches)');
 select lives_ok($$ update public.system_settings set value = 'false' where key = 'require_course_approval' $$, 'admin AAL2: can change a setting');
 select throws_ok($$ update public.system_settings set value = '"no"' where key = 'require_course_approval' $$, '22023', NULL, 'admin AAL2: a setting keeps its JSON type');
 select throws_ok($$ insert into public.system_settings (key, value) values ('new_key', '1') $$, '42501', NULL, 'admin AAL2: cannot add settings (migrations only)');
