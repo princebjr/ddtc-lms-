@@ -75,7 +75,7 @@ Seed: 4 courses × 125 learners (500), 4 lecturers, 12 lessons and 15 assignment
 | Unit | **615 passed** |
 | Database (pgTAP) | 50 files, **1,613 passed** |
 | Bundle budgets | Pass (starting code about 124 KB) |
-| End to end, 24 device projects, light and dark; Lighthouse | CI on the pull request |
+| End to end, 24 device projects, light and dark; Lighthouse | **CI run 43536722622 on 5af01c4: every job green** (8 shards, Lighthouse, pgTAP, lint, types, unit, audit, build, gitleaks) |
 
 **First CI run of the pull request (43532625204):** all 8 end-to-end shards (24 device projects, light and dark), pgTAP, lint, types, unit, audit, build and gitleaks passed. Lighthouse failed one assertion: the Sign In page loaded 205,824 bytes of script against the 200 KB budget (204,800). The cause was the router importing the learner page-read code at start. The router now loads that code with the screen's own code, in parallel, so nothing waits on it. Starting code went from 176.8 KB to 174.7 KB, and Lighthouse locally measured 202,614 bytes. The budget was not changed.
 
