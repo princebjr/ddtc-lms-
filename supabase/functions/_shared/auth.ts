@@ -61,3 +61,33 @@ export async function requireStaff(req: Request): Promise<Caller & { isAdmin: bo
   const { data } = await caller.client.rpc('am_i_admin');
   return { ...caller, isAdmin: data === true };
 }
+
+/** The claims of a JWT, unverified (null if it is not one). Only for choosing a check; never for trusting it. */
+function unverifiedClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Scheduled jobs only (pg_cron through private.call_edge_function, with the service-role key from Vault).
+ * The caller passes when its token is the function's own service key, or when it is another genuine service-role
+ * key of this project: projects created since late 2026 give Edge Functions a different service key from the legacy
+ * one in Vault (production, Phase 14). "Genuine" is decided by Supabase Auth, not by the token's own claims: an
+ * administrator-only Auth request made with the token must succeed, which a forged, expired, learner's or other
+ * project's token never does.
+ */
+export async function requireScheduler(req: Request): Promise<void> {
+  const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '');
+  if (token && SERVICE_KEY && token === SERVICE_KEY) return;
+  if (token && unverifiedClaims(token)?.role === 'service_role') {
+    const res = await fetch(`${URL}/auth/v1/admin/users?page=1&per_page=1`, { headers: { apikey: token, Authorization: `Bearer ${token}` } });
+    await res.body?.cancel();
+    if (res.ok) return;
+  }
+  throw new HttpError(403, 'forbidden', 'Scheduled job only');
+}
