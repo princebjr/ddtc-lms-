@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, CircleCheck, Download, FileText } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { AudioPlayer } from '@/components/audio/AudioPlayer.jsx';
 import { FormMessage } from '@/components/auth/AuthLayout.jsx';
@@ -8,10 +8,11 @@ import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { useToast } from '@/components/feedback/ToastProvider.jsx';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardTitle } from '@/components/ui/card.jsx';
-import { useLoad } from '@/hooks/use-load.js';
+import { useCachedLoad } from '@/hooks/use-load.js';
 import { fileSize } from '@/lib/audio/format.js';
-import { fetchCourse, fetchMyEnrolment } from '@/lib/courses/courses.js';
-import { downloadMedia, fetchLesson, fetchLessonMedia, fetchLessons, fetchMyProgress, markLesson, playbackUrl } from '@/lib/lessons/lessons.js';
+import { downloadMedia, markLesson, playbackUrl } from '@/lib/lessons/lessons.js';
+import { prefetch, prefetchOnIntent } from '@/lib/data-cache.js';
+import { pageQueries } from '@/lib/pages/page-reads.js';
 import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
 
 // The learner's lesson page (Phase 6; RESPONSIVE.md 15.2 "Lesson page"): the lesson text first at
@@ -22,19 +23,24 @@ import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
 export default function LearnerLessonPage() {
   const { courseId = '', lessonId = '' } = useParams();
   const toast = useToast();
-  const page = useLoad(async () => {
-    const [course, lessons, lesson, media, progress, enrolment] = await Promise.all([
-      fetchCourse(courseId),
-      fetchLessons(courseId),
-      fetchLesson(lessonId),
-      fetchLessonMedia(lessonId),
-      fetchMyProgress(courseId),
-      fetchMyEnrolment(courseId),
-    ]);
-    return { course, lessons, lesson, media, progress, enrolment };
-  }, [courseId, lessonId]);
+  // One call for the whole screen, through the data layer (Phase 15, D45): a lesson opened before shows at once.
+  const query = pageQueries.lesson(courseId, lessonId);
+  const page = useCachedLoad(query.key, query.fetch);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
+  // The next lesson is the likeliest next screen: fetch it quietly once this one is on screen (Phase 15).
+  const lessons = page.data?.lessons;
+  useEffect(() => {
+    if (!lessons) return undefined;
+    const at = lessons.findIndex((l) => l.id === lessonId);
+    const following = at >= 0 ? lessons[at + 1] : undefined;
+    if (!following) return undefined;
+    const timer = setTimeout(() => {
+      const q = pageQueries.lesson(courseId, following.id);
+      prefetch(q.key, q.fetch);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [lessons, courseId, lessonId]);
 
   if (page.state === 'error') return <ErrorState title="The lesson could not be loaded" onRetry={page.reload} />;
   if (page.state === 'ready' && (!page.data?.course || !page.data?.lesson)) {
@@ -156,7 +162,7 @@ export default function LearnerLessonPage() {
             <nav aria-label="Lessons" className="grid grid-cols-2 gap-3">
               {previous ? (
                 <Button asChild variant="secondary">
-                  <Link to={`${base}/lessons/${previous.id}`} aria-label={`Previous lesson: ${previous.title}`}>
+                  <Link to={`${base}/lessons/${previous.id}`} aria-label={`Previous lesson: ${previous.title}`} {...prefetchOnIntent(pageQueries.lesson(courseId, previous.id))}>
                     <ArrowLeft aria-hidden="true" />
                     Previous
                   </Link>
@@ -166,7 +172,7 @@ export default function LearnerLessonPage() {
               )}
               {next ? (
                 <Button asChild variant="secondary">
-                  <Link to={`${base}/lessons/${next.id}`} aria-label={`Next lesson: ${next.title}`}>
+                  <Link to={`${base}/lessons/${next.id}`} aria-label={`Next lesson: ${next.title}`} {...prefetchOnIntent(pageQueries.lesson(courseId, next.id))}>
                     Next
                     <ArrowRight aria-hidden="true" />
                   </Link>

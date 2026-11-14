@@ -80,7 +80,7 @@ Tracker (tick after sign-off):
 - 2026-11-11: the lecturer chooses an examination's types of question, and each section has one type. Built in Step 11.2 (ADR-021): `docs/requests/2026-11-11-examination-types.md`.
 - 2026-11-12: Phase 15, stability and speed (stress, spike and soak tests, capacity, speed on low-end phones). Runs after Phase 13 and before Phase 14, on staging (ADR-023). Five questions go to the owner before its plan: `docs/requests/2026-11-12-phase-15-stability-and-speed.md`.
 - 2026-11-12: learners and lecturers clear notifications one at a time or all at once. Built in Phase 13 (ADR-024).
-- 2026-11-12: the approved retention schedule (`docs/RETENTION_SCHEDULE.md`) removes notifications, email delivery records and reminders after 2 years. A small daily job is still to build; plan it into Phase 15 or 14 with the owner.
+- 2026-11-12: the approved retention schedule (`docs/RETENTION_SCHEDULE.md`) removes notifications, email delivery records and reminders after 2 years. Built in Phase 15 (migration 59, a daily job at 03:20).
 
 ## Session prompt for each phase
 

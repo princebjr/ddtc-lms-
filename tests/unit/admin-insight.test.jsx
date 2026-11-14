@@ -66,11 +66,36 @@ beforeEach(() => {
     setting('file_limits', { submission_document: { max_bytes: 10485760 }, submission_audio: { max_bytes: 26214400, max_seconds: 600 } }),
     setting('notification_retry_minutes', [1, 5, 15, 60, 240]),
     setting('retention_enabled', false),
+    setting('support_email', ''),
+    setting('support_phone', ''),
   ]);
   api.saveSetting.mockResolvedValue(undefined);
 });
 
 describe('Settings', () => {
+  it('saves the Help & Support contact, refusing a malformed email or phone before sending it (Phase 15)', async () => {
+    inRouter(<SettingsPage />);
+    const email = await screen.findByLabelText('Support email');
+    await settled();
+    const emailRow = /** @type {HTMLElement} */ (email.closest('[data-setting]'));
+    fireEvent.change(email, { target: { value: 'not an email' } });
+    fireEvent.click(within(emailRow).getByRole('button', { name: 'Save' }));
+    expect(await within(emailRow).findByText('Enter an email address like support@ddtc.org, or leave it empty.')).toBeTruthy();
+    expect(api.saveSetting).not.toHaveBeenCalled();
+    fireEvent.change(email, { target: { value: ' support@ddtc.example ' } });
+    fireEvent.click(within(emailRow).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.saveSetting).toHaveBeenCalledWith('support_email', 'support@ddtc.example'));
+
+    const phone = screen.getByLabelText('Support phone and WhatsApp');
+    const phoneRow = /** @type {HTMLElement} */ (phone.closest('[data-setting]'));
+    fireEvent.change(phone, { target: { value: '12345' } });
+    fireEvent.click(within(phoneRow).getByRole('button', { name: 'Save' }));
+    expect(await within(phoneRow).findByText('Enter 7 to 15 digits, with an optional + and spaces, or leave it empty.')).toBeTruthy();
+    fireEvent.change(phone, { target: { value: '+233 24 123 4567' } });
+    fireEvent.click(within(phoneRow).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.saveSetting).toHaveBeenCalledWith('support_phone', '+233 24 123 4567'));
+  });
+
   it('saves the pass mark with "Setting saved"', async () => {
     inRouter(<SettingsPage />);
     const input = await screen.findByLabelText('Pass mark');

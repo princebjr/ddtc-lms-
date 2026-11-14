@@ -5,8 +5,10 @@ import { ListSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx
 import { EmptyState, ErrorState } from '@/components/feedback/States.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
-import { useLoad } from '@/hooks/use-load.js';
-import { CONTENT_TYPE_LABEL, fetchMyAssignments } from '@/lib/assignments/assignments.js';
+import { useCachedLoad } from '@/hooks/use-load.js';
+import { CONTENT_TYPE_LABEL } from '@/lib/assignments/assignments.js';
+import { prefetchOnIntent } from '@/lib/data-cache.js';
+import { pageQueries } from '@/lib/pages/page-reads.js';
 import { dueStatus } from '@/lib/assignments/due.js';
 import { formatScore } from '@/lib/grading/grading.js';
 
@@ -23,7 +25,9 @@ const SEGMENTS = /** @type {const} */ ([
 ]);
 
 export default function LearnerAssignmentsPage() {
-  const list = useLoad(fetchMyAssignments, []);
+  // Through the data layer (Phase 15, D45): the list opened before shows at once and refreshes.
+  const query = pageQueries.myAssignments();
+  const list = useCachedLoad(query.key, query.fetch);
   const [segment, setSegment] = useState(/** @type {'todo' | 'sent' | 'past'} */ ('todo'));
   const now = new Date();
   const rows = (list.data ?? []).map((a) => ({
@@ -77,6 +81,7 @@ export default function LearnerAssignmentsPage() {
                 <li key={a.id}>
                   <Link
                     to={`/learner/courses/${a.course_id}/assignments/${a.id}`}
+                    {...prefetchOnIntent(pageQueries.assignment(a.course_id, a.id))}
                     className="flex min-h-16 flex-col gap-1 px-4 py-3 hover:bg-fill focus-visible:focus-ring sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
                     <span className="flex min-w-0 flex-col">

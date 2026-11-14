@@ -24,23 +24,49 @@ export const PLAYBACK_SECONDS = 3600;
 
 /** @type {Map<string, { url: string, expires: number }>} */
 const cache = new Map();
+/** Signing requests still on their way, so a second ask for the same file waits for the first (Phase 15). */
+/** @type {Map<string, Promise<string | null>>} */
+const pending = new Map();
 // Signed URLs are held only for the signed-in session (D43).
-clearOnSignOut(() => cache.clear());
+clearOnSignOut(() => {
+  cache.clear();
+  pending.clear();
+});
 
 /**
  * A signed URL for an object, reused until shortly before it expires.
  * @param {string} bucket @param {string} path
  * @returns {Promise<string | null>} null when the file may not be read (for example not VALIDATED)
  */
-export async function signedUrl(bucket, path) {
+export function signedUrl(bucket, path) {
   const key = `${bucket}/${path}`;
   const hit = cache.get(key);
-  if (hit && hit.expires > Date.now() + 60_000) return hit.url;
-  const storage = await getStorage();
-  const { data, error } = await storage.from(bucket).createSignedUrl(path, PLAYBACK_SECONDS);
-  if (error || !data?.signedUrl) return null;
-  cache.set(key, { url: data.signedUrl, expires: Date.now() + PLAYBACK_SECONDS * 1000 });
-  return data.signedUrl;
+  if (hit && hit.expires > Date.now() + 60_000) return Promise.resolve(hit.url);
+  const inFlight = pending.get(key);
+  if (inFlight) return inFlight;
+  const request = (async () => {
+    const storage = await getStorage();
+    const { data, error } = await storage.from(bucket).createSignedUrl(path, PLAYBACK_SECONDS);
+    if (error || !data?.signedUrl) return null;
+    cache.set(key, { url: data.signedUrl, expires: Date.now() + PLAYBACK_SECONDS * 1000 });
+    return data.signedUrl;
+  })().finally(() => pending.delete(key));
+  pending.set(key, request);
+  return request;
+}
+
+/**
+ * Starts signing a file's playback URL now, without waiting, so the player finds it ready (Phase 15: a screen
+ * signs its audio as soon as its data arrives, not after it has drawn). Failures are left to the player.
+ * @param {{ bucket_name: string, storage_path: string } | null | undefined} file
+ */
+export function warmSignedUrl(file) {
+  if (file) signedUrl(file.bucket_name, file.storage_path).catch(() => {});
+}
+
+/** Loads the Storage client now (in parallel with a screen's data), without waiting. */
+export function warmStorage() {
+  getStorage().catch(() => {});
 }
 
 /** Forget a cached URL (after a photo is replaced or removed). @param {string} bucket @param {string} path */

@@ -1,6 +1,7 @@
 import { AuthClient } from '@supabase/auth-js';
 import { PostgrestClient } from '@supabase/postgrest-js';
 import { parsePublicEnv } from './env.js';
+import { resilientFetch } from './resilient-fetch.js';
 
 // Supabase client with the anon (publishable) key only. Every privileged operation happens in an
 // Edge Function; RLS enforces access for every query made with this client.
@@ -43,13 +44,16 @@ export function createAppClient(url, key) {
     flowType: 'pkce',
   });
 
+  // Every database request has a time limit, and reads are retried after a network failure (Phase 15).
+  const resilient = resilientFetch((input, init) => fetch(input, init));
+
   /** @type {typeof fetch} */
   const fetchWithAuth = async (input, init) => {
     const { data } = await auth.getSession();
     const headers = new Headers(init?.headers);
     if (!headers.has('apikey')) headers.set('apikey', key);
     if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${data.session?.access_token ?? key}`);
-    return fetch(input, { ...init, headers });
+    return resilient(input, { ...init, headers });
   };
 
   /** @type {PostgrestClient<Database>} */

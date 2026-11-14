@@ -19,10 +19,30 @@ const page = (load) => async () => ({ Component: (await load()).default });
 /** @param {'AdminNewCourse' | 'AdminCourse' | 'LecturerNewCourse' | 'LecturerCourse' | 'LearnerCourse' | 'AdminLesson' | 'LecturerLesson' | 'LearnerLesson' | 'AdminAssignment' | 'LecturerAssignment' | 'LearnerAssignment'
  *   | 'AdminSubmissions' | 'LecturerSubmissions' | 'AdminSubmission' | 'LecturerSubmission' | 'LearnerCourseGrades'
  *   | 'AdminExam' | 'LecturerExam' | 'AdminExamResults' | 'LecturerExamResults' | 'AdminExamScript' | 'LecturerExamScript' | 'LearnerExam'} name */
-const coursePage = (name) => async () => ({ Component: (await import('@/pages/courses/CourseRoutes.jsx'))[name] });
+const coursePage = (name, /** @type {(() => Promise<unknown>) | undefined} */ screen = undefined) => async () => {
+  // A learner screen's own code is fetched together with CourseRoutes (Phase 15), not after it: CourseRoutes
+  // imports its screens lazily, and that import then finds the code already loaded.
+  const [routes] = await Promise.all([import('@/pages/courses/CourseRoutes.jsx'), screen?.()]);
+  return { Component: routes[name] };
+};
 
 /** @param {'AdminPage' | 'LecturerPage' | 'LearnerPage'} name */
 const rolePage = (name) => async () => ({ Component: (await import('@/pages/RolePage.jsx'))[name] });
+
+/**
+ * Starts a learner screen's data as navigation begins (Phase 15, D45), alongside the page's code and the
+ * profile instead of after them. Never waits: the screen shares the request through the data layer. Signed out,
+ * nothing is fetched (no session, no cache key). The read code is loaded here, alongside the screen's code, not
+ * with the app's starting code (it kept the Sign In page under its 200 KB script budget).
+ * @param {(pageQueries: typeof import('@/lib/pages/page-reads.js').pageQueries, params: Record<string, string | undefined>) => { key: string, fetch: () => Promise<unknown> } | null} query
+ */
+const startData = (query) => (/** @type {{ params: Record<string, string | undefined> }} */ { params }) => {
+  void Promise.all([import('@/lib/pages/page-reads.js'), import('@/lib/data-cache.js')]).then(([{ pageQueries }, { prefetch }]) => {
+    const q = query(pageQueries, params);
+    if (q) prefetch(q.key, q.fetch);
+  });
+  return null;
+};
 
 /** @type {import('react-router').RouteObject[]} */
 const authRoutes = [
@@ -84,12 +104,12 @@ const roleRoutes = [
     path: 'learner',
     element: <ProtectedRoute role="LEARNER" />,
     children: [
-      { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LearnerLesson') },
-      { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LearnerAssignment') },
+      { path: 'courses/:courseId/lessons/:lessonId', lazy: coursePage('LearnerLesson', () => import('@/pages/learner/LearnerLessonPage.jsx')), loader: startData((pageQueries, p) => pageQueries.lesson(p.courseId ?? '', p.lessonId ?? '')) },
+      { path: 'courses/:courseId/assignments/:assignmentId', lazy: coursePage('LearnerAssignment', () => import('@/pages/learner/LearnerAssignmentPage.jsx')), loader: startData((pageQueries, p) => pageQueries.assignment(p.courseId ?? '', p.assignmentId ?? '')) },
       { path: 'courses/:courseId/grades', lazy: coursePage('LearnerCourseGrades') },
       { path: 'courses/:courseId/exams/:examId', lazy: coursePage('LearnerExam') },
-      { path: 'courses/:courseId', lazy: coursePage('LearnerCourse') },
-      { path: ':slug?', lazy: rolePage('LearnerPage') },
+      { path: 'courses/:courseId', lazy: coursePage('LearnerCourse', () => import('@/pages/learner/LearnerCoursePage.jsx')), loader: startData((pageQueries, p) => pageQueries.course(p.courseId ?? '')) },
+      { path: ':slug?', lazy: rolePage('LearnerPage'), loader: startData((pageQueries, p) => (p.slug === 'assignments' ? pageQueries.myAssignments() : null)) },
     ],
   },
 ];

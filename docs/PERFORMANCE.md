@@ -1,0 +1,262 @@
+# DDTC LMS: Performance
+
+Phase 15 (D45). Baseline, every change with its before and after, and results per device. The tools are in `tests/perf/` and `tests/load/`; capacity and growth are in `docs/CAPACITY.md`.
+
+## How it is measured
+
+`node tests/perf/baseline.mjs --runs 3 --json <file>` creates its own course with realistic content and loads each screen as the person who uses it:
+- **The course:** 12 lessons of about 1,200 words, each with 60 s of lesson audio and a stored waveform; an assignment with instruction audio, the learner's answer, and a second assignment still to do.
+- **What is recorded:**
+  - **Readable:** time until the page's own text is on screen, the brief's "time to readable text".
+  - **Repeat visit:** opening the same page again inside the app.
+  - **Audio ready:** time until the Play button can be used. **Audio starts:** from a tap on Play until the audio plays.
+  - **Page metrics:** LCP and CLS, plus TBT (blocking time) as a stand-in for INP, since a scripted run has no real input delay to measure.
+  - **Data calls:** calls to Supabase, not counting audio bytes.
+
+`node tests/perf/median.mjs <file>` takes the median of the runs. Raw data is in `docs/performance/`.
+
+**Profiles** (the lowest supported device, owner decision for Phase 15: a 2 GB Android in Chrome):
+- **Budget Android, slow 4G:** Chromium on a Pixel 7 screen, CPU 4 times slower, slow 4G (150 ms round trip, 1.6 Mbit/s).
+- **Budget Android, slow 3G:** the same phone on DevTools "Slow 3G" (2 s round trip, 400 kbit/s).
+- **iPhone SE, iPad:** WebKit. WebKit cannot be throttled, so these show the engine, not a slow network.
+- **Desktop:** not throttled.
+
+**Where:** the developer's laptop. The local stack has 2.8 GB of Docker memory and the preview build is served locally, so times are pessimistic for the database and optimistic for the network (no internet distance). Before and after are always compared on the same machine with the same tool. Staging runs and two real phones are added in the results section.
+
+## Baseline (2026-11-13, before any Phase 15 change)
+
+Medians of 3 runs. Targets (D45, p75, first visit on a mid-range Android over 4G):
+- the lesson and assignment pages readable within 1.5 s, the lesson page within 0.8 s on a repeat visit;
+- audio playing within 1.5 s of the tap;
+- lists usable within 0.8 s;
+- 3 or fewer data calls on the lesson page and 2 or fewer on lists;
+- CLS 0.1.
+
+**Budget Android, slow 4G (CPU 4x slower)**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts after tap | LCP | CLS | Blocking (TBT) | Data calls |
+|---|---|---|---|---|---|---|---|---|
+| learner dashboard | 3.6 s | 1.1 s | – | – | 2.3 s | 0 | 572 ms | 8 |
+| lesson list (course) | 2.9 s | 748 ms | – | – | 3.0 s | 0 | 231 ms | 17 |
+| lesson | 3.8 s | 1.4 s | 5.5 s | 1.4 s | 3.9 s | 0.024 | 390 ms | 10 |
+| assignment list | 2.5 s | 571 ms | – | – | 2.0 s | 0.005 | 103 ms | 8 |
+| assignment (instruction audio) | 3.5 s | 762 ms | 4.0 s | 1.5 s | 3.5 s | 0.017 | 343 ms | 10 |
+| lecturer dashboard | 2.7 s | 625 ms | – | – | 2.2 s | 0 | 153 ms | 8 |
+| grading (one answer) | 3.3 s | 567 ms | – | – | 3.3 s | 0 | 222 ms | 6 |
+| gradebook | 4.9 s | 1.8 s | – | – | 3.9 s | 0 | 429 ms | 9 |
+
+**Budget Android, slow 3G (2 s round trip)**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts after tap | LCP | CLS | Blocking (TBT) | Data calls |
+|---|---|---|---|---|---|---|---|---|
+| learner dashboard | 23.4 s | 4.4 s | – | – | 19.2 s | 0 | 250 ms | 8 |
+| lesson list (course) | 25.2 s | 7.3 s | – | – | 25.4 s | 0 | 140 ms | 17 |
+| lesson | 23.5 s | 5.5 s | 27.7 s | 6.9 s | 23.6 s | 0.024 | 165 ms | 10 |
+| assignment list | 17.1 s | 2.2 s | – | – | 14.9 s | 0.006 | 47 ms | 8 |
+| assignment (instruction audio) | 29.3 s | 5.4 s | 33.5 s | 6.9 s | 29.4 s | 0.017 | 226 ms | 11 |
+| lecturer dashboard | 21.1 s | 2.2 s | – | – | 19.0 s | 0 | 57 ms | 9 |
+| grading (one answer) | 27.0 s | 3.3 s | – | – | 27.1 s | 0 | 192 ms | 6 |
+| gradebook | 35.4 s | 4.5 s | – | – | 33.2 s | 0 | 289 ms | 9 |
+
+**iPhone SE (WebKit, not throttled)**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts after tap | LCP | CLS | Blocking (TBT) | Data calls |
+|---|---|---|---|---|---|---|---|---|
+| learner dashboard | 1.2 s | 375 ms | – | – | 826 ms | 0 | 0 ms | 9 |
+| lesson list (course) | 1.5 s | 592 ms | – | – | 1.5 s | 0 | 0 ms | 17 |
+| lesson | 1.3 s | 851 ms | 1.4 s | 426 ms | 1.4 s | 0 | 0 ms | 11 |
+| assignment list | 1.5 s | 574 ms | – | – | 809 ms | 0 | 0 ms | 9 |
+| assignment (instruction audio) | 1.9 s | 705 ms | 2.2 s | 740 ms | 2.0 s | 0 | 0 ms | 11 |
+| lecturer dashboard | 784 ms | 200 ms | – | – | 589 ms | 0 | 0 ms | 10 |
+| grading (one answer) | 934 ms | 160 ms | – | – | 1.4 s | 0 | 0 ms | 7 |
+| gradebook | 1.5 s | 702 ms | – | – | 1.0 s | 0 | 0 ms | 10 |
+
+**iPad (WebKit, not throttled)**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts after tap | LCP | CLS | Blocking (TBT) | Data calls |
+|---|---|---|---|---|---|---|---|---|
+| learner dashboard | 1.3 s | 660 ms | – | – | 739 ms | 0 | 0 ms | 8 |
+| lesson list (course) | 1.4 s | 564 ms | – | – | 1.5 s | 0 | 0 ms | 17 |
+| lesson | 985 ms | 332 ms | 1.2 s | 228 ms | 1.1 s | 0 | 0 ms | 11 |
+| assignment list | 819 ms | 186 ms | – | – | 721 ms | 0 | 0 ms | 9 |
+| assignment (instruction audio) | 927 ms | 257 ms | 1.1 s | 312 ms | 1.0 s | 0 | 0 ms | 11 |
+| lecturer dashboard | 648 ms | 152 ms | – | – | 594 ms | 0 | 0 ms | 8 |
+| grading (one answer) | 737 ms | 131 ms | – | – | 795 ms | 0 | 0 ms | 7 |
+| gradebook | 1.1 s | 210 ms | – | – | 1.0 s | 0 | 0 ms | 10 |
+
+**Desktop (not throttled)**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts after tap | LCP | CLS | Blocking (TBT) | Data calls |
+|---|---|---|---|---|---|---|---|---|
+| learner dashboard | 992 ms | 507 ms | – | – | 508 ms | 0.015 | 0 ms | 7 |
+| lesson list (course) | 974 ms | 475 ms | – | – | 1.0 s | 0 | 0 ms | 16 |
+| lesson | 938 ms | 106 ms | 1.2 s | 156 ms | 972 ms | 0.011 | 0 ms | 10 |
+| assignment list | 251 ms | 138 ms | – | – | 216 ms | 0.001 | 0 ms | 8 |
+| assignment (instruction audio) | 1.1 s | 141 ms | 1.3 s | 154 ms | 1.1 s | 0.007 | 0 ms | 10 |
+| lecturer dashboard | 302 ms | 88 ms | – | – | 324 ms | 0 | 0 ms | 7 |
+| grading (one answer) | 418 ms | 474 ms | – | – | 440 ms | 0 | 0 ms | 6 |
+| gradebook | 538 ms | 188 ms | – | – | 412 ms | 0 | 0 ms | 9 |
+
+**What the baseline shows**
+- **Every page misses its target on the budget Android.** On slow 4G, pages become readable after 2.5–4.9 s; the target is 0.8 s for lists and 1.5 s for lesson and assignment pages.
+- **On slow 3G the number of round trips decides everything:**
+  - pages take 17–35 s;
+  - each request made after another one costs about 2 s;
+  - the app makes several before any data arrives: the code, the session, the profile and settings, the page's code, then the page's data.
+- **Too many data calls:**
+  - the lesson list (course page) makes 17;
+  - the lesson and assignment pages make 10 each, against a target of 3;
+  - the learner dashboard makes 8.
+- **Audio ready waits behind a chain:** the page data, then drawing the page, then loading the file-storage code, then signing the link, then the audio's details. On slow 4G that's 5.5 s on the lesson page.
+- **Layout shift is fine everywhere:** 0.024 at most.
+- **Desktop and iPad are mostly within targets already,** so the work is for phones and slow networks.
+- **Repeat visits fetch everything again,** because nothing is cached between pages.
+
+## Changes
+
+Each change is measured with the same tool on the same machine, kept only if it improves the numbers and every test passes.
+
+### Change 1: one call per learner screen (migration 55)
+
+`get_lesson_page`, `get_course_page`, `get_assignment_page` and `list_my_assignments` return what each screen fetched with 4 to 17 separate calls:
+- They run with the caller's rights, so the same RLS policies and read functions decide what comes back.
+- pgTAP 44 proves, for every role, that each part equals the separate reads.
+
+Measured with the same tool, 3 runs each (`docs/performance/after-step2-2026-11-13.json`, with the desktop and WebKit rows). Columns show before → after; the tables below are the budget Android profiles.
+
+**Reading the numbers:** the lecturer pages (dashboard, grading, gradebook) did not change in this step, so they act as a control. On desktop and iPad they moved by up to ±40–120% between runs, so differences of that size on short times are noise on this laptop. The larger, consistent effects are on the budget Android profiles, the target devices.
+**android-4g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 3.6 s → 3.2 s (−13%) | 1.1 s → 1.1 s (−1%) | – | – | 8 → 8 |
+| lesson list (course) | 2.9 s → 2.7 s (−8%) | 748 ms → 795 ms (+6%) | – | – | 17 → 7 |
+| lesson | 3.8 s → 2.7 s (−28%) | 1.4 s → 763 ms (−44%) | 5.5 s → 3.4 s (−39%) | 1.4 s → 1.4 s (−4%) | 10 → 5 |
+| assignment list | 2.5 s → 2.3 s (−8%) | 571 ms → 569 ms (−0%) | – | – | 8 → 5 |
+| assignment (instruction audio) | 3.5 s → 3.4 s (−2%) | 762 ms → 724 ms (−5%) | 4.0 s → 4.0 s (+2%) | 1.5 s → 1.4 s (−7%) | 10 → 6 |
+| lecturer dashboard | 2.7 s → 2.6 s (−4%) | 625 ms → 567 ms (−9%) | – | – | 8 → 9 |
+| grading (one answer) | 3.3 s → 2.9 s (−10%) | 567 ms → 560 ms (−1%) | – | – | 6 → 6 |
+| gradebook | 4.9 s → 4.1 s (−15%) | 1.8 s → 1.1 s (−37%) | – | – | 9 → 9 |
+
+**android-3g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 23.4 s → 23.8 s (+2%) | 4.4 s → 4.3 s (−1%) | – | – | 8 → 8 |
+| lesson list (course) | 25.2 s → 23.0 s (−9%) | 7.3 s → 3.4 s (−54%) | – | – | 17 → 7 |
+| lesson | 23.5 s → 21.9 s (−7%) | 5.5 s → 4.0 s (−27%) | 27.7 s → 26.3 s (−5%) | 6.9 s → 7.6 s (+12%) | 10 → 6 |
+| assignment list | 17.1 s → 17.2 s (+0%) | 2.2 s → 2.3 s (+1%) | – | – | 8 → 5 |
+| assignment (instruction audio) | 29.3 s → 27.6 s (−6%) | 5.4 s → 3.5 s (−35%) | 33.5 s → 31.8 s (−5%) | 6.9 s → 7.0 s (+2%) | 11 → 6 |
+| lecturer dashboard | 21.1 s → 21.2 s (+0%) | 2.2 s → 2.2 s (+1%) | – | – | 9 → 9 |
+| grading (one answer) | 27.0 s → 27.3 s (+1%) | 3.3 s → 3.3 s (+1%) | – | – | 6 → 6 |
+| gradebook | 35.4 s → 35.4 s (+0%) | 4.5 s → 5.5 s (+22%) | – | – | 9 → 9 |
+
+
+**Result:**
+- **Data calls fell as designed:** the lesson list from 17 to 7, the lesson page from 10 to 5, the assignment page from 10 to 6, the assignment list from 8 to 5. The remaining ones are the app frame (profile, settings, notifications, who's online) plus, on audio screens, signing the audio link.
+- **On the budget Android over slow 4G, the lesson page:**
+  - readable 3.8 s → 2.7 s (−28%);
+  - repeat visit 1.4 s → 0.76 s (−44%);
+  - audio ready 5.5 s → 3.4 s (−39%).
+- **On slow 3G, repeat visits:** the lesson list 7.3 s → 3.4 s, the assignment page 5.4 s → 3.5 s.
+- **Kept.**
+
+**Cost noted:** the first call on each database connection takes about 200 ms while Postgres warms its caches; after that the combined reads take 15–50 ms (`get_lesson_page` 29 ms, `get_assignment_page` 15 ms, `get_course_page` 50 ms, `list_my_assignments` 62 ms on the load seed's sizes). This shows as slower repeat visits on desktop (about 0.1 s → 0.48 s). To check on staging, where connections stay warm.
+
+**A local pitfall found on the way:** a build made from Git Bash (`/c/dev/...`) reached the same files under two names, `c:` and `C:`. React was bundled twice and the app failed at start ("Cannot read properties of null (reading 'useState')"). Building from PowerShell in `C:devddtc-lms` gives one copy (`scripts/perf-preview.ps1`). CI and Vercel build on Linux and are not affected. The starting code stays about 124 KB compressed, under the 200 KB budget.
+
+### Change 2: in-memory data layer, data started by the route, prefetch on intent, audio link signed early
+
+`src/lib/data-cache.js`:
+- stale-while-revalidate, memory only, per person;
+- emptied on every sign-out, including the idle sign-out, and when another person signs in;
+- at most 50 answers; one request per key at a time;
+- every write marks the cache old, so the next screen asks again.
+
+The learner routes start their screen's read as navigation begins, alongside the page's code and the profile. Lesson, next/previous and assignment links prefetch on touch, hover or focus, and the next lesson is fetched quietly 1.5 s after a lesson is on screen. The screen's first audio link is signed as soon as its data arrives, and the Storage client loads alongside the data. Unit tests: `tests/unit/data-cache.test.js`.
+
+Compared with the baseline (`docs/performance/after-step3-2026-11-13.json`).
+
+**Notes on this run:**
+- 6 of 120 measurements failed: the laptop suspended its network during the slow-3G lecturer pages, which this change does not touch. The WebKit runs near that moment were erratic; the unchanged lecturer pages moved by up to +116% there.
+- Data calls now include the quiet prefetch of the next lesson, so the lesson page shows more calls than after change 1. Its own screen still makes one.
+**android-4g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 3.6 s → 3.2 s (−10%) | 1.1 s → 1.0 s (−7%) | – | – | 8 → 8 |
+| lesson list (course) | 2.9 s → 2.0 s (−30%) | 748 ms → 142 ms (−81%) | – | – | 17 → 10 |
+| lesson | 3.8 s → 2.3 s (−40%) | 1.4 s → 261 ms (−81%) | 5.5 s → 2.4 s (−57%) | 1.4 s → 1.4 s (+0%) | 10 → 9 |
+| assignment list | 2.5 s → 1.8 s (−28%) | 571 ms → 55 ms (−90%) | – | – | 8 → 5 |
+| assignment (instruction audio) | 3.5 s → 2.7 s (−23%) | 762 ms → 217 ms (−72%) | 4.0 s → 2.8 s (−30%) | 1.5 s → 1.5 s (+4%) | 10 → 9 |
+| lecturer dashboard | 2.7 s → 2.5 s (−6%) | 625 ms → 579 ms (−7%) | – | – | 8 → 8 |
+| grading (one answer) | 3.3 s → 2.8 s (−15%) | 567 ms → 551 ms (−3%) | – | – | 6 → 6 |
+| gradebook | 4.9 s → 3.9 s (−20%) | 1.8 s → 1.1 s (−39%) | – | – | 9 → 9 |
+
+**android-3g**
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts | Data calls |
+|---|---|---|---|---|---|
+| learner dashboard | 23.4 s → 23.8 s (+2%) | 4.4 s → 4.3 s (−2%) | – | – | 8 → 7 |
+| lesson list (course) | 25.2 s → 17.0 s (−33%) | 7.3 s → 152 ms (−98%) | – | – | 17 → 14 |
+| lesson | 23.5 s → 17.6 s (−25%) | 5.5 s → 352 ms (−94%) | 27.7 s → 17.7 s (−36%) | 6.9 s → 7.3 s (+6%) | 10 → 13 |
+| assignment list | 17.1 s → 14.9 s (−13%) | 2.2 s → 75 ms (−97%) | – | – | 8 → 8 |
+| assignment (instruction audio) | 29.3 s → 23.5 s (−20%) | 5.4 s → 261 ms (−95%) | 33.5 s → 23.5 s (−30%) | 6.9 s → 6.9 s (+0%) | 11 → 13 |
+| lecturer dashboard | 21.1 s → 21.7 s (+3%) | 2.2 s → 2.2 s (−1%) | – | – | 9 → 9 |
+| grading (one answer) | 27.0 s → – () | 3.3 s → – () | – | – | 6 → null |
+| gradebook | 35.4 s → – () | 4.5 s → – () | – | – | 9 → null |
+
+
+**Result (budget Android):**
+- **Repeat visits are now near-instant:** on slow 4G 0.06–0.26 s instead of 0.6–1.4 s; on slow 3G 0.08–0.35 s instead of 2.2–7.3 s.
+- **First visits on slow 4G:**
+  - the lesson page is readable in 2.3 s (was 3.8 s), with its audio ready at 2.4 s (was 5.5 s);
+  - the lesson list in 2.0 s (was 2.9 s), the assignment list in 1.8 s (was 2.5 s), the assignment page in 2.7 s (was 3.5 s).
+- **First visits on slow 3G:** the lesson page in 17.6 s (was 23.5 s) and the lesson list in 17.0 s (was 25.2 s).
+- **Audio start after a tap is unchanged** at about 1.4 s on slow 4G. It is the audio file itself arriving; covered by the audio step.
+- **Kept.**
+
+### Change 3: screen code alongside its route module, no forced layout in the waveform, cleaned HTML remembered
+
+- **Screen code:** the learner screens' code is fetched together with `CourseRoutes`, which imported them only after it had loaded itself.
+- **Waveform:** takes its width from the ResizeObserver report instead of reading `clientWidth` on mount. That read forced a layout of the whole page, long lesson included, before its first paint: about 200 ms of the lesson load's CPU on the 4× slower phone (found with a CPU profile).
+- **Cleaned HTML:** the lesson and instruction text cleaned for display is remembered (the last 8 texts, emptied on sign-out), so redraws do not clean it again (10–100 ms each on that phone). `tests/unit/sanitize-display.test.js` covers the cleaning, since it is a security defence and had no tests.
+
+**How it was measured, and why:** a first run hours after change 2 looked 11–76% slower on every row. Every row moved the same way, including parts this change does not touch, which suggested the laptop had drifted. Both versions were then built and measured in the same session, alternating (change 2, this change, change 2, this change; 4 runs each on the budget Android over slow 4G; `docs/performance/ab-change2-2026-11-13.json` and `ab-change3-2026-11-13.json`):
+
+| Page | Readable | Repeat visit | Audio ready | Audio starts |
+|---|---|---|---|---|
+| lesson list (course) | 2.7 s → 2.8 s (+4%) | 225 ms → 136 ms (−40%) | – | – |
+| lesson | 2.6 s → 2.5 s (−5%) | 271 ms → 144 ms (−47%) | 2.8 s → 2.8 s | 1.8 s → 1.7 s |
+| assignment list | 2.3 s → 2.1 s (−7%) | 66 ms → 62 ms | – | – |
+| assignment (instruction audio) | 3.6 s → 3.4 s (−7%) | 299 ms → 276 ms (−8%) | 3.8 s → 3.5 s (−8%) | 2.0 s → 1.5 s (−27%) |
+
+**Result:** first visits are the same or slightly faster, and repeat visits to the lesson and lesson list are 40–47% faster. **Kept.**
+
+**Lesson for later measurements:** the same build measured 2.0–2.3 s at one time and 2.6–2.8 s hours later, so runs taken hours apart are not comparable on this laptop. From here on, every change is measured side by side with the version before it, in the same session.
+
+## Stability (Phase 15)
+
+### Graceful degradation order
+
+When part of the system struggles, what gives way first, and what is protected last:
+1. **Exports and reports pause first:** an administrator turns them off on Settings, Heavy features (migration 58). People asking for them are told plainly that they are paused.
+2. **Live presence falls back quietly:** if the Realtime connection fails, "Who's online" shows nobody and nothing else is affected.
+3. **Audio falls back to text:** if a lesson's audio cannot load, the player shows its error with Retry and the lesson text is still there to read.
+4. **Slow pages keep loading:** after 10 seconds a page keeps its skeleton and shows "Still loading. Your connection seems slow." with Retry (owner decision, ADR-028).
+5. **Protected last:** sign-in, lessons and sending answers are never paused. Answers keep drafts on the device, and recordings are kept until they upload.
+
+### What protects each part
+
+| Brief item | How | Since |
+|---|---|---|
+| A user never sees a blank screen | A failing screen shows its own error with Try again inside the app frame (`PageErrorBoundary`); the route error page catches everything else | Phase 15; Phase 1 |
+| Time limits on every request | Database requests stop after 45 s; Edge Function calls after their own limit (`functions.js`) | Phase 15; Phase 6 |
+| Retries only for safe reads | Up to 2 retries with growing, spread-out waits, only for reads and only after a network failure or 502/503/504 (`resilient-fetch.js`) | Phase 15 |
+| Writes are never repeated | Answers carry a client request id (`submission_versions.client_request_id`, unique); grade release, enrolment and imports are idempotent in the database | Phases 8–10 |
+| Scheduled jobs never overlap harmfully | Emails are claimed with `FOR UPDATE SKIP LOCKED` and a 15-minute lease; reminders and health alerts have unique keys; retention re-checks each file before deleting | Phases 11–13 |
+| No duplicate notifications | Unique `deduplication_key` | Phase 9 |
+| Failed jobs and emails are visible | Daily health check and System health card; failed emails retried on the D31 schedule, then marked FAILED and alerted | Phases 11 and 13 |
+| Database safety | Statement limits (3 s signed out, 8 s signed in, 60 s for the Edge Functions), idle-transaction limit 60 s for every app role (migration 60); slow queries visible in `pg_stat_statements` | Phase 15 |
+| Plan limits | Warnings at 80% and 95% of file storage and database size (migration 57) | Phase 15 |
+| Speed stays within budget | Bundle budgets in verify and CI; layout shift and data calls per page in the throttled-phone test | Phase 15 |

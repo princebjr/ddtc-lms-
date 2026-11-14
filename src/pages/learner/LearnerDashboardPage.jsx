@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { DashboardSkeleton, LoadingRegion } from '@/components/feedback/Skeletons.jsx';
 import { ErrorState } from '@/components/feedback/States.jsx';
 import { LearnerOverview } from '@/components/dashboard/DashboardPanels.jsx';
+import { HelpCard } from '@/components/dashboard/HelpCard.jsx';
 import { RoleIntro } from '@/components/dashboard/RoleIntro.jsx';
 import { WhoIsOnline } from '@/components/presence/WhoIsOnline.jsx';
 import { PageHeader } from '@/components/layout/PageHeader.jsx';
@@ -40,6 +41,10 @@ export default function LearnerDashboardPage() {
             after={
               <>
                 <RoleIntro role="learner" />
+                {/* Help & Support for someone new (owner request 2026-11-13). */}
+                <div className="mt-6">
+                  <HelpCard role="learner" />
+                </div>
                 <div className="mt-6">
                   <WhoIsOnline />
                 </div>

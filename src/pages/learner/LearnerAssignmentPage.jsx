@@ -10,15 +10,14 @@ import { AnswerForm } from '@/components/submissions/AnswerForm.jsx';
 import { VersionList } from '@/components/submissions/VersionList.jsx';
 import { Card, CardTitle } from '@/components/ui/card.jsx';
 import { StatusChip } from '@/components/ui/status-chip.jsx';
-import { useLoad } from '@/hooks/use-load.js';
-import { fetchAssignment, fetchInstructionAudio } from '@/lib/assignments/assignments.js';
+import { useCachedLoad } from '@/hooks/use-load.js';
+import { pageQueries } from '@/lib/pages/page-reads.js';
 import { dueStatus, formatDue } from '@/lib/assignments/due.js';
 import { fileSize } from '@/lib/audio/format.js';
-import { fetchCourse } from '@/lib/courses/courses.js';
-import { fetchMyGrade, markGradeNotificationsRead } from '@/lib/grading/grading.js';
+import { markGradeNotificationsRead } from '@/lib/grading/grading.js';
 import { downloadMedia, playbackUrl } from '@/lib/lessons/lessons.js';
 import { cleanForDisplay } from '@/lib/lessons/sanitize.js';
-import { blockedMessage, fetchMySubmission } from '@/lib/submissions/submissions.js';
+import { blockedMessage } from '@/lib/submissions/submissions.js';
 
 // The learner's assignment page (prototype `nsub`; Phase 7): the instructions (text, audio, or
 // both), then the details: due date in Ghana time with their own extension (D13), whether late
@@ -38,23 +37,9 @@ function answerFiles(formats) {
 export default function LearnerAssignmentPage() {
   const { courseId = '', assignmentId = '' } = useParams();
   const toast = useToast();
-  const page = useLoad(async () => {
-    const [course, assignment, audio, mine, grade] = await Promise.all([
-      fetchCourse(courseId),
-      fetchAssignment(assignmentId),
-      fetchInstructionAudio(assignmentId),
-      fetchMySubmission(assignmentId),
-      fetchMyGrade(assignmentId),
-    ]);
-    return {
-      course,
-      assignment,
-      audio,
-      mine,
-      grade,
-      extendedTo: mine?.extended ? mine.effective_due_at : null,
-    };
-  }, [courseId, assignmentId]);
+  // One call for the whole screen, through the data layer (Phase 15, D45). Sending an answer reloads it.
+  const query = pageQueries.assignment(courseId, assignmentId);
+  const page = useCachedLoad(query.key, query.fetch);
   const shown = Boolean(page.data?.grade);
   useEffect(() => {
     // A grade on screen is a grade seen: its notifications count as read (the toast stops showing).

@@ -1,0 +1,136 @@
+{
+  "learners": 246,
+  "lecturers": 4,
+  "seconds": 851.948,
+  "total": 11836,
+  "errors": 1116,
+  "downloadedMb": 95.83,
+  "rows": [
+    {
+      "request": "sign-in",
+      "count": 250,
+      "errors": 0,
+      "p50_ms": 427,
+      "p95_ms": 21063,
+      "p99_ms": 28650,
+      "error_codes": ""
+    },
+    {
+      "request": "my courses",
+      "count": 4,
+      "errors": 0,
+      "p50_ms": 335,
+      "p95_ms": 698,
+      "p99_ms": 698,
+      "error_codes": ""
+    },
+    {
+      "request": "lecturer_dashboard",
+      "count": 133,
+      "errors": 3,
+      "p50_ms": 566,
+      "p95_ms": 12124,
+      "p99_ms": 98934,
+      "error_codes": "401x3"
+    },
+    {
+      "request": "grading_queue",
+      "count": 133,
+      "errors": 3,
+      "p50_ms": 326,
+      "p95_ms": 6509,
+      "p99_ms": 69903,
+      "error_codes": "401x3"
+    },
+    {
+      "request": "gradebook_assignments",
+      "count": 133,
+      "errors": 4,
+      "p50_ms": 486,
+      "p95_ms": 7897,
+      "p99_ms": 43706,
+      "error_codes": "401x4"
+    },
+    {
+      "request": "assignment list (lecturer)",
+      "count": 133,
+      "errors": 4,
+      "p50_ms": 343,
+      "p95_ms": 11966,
+      "p99_ms": 65773,
+      "error_codes": "401x4"
+    },
+    {
+      "request": "assignment_submissions",
+      "count": 129,
+      "errors": 2,
+      "p50_ms": 337,
+      "p95_ms": 10954,
+      "p99_ms": 73690,
+      "error_codes": "401x1 504x1"
+    },
+    {
+      "request": "my enrolments",
+      "count": 246,
+      "errors": 18,
+      "p50_ms": 4814,
+      "p95_ms": 125213,
+      "p99_ms": 125642,
+      "error_codes": "504x18"
+    },
+    {
+      "request": "learner_dashboard",
+      "count": 1866,
+      "errors": 217,
+      "p50_ms": 1342,
+      "p95_ms": 81978,
+      "p99_ms": 127052,
+      "error_codes": "401x163 500x14 504x40"
+    },
+    {
+      "request": "get_course_page",
+      "count": 1866,
+      "errors": 261,
+      "p50_ms": 2216,
+      "p95_ms": 70275,
+      "p99_ms": 125454,
+      "error_codes": "401x175 404x29 500x24 504x33"
+    },
+    {
+      "request": "get_lesson_page",
+      "count": 1605,
+      "errors": 36,
+      "p50_ms": 1482,
+      "p95_ms": 68474,
+      "p99_ms": 125226,
+      "error_codes": "401x11 500x4 504x21"
+    },
+    {
+      "request": "my_grades",
+      "count": 1866,
+      "errors": 240,
+      "p50_ms": 1329,
+      "p95_ms": 64649,
+      "p99_ms": 125900,
+      "error_codes": "401x200 504x40"
+    },
+    {
+      "request": "list_my_assignments",
+      "count": 1866,
+      "errors": 260,
+      "p50_ms": 1771,
+      "p95_ms": 61395,
+      "p99_ms": 125371,
+      "error_codes": "401x219 500x8 504x33"
+    },
+    {
+      "request": "get_assignment_page",
+      "count": 1606,
+      "errors": 68,
+      "p50_ms": 1131,
+      "p95_ms": 48078,
+      "p99_ms": 125432,
+      "error_codes": "401x12 404x28 500x4 504x24"
+    }
+  ]
+}

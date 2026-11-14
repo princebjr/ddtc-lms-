@@ -1,6 +1,6 @@
+import { Button } from '@/components/ui/button.jsx';
 import { Skeleton } from '@/components/ui/skeleton.jsx';
 import { useDelayedLoading } from '@/hooks/use-delayed-loading.js';
-import { ErrorState } from './States.jsx';
 
 // Shared skeletons (UI_FEEDBACK.md skeleton table). Each matches its final layout so content does
 // not shift when it arrives. Repeat counts never exceed one screen.
@@ -12,21 +12,35 @@ import { ErrorState } from './States.jsx';
  */
 export function LoadingRegion({ loading, skeleton, children, onRetry, label = 'Loading' }) {
   const phase = useDelayedLoading(loading);
-  if (phase === 'timeout')
-    return <ErrorState title="This is taking too long" description="The page did not load in time. Check your connection and try again." onRetry={onRetry} />;
   if (phase === 'content') return <>{children}</>;
+  // After 10 seconds (owner decision of 2026-11-13, Phase 15, ADR-028): on a slow connection the page is usually
+  // still on its way, so the skeleton stays and a calm notice with Retry appears beneath it; the page replaces
+  // both when it arrives. A real failure reaches the page as its error state at once.
+  const slow = phase === 'timeout';
   return (
-    <div aria-busy="true" data-loading-phase={phase}>
+    <div aria-busy="true" data-loading-phase={phase} className={slow ? 'flex flex-col gap-4' : undefined}>
       <span className="sr-only" role="status">
-        {label}
+        {slow ? 'Still loading. Your connection seems slow.' : label}
       </span>
-      {phase === 'skeleton' ? (
+      {phase === 'skeleton' || slow ? (
         skeleton
       ) : (
         <div className="invisible" aria-hidden="true">
           {skeleton}
         </div>
       )}
+      {slow ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-hairline bg-card px-4 py-3" data-slot="slow-notice">
+          <p className="m-0 min-w-0 flex-1 text-body-sm text-ink-secondary" aria-hidden="true">
+            Still loading. Your connection seems slow.
+          </p>
+          {onRetry ? (
+            <Button variant="outline" onClick={onRetry}>
+              Retry
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

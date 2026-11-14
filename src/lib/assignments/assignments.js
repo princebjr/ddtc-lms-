@@ -133,22 +133,11 @@ export async function setAssignmentArchived(id, archived) {
  * @returns {Promise<Array<Pick<Assignment, 'id' | 'course_id' | 'title' | 'content_type' | 'due_at' | 'allow_late'> & { course: { title: string, course_code: string } | null, category: { part: GradePart } | null, extended_to: string | null, submission: { status: string, current_version: number, is_late: boolean } | null, grade: import('@/lib/grading/grading.js').MyGradeRow | null }>>}
  */
 export async function fetchMyAssignments() {
-  const supabase = getSupabase();
-  const [assignments, extensions, submissions, grades] = await Promise.all([
-    supabase.from('assignments').select('id, course_id, title, content_type, due_at, allow_late, course:courses(title, course_code), category:grade_categories(part)').order('due_at'),
-    supabase.from('submission_extensions').select('assignment_id, extended_due_at'),
-    supabase.from('submissions').select('assignment_id, status, current_version, is_late').neq('status', 'DRAFT'),
-    // Released grades only (my_grades never shows a draft): the list says Graded once a grade is released.
-    supabase.rpc('my_grades'),
-  ]);
-  if (assignments.error) throw assignments.error;
-  if (extensions.error) throw extensions.error;
-  if (submissions.error) throw submissions.error;
-  if (grades.error) throw grades.error;
-  const extended = new Map((extensions.data ?? []).map((x) => [x.assignment_id, x.extended_due_at]));
-  const sent = new Map((submissions.data ?? []).map((s) => [s.assignment_id, s]));
-  const released = new Map(/** @type {any[]} */ (grades.data ?? []).filter((g) => g.state === 'RELEASED').map((g) => [g.assignment_id, g]));
-  return /** @type {any[]} */ (assignments.data ?? []).map((a) => ({ ...a, extended_to: extended.get(a.id) ?? null, submission: sent.get(a.id) ?? null, grade: released.get(a.id) ?? null }));
+  // One call (Phase 15, D45; list_my_assignments runs with the learner's rights): each assignment with their
+  // extension, sent answer and released grade (my_grades never shows a draft), soonest due first.
+  const { data, error } = await getSupabase().rpc('list_my_assignments');
+  if (error) throw error;
+  return /** @type {any[]} */ (data ?? []);
 }
 
 /**

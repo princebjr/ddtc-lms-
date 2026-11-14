@@ -318,7 +318,7 @@ The change is audited (`setting.updated`). The database accepts 0 to 3650. Never
 6. **GitHub secrets** (repository Settings, then Secrets and variables, then Actions): `BACKUP_DB_URL`, `AGE_PUBLIC_KEY` (the `age1…` public key), `BACKUP_SUPABASE_URL`, `BACKUP_SUPABASE_SERVICE_ROLE_KEY`, `BACKUP_SUPABASE_S3_ENDPOINT`, `BACKUP_SUPABASE_S3_KEY_ID`, `BACKUP_SUPABASE_S3_SECRET`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`. Add the variable `BACKUP_ENV` (`staging` now, `production` at launch). If the project is not in Europe (Ireland), also add the variable `BACKUP_SUPABASE_S3_REGION` with its region (shown on the S3 Connection page); the default is `eu-west-1`. The R2 endpoint is the account address only (`https://<account id>.r2.cloudflarestorage.com`, without the bucket name), and the R2 token needs Object Read & Write on the bucket.
 7. Run the workflow by hand once. Check that the run is green, that both files appear in R2, and that the System health card on the administrator dashboard no longer lists the backups.
 
-At launch, point the secrets at production. Supabase Pro (about US$25 a month, ADR-023) adds Supabase's own daily backups as a second copy.
+At launch, point the secrets at production. Production starts on the Supabase free plan (ADR-028), which keeps no backups of its own, so this nightly backup is the only copy: check the System health card daily. If DDTC later moves to Supabase Pro (about US$25 a month), Supabase's own daily backups become a second copy.
 
 ### Restore drill (D34; before launch, then every quarter)
 
@@ -357,3 +357,29 @@ Set for every page by `vercel.json`: Content-Security-Policy (scripts only from 
 ### Load and speed checks
 
 See `docs/CAPACITY.md` for the load seed, the load test and the throttled-phone budgets.
+
+## Written in Phase 15
+
+### Help & Support contact (ADR-027)
+
+Learners and lecturers find Help & Support on their dashboard and under More. Its Contact Support section shows the support email and the phone/WhatsApp number from Settings:
+1. As an administrator with two-step verification, open **Settings**, then **Help & Support**.
+2. Enter the **Support email** and the **Support phone and WhatsApp** number. Give the number with its country code, for example `+233 24 123 4567`, so the WhatsApp link works abroad too.
+3. Save each one. The change is audited, and the Help page shows it within a minute.
+
+Leave a field empty to hide it. With both empty, the page tells people to speak to their lecturer or a DDTC administrator. The database refuses a malformed email or a number that is not 7 to 15 digits.
+
+The help text lives in `src/lib/help/content.js`, one set for learners and one for lecturers. When a screen's button or rule changes, change the text with it.
+
+### Plan limits (ADR-028)
+
+DDTC runs on the Supabase free plan, which allows 1 GB of stored files, a 500 MB database and 5 GB of downloads a month. The project pauses after 7 days without activity; the uptime monitor's checks keep it active.
+
+- **Warnings:** the System health card and the daily alert warn when files or the database reach 80% of the limit, and raise an error at 95%, with what is used and what is left. The limits are on **Settings, Plan limits**; change them only when the plan changes.
+- **Downloads (egress) cannot be measured from the app.** Once a month, open the Supabase dashboard, then the project, then **Usage**, and check "Egress". Lesson and answer audio are most of it.
+- **When files near the limit:**
+  1. Check that the cleanup job is removing replaced and unused files (System health shows if it is failing).
+  2. Consider switching learner-audio retention on (runbook "Learner-audio retention") after DDTC's review.
+  3. Ask lecturers to upload speech audio as MP3 or M4A at about 64 kbit/s mono rather than WAV.
+  4. Otherwise decide on a paid plan (the growth plan in `docs/CAPACITY.md`).
+- **When downloads near the limit:** the same audio advice applies; smaller audio files are the main saving.

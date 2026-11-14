@@ -16,7 +16,11 @@ function securityHeadersInPreview() {
   return {
     name: 'ddtc-security-headers-preview',
     configurePreviewServer(server) {
-      const headers = previewHeaders(process.env.VITE_SUPABASE_URL ?? loadEnv('production', process.cwd(), 'VITE_').VITE_SUPABASE_URL);
+      // The address the build was given: the environment (CI and end-to-end runs), else the production env files,
+      // else the development ones (a developer's `npm run preview` with only .env.development.local).
+      const url =
+        process.env.VITE_SUPABASE_URL ?? loadEnv('production', process.cwd(), 'VITE_').VITE_SUPABASE_URL ?? loadEnv('development', process.cwd(), 'VITE_').VITE_SUPABASE_URL;
+      const headers = previewHeaders(url);
       server.middlewares.use((_req, res, next) => {
         for (const [name, value] of headers) res.setHeader(name, value);
         next();

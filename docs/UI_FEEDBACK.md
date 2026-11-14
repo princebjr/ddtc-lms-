@@ -129,7 +129,7 @@ Not a toast: a dialog, because it needs an answer. After `idle_timeout_minutes` 
 - Timing: show the skeleton only if loading takes longer than 150 ms, and once shown keep it for at least 300 ms to avoid flicker.
 - Session check: while the app checks the session, show the skeleton of the page being opened (or a neutral shell). A signed-in user never sees a flash of the Sign In page, and a signed-out user never sees a flash of protected content. This is the Authentication Loading State.
 - Accessibility: the loading region has `aria-busy="true"` and a visually hidden "Loading" label; shimmer is replaced by a static grey block when the user prefers reduced motion.
-- If data has not arrived after 10 seconds, replace the skeleton with an error state and a Retry button. Loading, empty and error states must look clearly different from each other.
+- If data has not arrived after 10 seconds, keep the skeleton and show beneath it a calm notice, "Still loading. Your connection seems slow.", with a Retry button; the page replaces both when it arrives (owner decision of 2026-11-13, Phase 15, ADR-028: on slow 3G pages take 17–25 seconds, and an error at 10 seconds made learners restart a load that was nearly done). A real failure still shows the error state at once. Loading, empty and error states must look clearly different from each other.
 - Button actions use an inline spinner inside the button, and file uploads use a progress bar. Neither uses a page skeleton.
 - Repeat counts match the page size (for example 20 list rows on a phone) but never more than fit one screen.
 

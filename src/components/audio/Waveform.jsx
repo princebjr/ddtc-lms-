@@ -36,10 +36,17 @@ export function Waveform({ peaks, state, currentSeconds, durationSeconds, onSeek
   useEffect(() => {
     const el = box.current;
     if (!el) return undefined;
-    const measure = () => setBars(barsForWidth(el.clientWidth));
-    measure();
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(measure);
+    if (typeof ResizeObserver === 'undefined') {
+      setBars(barsForWidth(el.clientWidth));
+      return undefined;
+    }
+    // The observer reports the width after the browser's own layout (its first report comes as soon as it starts
+    // observing). Reading clientWidth here instead forced a layout of the whole page, long lesson included, before
+    // its first paint: about 200 ms on a budget phone (Phase 15).
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setBars(barsForWidth(width));
+    });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);

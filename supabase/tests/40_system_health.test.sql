@@ -37,7 +37,9 @@ select tests.reset();
 
 select is(tests.issues(), '{}'::text[], 'healthy: nothing needs attention');
 select private.check_system_health();
-select is((select count(*)::int from public.notifications where notification_type = 'SYSTEM_ALERT'), 0, 'and no one is alerted');
+-- Only alerts made in this test (inside its transaction now() is the start time): the real daily job may have
+-- alerted earlier on a long-running local database.
+select is((select count(*)::int from public.notifications where notification_type = 'SYSTEM_ALERT' and created_at >= now()), 0, 'and no one is alerted');
 
 -- ---------------------------------------------------------------- each kind of problem
 insert into cron.job_run_details (jobid, runid, job_pid, database, username, command, status, return_message, start_time, end_time)

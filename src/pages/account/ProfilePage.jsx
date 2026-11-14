@@ -17,6 +17,7 @@ import { callFunction } from '@/lib/functions.js';
 import { formatIdNumber } from '@/lib/id-number.js';
 import { NAVIGATION } from '@/lib/navigation.js';
 import { limitFor, limitText, useClientSettings } from '@/lib/settings/client-settings.js';
+import { IMAGE_SIZES, shrinkImage } from '@/lib/images/shrink.js';
 import { getStorage } from '@/lib/storage.js';
 import { getSupabase } from '@/lib/supabase.js';
 
@@ -102,11 +103,18 @@ function PhotoSection() {
   /** @param {string} reason */
   const rejected = (reason) => toast.show('profile.photo-rejected', { params: { reason }, onAction: pick });
 
-  /** @param {File} file */
-  const upload = async (file) => {
-    const problem = photoProblem(file, limit.maxBytes);
-    if (problem) return rejected(problem);
+  /** @param {File} picked */
+  const upload = async (picked) => {
+    // Made smaller in the browser first (Phase 15): the limit applies to what is uploaded.
+    const typeProblem = photoProblem(picked, null);
+    if (typeProblem) return rejected(typeProblem);
     setBusy('upload');
+    const file = await shrinkImage(picked, IMAGE_SIZES.PROFILE_IMAGE);
+    const problem = photoProblem(file, limit.maxBytes);
+    if (problem) {
+      setBusy(null);
+      return rejected(problem);
+    }
     try {
       const reg = await callFunction('register-upload', { resourceType: 'PROFILE_IMAGE', filename: file.name, size: file.size });
       const { bucket, path, token, fileId } = /** @type {{ bucket: string, path: string, token: string, fileId: string }} */ (reg);

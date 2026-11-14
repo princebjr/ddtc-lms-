@@ -13,6 +13,7 @@ const STEPS = [
   ['Secret scan', 'scan:secrets'],
   ['Dependency audit (high and above)', 'audit:deps'],
   ['Build (Vite)', 'build'],
+  ['Bundle budgets (200 KB starting code, 100 KB per chunk)', 'check:bundle'],
   ['Database tests (pgTAP on local Supabase)', 'test:db'],
   ['Edge Function integration tests (local Supabase)', 'test:functions'],
   ['End-to-end (Playwright, all device projects, light and dark)', 'test:e2e'],

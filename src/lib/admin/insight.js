@@ -86,6 +86,8 @@ export async function fetchReport(kind, f) {
   const { fn, dated } = REPORT_FN[kind];
   const args = { p_course: f.course || null, p_branch: f.branch || null, ...(dated ? { p_from: f.from || null, p_to: f.to || null } : {}) };
   const { data, error } = await getSupabase().rpc(/** @type {any} */ (fn), args);
+  // DDTC paused reports (Phase 15, migration 58): an empty result marked paused, not an error.
+  if (error?.code === 'P0503') return /** @type {any} */ (Object.assign([], { paused: true }));
   if (error) throw error;
   return /** @type {any} */ (data ?? []);
 }

@@ -13,7 +13,7 @@ import { Card, CardDescription, CardTitle } from '@/components/ui/card.jsx';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog.jsx';
 import { useLoad } from '@/hooks/use-load.js';
 import { useMediaDelete } from '@/hooks/use-media-delete.js';
-import { fileSize } from '@/lib/audio/format.js';
+import { AUDIO_SIZE_TIP, fileSize } from '@/lib/audio/format.js';
 import { computePeaks } from '@/lib/audio/peaks.js';
 import { downloadMedia, fetchAudioHistory, fetchLessonMedia, MAX_LESSON_AUDIO, playbackUrl, renameAudio, reorderAudio } from '@/lib/lessons/lessons.js';
 import { extensionForMime, LESSON_RECORDING } from '@/lib/recording/format.js';
@@ -236,6 +236,7 @@ export function AudioCard({ lessonId, courseId, lessonTitle, archived }) {
           </CardDescription>
         )}
       </LoadingRegion>
+      {archived ? null : <p className="m-0 text-body-sm text-ink-secondary" data-slot="audio-size-tip">{AUDIO_SIZE_TIP}</p>}
       {progress ? (
         <div className="flex flex-col gap-2" role="status">
           <span className="truncate text-body-sm text-ink-secondary">

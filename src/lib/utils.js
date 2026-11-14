@@ -23,6 +23,15 @@ const twMerge = extendTailwindMerge({
       radius: ['xs', 'sm', 'md', 'lg', 'full'],
       shadow: ['overlay'],
     },
+    // The safe-area paddings (src/styles/index.css) are paddings too, so a later p-4 or pb-4 replaces them.
+    // Without this, a centred dialog that asked for pb-4 kept the bottom sheet's pb-safe (0 on most phones)
+    // and its last button touched the card's edge (owner, 2026-11-13).
+    classGroups: {
+      pt: ['pt-safe', 'pt-sheet'],
+      pb: ['pb-safe', 'pb-sheet'],
+      pl: ['pl-safe'],
+      pr: ['pr-safe'],
+    },
   },
 });
 

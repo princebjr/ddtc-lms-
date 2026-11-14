@@ -12,6 +12,7 @@ export default [
       'dist/',
       'dist-e2e/',
       'dist-shots/',
+      'dist-perf/',
       'dev-dist/',
       'coverage/',
       'playwright-report/',

@@ -18,7 +18,7 @@ export function AlertDialogContent({ className, overlayClassName, children, ...p
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          'fixed inset-x-0 bottom-0 z-50 flex flex-col gap-4 rounded-t-lg border-t border-hairline bg-card p-4 pb-safe text-ink shadow-overlay outline-none',
+          'fixed inset-x-0 bottom-0 z-50 flex flex-col gap-4 rounded-t-lg border-t border-hairline bg-card p-4 pb-sheet text-ink shadow-overlay outline-none',
           'data-[state=open]:animate-fade-in',
           'sm:inset-auto sm:top-1/2 sm:left-1/2 sm:w-full sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg sm:border sm:p-6 sm:data-[state=open]:animate-dialog-in',
           className,

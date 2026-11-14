@@ -1,4 +1,5 @@
 import { parsePublicEnv } from './env.js';
+import { markAllStale } from './data-cache.js';
 import { getSupabase } from './supabase.js';
 
 // Calls a DDTC LMS Edge Function with the signed-in user's own token. The function re-checks who
@@ -56,6 +57,8 @@ export async function callFunction(name, body) {
     const ours = typeof payload.code === 'string' && OUR_CODE.test(payload.code) && typeof payload.message === 'string';
     throw ours ? new FunctionError(res.status, payload.code, payload.message) : new FunctionError(res.status, 'server_error', 'Something went wrong. Try again.');
   }
+  // Our functions change things: cached screens ask again next time they open (Phase 15 data layer).
+  markAllStale();
   return /** @type {T} */ (payload);
 }
 

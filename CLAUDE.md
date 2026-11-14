@@ -66,6 +66,7 @@ Build one phase at a time. Full detail in `docs/PHASES.md`. In short:
 | `npm run test:db` | Local Supabase plus pgTAP (RLS and Storage policy tests) |
 | `npm run test:e2e` | Playwright on every device project, light and dark, with axe |
 | `npm run lighthouse` | Lighthouse CI on the mobile preset with the budgets |
+| `npm run check:bundle` | Bundle budgets after a build: 200 KB starting code, 100 KB per chunk (Phase 15) |
 | `npm run verify` | All of the above plus the secret scan and dependency audit |
 
 ## 6. Repository layout

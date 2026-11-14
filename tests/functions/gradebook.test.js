@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createAssignmentFixture } from '../e2e/support/assignments.js';
 import { createCourseFixture, enrolFixture } from '../e2e/support/courses.js';
+import { requireSupabase } from '../e2e/support/local-supabase.js';
 import { call, serviceGet, signedInAdmin, signedInAs } from './support.js';
 
 /** @type {Awaited<ReturnType<typeof signedInAs>>} */
@@ -84,6 +85,25 @@ describe('weights after the first release (owner decision 4; since Phase 10.1 ad
 });
 
 describe('export-gradebook', () => {
+  it('refuses, with a plain message, while DDTC has paused exports (Phase 15, migration 58)', async () => {
+    const s = requireSupabase();
+    /** @param {boolean} on */
+    const exportsOn = (on) =>
+      fetch(`${s.url}/rest/v1/system_settings?key=eq.exports_enabled`, {
+        method: 'PATCH',
+        headers: { apikey: s.serviceKey, Authorization: `Bearer ${s.serviceKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: on }),
+      });
+    try {
+      await exportsOn(false);
+      const res = await call('export-gradebook', lecturer.token, { kind: 'gradebook', courseId, format: 'csv' });
+      expect(res.status).toBe(503);
+      expect(res.body).toMatchObject({ code: 'paused', message: 'Exports are paused by DDTC for now. Try again later.' });
+    } finally {
+      await exportsOn(true);
+    }
+  });
+
   it('exports the course gradebook as CSV, one row per learner with their grades', async () => {
     const res = await call('export-gradebook', lecturer.token, { kind: 'gradebook', courseId, format: 'csv' });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
