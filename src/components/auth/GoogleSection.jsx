@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GoogleButton } from '@/components/brand/GoogleButton.jsx';
 import { authErrorMessage } from '@/lib/auth/messages.js';
+import { googleSignInEnabled } from '@/lib/flags.js';
 import { googleAvailability, startGoogleSignIn } from '@/pages/auth/google.js';
 import { FormMessage, OrDivider } from './AuthLayout.jsx';
 
@@ -11,7 +12,8 @@ import { FormMessage, OrDivider } from './AuthLayout.jsx';
 export const IN_APP_GOOGLE_MESSAGE = (app) =>
   `Google sign-in does not work inside ${app}. Open this page in Safari or Chrome, or use your email and password.`;
 
-export function GoogleSection() {
+/** @param {{ enabled?: boolean }} [props] Tests pass `enabled`; the app uses the build flag. */
+export function GoogleSection({ enabled = googleSignInEnabled } = {}) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
 
@@ -31,6 +33,7 @@ export function GoogleSection() {
     }
   };
 
+  if (!enabled) return null;
   return (
     <div className="flex flex-col gap-4">
       <OrDivider />
