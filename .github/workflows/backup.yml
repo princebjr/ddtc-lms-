@@ -106,12 +106,12 @@ jobs:
           report() { curl -fsS -X POST "${SUPABASE_URL}/rest/v1/rpc/backup_report" -H "apikey: ${SERVICE_KEY}" -H "Authorization: Bearer ${SERVICE_KEY}" -H 'Content-Type: application/json' -d "$1" > /dev/null; }
           failed=0
           for bucket in profile-images course-covers lesson-audio lesson-attachments assignment-instructions-audio learner-submissions; do
-            rclone sync "supabase:${bucket}" "r2:${R2_BUCKET}/storage/current/${bucket}" \
-              --backup-dir "r2:${R2_BUCKET}/storage/history/${day}/${bucket}" --transfers 4 --checksum || failed=1
+            rclone sync "supabase:${bucket}" "r2:${R2_BUCKET}/storage/${BACKUP_ENV}/current/${bucket}" \
+              --backup-dir "r2:${R2_BUCKET}/storage/${BACKUP_ENV}/history/${day}/${bucket}" --transfers 4 --checksum || failed=1
           done
-          size=$(rclone size --json "r2:${R2_BUCKET}/storage/current" | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])') || { size=null; failed=1; }
+          size=$(rclone size --json "r2:${R2_BUCKET}/storage/${BACKUP_ENV}/current" | python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])') || { size=null; failed=1; }
           if [ "$failed" = 0 ]; then
-            report "{\"p_kind\":\"STORAGE\",\"p_succeeded\":true,\"p_size_bytes\":${size},\"p_location\":\"r2://${R2_BUCKET}/storage/current\",\"p_error\":null}"
+            report "{\"p_kind\":\"STORAGE\",\"p_succeeded\":true,\"p_size_bytes\":${size},\"p_location\":\"r2://${R2_BUCKET}/storage/${BACKUP_ENV}/current\",\"p_error\":null}"
           else
             report "{\"p_kind\":\"STORAGE\",\"p_succeeded\":false,\"p_size_bytes\":${size},\"p_location\":null,\"p_error\":\"copying one or more buckets failed (see the Backup workflow run)\"}"
             exit 1
