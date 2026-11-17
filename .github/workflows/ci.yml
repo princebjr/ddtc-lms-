@@ -66,6 +66,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # A throwaway secret for this run: it signs Supabase Auth's call to the sign-up email check (config.toml).
+      - name: Sign-up hook secret for this run
+        run: echo "AUTH_HOOK_SECRET=v1,whsec_$(openssl rand -base64 32)" > supabase/.env
       - name: Start local Supabase (database, auth, storage only)
         run: npm run db:start
       - run: npm run test:db
@@ -106,6 +109,9 @@ jobs:
       - name: Install browsers and their system libraries
         timeout-minutes: 20
         run: npx playwright install --with-deps chromium firefox webkit
+      # A throwaway secret for this run: it signs Supabase Auth's call to the sign-up email check (config.toml).
+      - name: Sign-up hook secret for this run
+        run: echo "AUTH_HOOK_SECRET=v1,whsec_$(openssl rand -base64 32)" > supabase/.env
       - name: Start local Supabase (database, auth, Mailpit) for the authentication tests
         run: npm run db:start
       - run: npm run test:e2e -- --shard=${{ matrix.shard }}/8

@@ -416,3 +416,18 @@ DDTC runs on the Supabase free plan, which allows 1 GB of stored files, a 500 MB
 **Backups for production:** in GitHub (repository Settings, Secrets and variables, Actions) replace the `BACKUP_*` secrets with production's values (database URL, project URL, service-role key, Storage S3 endpoint and keys from Project Settings, Storage, S3 Connection) and set the variable `BACKUP_ENV` to `production`. Until then the nightly backup copies staging, not production.
 
 **Rollback:** the app goes back with Vercel (Deployments, the previous production deployment, Promote to Production, or `vercel rollback`); the database is not touched. A migration is never rolled back on production: a fix goes forward as a new numbered migration.
+
+### Sign-up email check (owner, 2026-11-17)
+
+Until confirmation emails can be switched back on (they need DDTC's domain), two checks stop wrong addresses at sign-up:
+- **On the form:** a likely typo of a common provider (gmial.com, gmail.con, yaho.com, hotmal.com) gets "Did you mean ...?" with one tap to fix, or "Keep what I typed" (`src/lib/auth/email-typos.js`).
+- **On the server:** the before-user-created hook `check-signup-email` refuses an address whose domain does not exist or publishes a null MX ("This email address cannot receive email..."). Google sign-ups are not checked. If the DNS lookup fails, the sign-up is allowed. It cannot prove the mailbox exists: only a confirmation email can, once the domain is set up.
+
+**Setup, once per project** (the same secret in both places; generate it with `node -e "console.log('v1,whsec_'+require('crypto').randomBytes(32).toString('base64'))"`):
+1. `npx supabase functions deploy check-signup-email --project-ref <ref>` (it runs without a user's token: `[functions.check-signup-email] verify_jwt = false`).
+2. `npx supabase secrets set AUTH_HOOK_SECRET=<secret> --project-ref <ref>`.
+3. With `AUTH_HOOK_SECRET=<secret>` in the shell, `npx supabase config push --project-ref <ref>` (turns the hook on, `[remotes.<env>.auth.hook.before_user_created]`).
+
+**Local and CI:** `supabase/.env` (never committed) holds `AUTH_HOOK_SECRET=v1,whsec_<base64>`; CI writes a throwaway one before starting Supabase. Without it, local sign-ups fail. The test domains (`TEST_EMAIL_DOMAINS` in `config.toml`) are allowed locally only.
+
+**To switch it off** (for example if it ever refuses a real address): Supabase dashboard, Authentication, Hooks, Before User Created, disable.

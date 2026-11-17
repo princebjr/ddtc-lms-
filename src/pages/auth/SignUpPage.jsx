@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { AuthLayout, FormMessage } from '@/components/auth/AuthLayout.jsx';
 import { FormField, formValues } from '@/components/auth/FormField.jsx';
 import { GoogleSection } from '@/components/auth/GoogleSection.jsx';
 import { Button } from '@/components/ui/button.jsx';
+import { suggestEmail } from '@/lib/auth/email-typos.js';
 import { authErrorMessage } from '@/lib/auth/messages.js';
 import { appUrl } from '@/lib/auth/routing.js';
 import { PASSWORD_MIN, signUpSchema, validate } from '@/lib/auth/schemas.js';
@@ -18,6 +19,27 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState(/** @type {Record<string, string>} */ ({}));
   const [message, setMessage] = useState(/** @type {string | null} */ (null));
   const [pending, setPending] = useState(false);
+  // A likely typo in the address (gmial.com): asked once, before the account is created (owner, 2026-11-17).
+  const [suggestion, setSuggestion] = useState(/** @type {string | null} */ (null));
+  const [kept, setKept] = useState(/** @type {string | null} */ (null));
+  const formRef = useRef(/** @type {HTMLFormElement | null} */ (null));
+  const emailInput = () => /** @type {HTMLInputElement | null} */ (formRef.current?.elements.namedItem('email') ?? null);
+
+  const checkEmail = (/** @type {string} */ value) => {
+    const next = value.trim() && value.trim() !== kept ? suggestEmail(value) : null;
+    setSuggestion(next);
+    return next;
+  };
+  const useSuggestion = () => {
+    const input = emailInput();
+    if (input && suggestion) input.value = suggestion;
+    setSuggestion(null);
+    input?.focus();
+  };
+  const keepTyped = () => {
+    setKept(emailInput()?.value.trim() ?? null);
+    setSuggestion(null);
+  };
 
   /** @param {import('react').FormEvent<HTMLFormElement>} event */
   const onSubmit = async (event) => {
@@ -29,6 +51,7 @@ export default function SignUpPage() {
       return;
     }
     setErrors({});
+    if (checkEmail(result.data.email)) return;
     setPending(true);
     try {
       const { firstName, secondName, email, password } = result.data;
@@ -71,12 +94,40 @@ export default function SignUpPage() {
         </div>
       }
     >
-      <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
+      <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="First name" name="firstName" autoComplete="given-name" autoCapitalize="words" error={errors.firstName} />
           <FormField label="Second name" name="secondName" autoComplete="family-name" autoCapitalize="words" error={errors.secondName} />
         </div>
-        <FormField label="Email address" name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} placeholder="you@example.org" error={errors.email} />
+        <FormField
+          label="Email address"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="you@example.org"
+          error={errors.email}
+          onBlur={(event) => checkEmail(event.currentTarget.value)}
+        />
+        <div aria-live="polite">
+          {suggestion ? (
+            <div data-slot="email-suggestion" className="flex flex-col gap-2 rounded-lg border border-hairline bg-fill p-3 text-body-sm">
+              <p className="m-0">
+                Did you mean <strong className="break-all">{suggestion}</strong>?
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" onClick={useSuggestion}>
+                  Use {suggestion.slice(suggestion.lastIndexOf('@'))}
+                </Button>
+                <Button type="button" variant="outline" onClick={keepTyped}>
+                  Keep what I typed
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
         <FormField label="Password" name="password" type="password" autoComplete="new-password" hint={`At least ${PASSWORD_MIN} characters`} error={errors.password} />
         <FormMessage>{message}</FormMessage>
         <Button type="submit" size="auth" loading={pending} loadingLabel="Creating your account">

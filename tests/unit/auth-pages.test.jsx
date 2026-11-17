@@ -20,12 +20,18 @@ import VerifyEmailPage from '@/pages/auth/VerifyEmailPage.jsx';
 
 /** Two-step verification waits for its factors unless a test gives it some. */
 const mfa = vi.hoisted(() => ({ factors: /** @type {unknown} */ (null) }));
+/** Sign-up calls (owner, 2026-11-17: typo suggestions and the server's refusal of mail-less domains). */
+const signUpCalls = vi.hoisted(() => ({ calls: /** @type {unknown[]} */ ([]), result: /** @type {unknown} */ ({ error: null }) }));
 
 vi.mock('@/lib/supabase.js', () => ({
   getSupabase: () => ({
     auth: {
       mfa: { listFactors: () => (mfa.factors ? Promise.resolve({ data: mfa.factors, error: null }) : new Promise(() => {})) },
       signInWithOAuth: vi.fn(async () => ({ error: null })),
+      signUp: async (/** @type {unknown} */ args) => {
+        signUpCalls.calls.push(args);
+        return signUpCalls.result;
+      },
     },
   }),
 }));
@@ -171,6 +177,51 @@ describe('Sign Up', () => {
     expect(screen.getByLabelText('Password').getAttribute('autocomplete')).toBe('new-password');
     const names = [...container.querySelectorAll('input')].map((i) => i.name);
     expect(names).toEqual(['firstName', 'secondName', 'email', 'password']);
+  });
+
+  /** @param {string} email */
+  const fill = (email) => {
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: 'Abena' } });
+    fireEvent.change(screen.getByLabelText('Second name'), { target: { value: 'Darko' } });
+    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: email } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Grace-and-Truth-26' } });
+  };
+
+  it('asks "Did you mean ...?" for a likely typo before creating the account, and fixes it in one tap', async () => {
+    signUpCalls.calls = [];
+    signUpCalls.result = { error: null };
+    renderPage(<SignUpPage />, '/signup');
+    fill('abena@gmial.com');
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('abena@gmail.com')).toBeTruthy();
+    expect(signUpCalls.calls).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Use @gmail.com' }));
+    expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('Email address')).value).toBe('abena@gmail.com');
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    await act(async () => {});
+    expect(signUpCalls.calls).toHaveLength(1);
+    expect(/** @type {{ email: string }} */ (signUpCalls.calls[0]).email).toBe('abena@gmail.com');
+  });
+
+  it('lets the person keep an unusual address they typed on purpose', async () => {
+    signUpCalls.calls = [];
+    signUpCalls.result = { error: null };
+    renderPage(<SignUpPage />, '/signup');
+    fill('abena@gmail.co');
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Keep what I typed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    await act(async () => {});
+    expect(signUpCalls.calls).toHaveLength(1);
+  });
+
+  it("shows the server's answer when the address cannot receive email", async () => {
+    signUpCalls.calls = [];
+    signUpCalls.result = { error: { status: 400, code: 'unknown', message: 'This email address cannot receive email. Check it for typing mistakes, or use another address.' } };
+    renderPage(<SignUpPage />, '/signup');
+    fill('abena@no-such-place-xyz.com');
+    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(await screen.findByText('This email address cannot receive email. Check it for typing mistakes, or use another address.')).toBeTruthy();
   });
 
   it('requires both names before anything is sent', () => {

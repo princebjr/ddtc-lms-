@@ -304,9 +304,13 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
-# [auth.hook.before_user_created]
-# enabled = true
-# uri = "pg-functions://postgres/auth/before-user-created-hook"
+# Refuses an email address whose domain cannot receive email, before the account is created (owner, 2026-11-17;
+# supabase/functions/check-signup-email). The secret signs Auth's call (Standard Webhooks); locally and in CI it
+# comes from supabase/.env (AUTH_HOOK_SECRET=v1,whsec_<base64>, never committed).
+[auth.hook.before_user_created]
+enabled = true
+uri = "http://host.docker.internal:54321/functions/v1/check-signup-email"
+secrets = "env(AUTH_HOOK_SECRET)"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]
@@ -415,8 +419,14 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+# Local and CI only (production uses `supabase secrets set`). TEST_EMAIL_DOMAINS are the made-up domains the tests use.
+[edge_runtime.secrets]
+AUTH_HOOK_SECRET = "env(AUTH_HOOK_SECRET)"
+TEST_EMAIL_DOMAINS = "ddtc.test,example.test,example.org,ddtc.example"
+
+# Supabase Auth calls this hook without a user's token; the function checks Auth's signature itself.
+[functions.check-signup-email]
+verify_jwt = false
 
 [analytics]
 enabled = true
@@ -479,6 +489,10 @@ otp_length = 8
 [remotes.staging.auth.sms]
 enable_confirmations = true
 
+# The sign-up email check is not deployed to staging yet.
+[remotes.staging.auth.hook.before_user_created]
+enabled = false
+
 [remotes.staging.db.pooler]
 default_pool_size = 15
 max_client_conn = 200
@@ -514,6 +528,12 @@ otp_length = 8
 
 [remotes.production.auth.sms]
 enable_confirmations = true
+
+# Sign-up email check (owner, 2026-11-17). The function's AUTH_HOOK_SECRET is set with `supabase secrets set`.
+[remotes.production.auth.hook.before_user_created]
+enabled = true
+uri = "https://gajmtqnvfjyvrhzjjcum.supabase.co/functions/v1/check-signup-email"
+secrets = "env(AUTH_HOOK_SECRET)"
 
 [remotes.production.db.pooler]
 default_pool_size = 15
