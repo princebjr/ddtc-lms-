@@ -10,6 +10,8 @@ export const MESSAGES = {
   rateLimited: 'Too many attempts. Wait a minute and try again.',
   network: 'You seem to be offline. Check your connection and try again.',
   signupFailed: 'We could not create the account. Check your details and try again.',
+  // From the before-user-created hook (supabase/functions/check-signup-email), whose text this matches.
+  emailCannotReceive: 'This email address cannot receive email. Check it for typing mistakes, or use another address.',
   linkInvalid: 'This link has expired or has already been used. Request a new one.',
   googleRefused:
     'Google sign-in could not be completed. Staff accounts sign in with email and password. If you already have a learner account, verify its email first, then try Google again.',
@@ -39,6 +41,8 @@ export function authErrorMessage(error, context) {
       // A duplicate address must look exactly like success (handled by the caller); the trigger's
       // missing-name rejection arrives as a 500 "Database error saving new user" (Phase 2, K12).
       if (code === 'user_already_exists' || code === 'email_exists') return MESSAGES.checkInbox;
+      // The domain cannot receive email (the hook's own message; it says nothing about registered addresses).
+      if (e?.status === 400 && (e?.message ?? '').includes('cannot receive email')) return MESSAGES.emailCannotReceive;
       return MESSAGES.signupFailed;
     case 'recovery':
       return MESSAGES.checkInbox;

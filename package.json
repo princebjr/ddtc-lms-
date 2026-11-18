@@ -24,7 +24,7 @@
     "test:e2e": "playwright test",
     "lighthouse": "lhci autorun",
     "scan:secrets": "node scripts/check-secrets.mjs",
-    "audit:deps": "npm audit --audit-level=high",
+    "audit:deps": "node scripts/audit.mjs",
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
