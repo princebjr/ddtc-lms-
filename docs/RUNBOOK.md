@@ -305,7 +305,7 @@ The change is audited (`setting.updated`). The database accepts 0 to 3650. Never
 
 **What runs.** The GitHub Actions workflow **Backup** (`.github/workflows/backup.yml`) runs every night at 01:30 Ghana time, and on demand from the Actions tab ("Run workflow"):
 - **Database:** `pg_dump` of the whole database, encrypted with `age` to DDTC's public key, uploaded to the private Cloudflare R2 bucket as `db/db-<env>-<date>.dump.age`. Without the private key the file is unreadable.
-- **Storage:** every file in the six buckets is copied to `storage/current/<bucket>`. A file changed or removed since the night before moves to `storage/history/<date>/<bucket>` instead of being lost.
+- **Storage:** every file in the six buckets is copied to `storage/<environment>/current/<bucket>` (`production` or `staging`, from the variable `BACKUP_ENV`). A file changed or removed since the night before moves to `storage/<environment>/history/<date>/<bucket>` instead of being lost. (Until 2026-11-14 the folders had no environment name: `storage/current` and `storage/history` hold staging's copies from before, and production's first, empty, copy.)
 - Each run is recorded through `backup_report` in `backup_runs` (and audited as `backup.succeeded` or `backup.failed`). The daily health check (06:15) alerts administrators when a backup failed, never ran, or the newest good one is older than 26 hours.
 - Nothing is kept in GitHub (the repository is public). Until every secret below exists, the workflow only prints a warning, and the System health card shows the backups as missing.
 
@@ -330,7 +330,7 @@ Never restore over production or staging. Use a temporary project and delete it 
    - `age -d -i ddtc-backup-key.txt db-<env>-<date>.dump.age > restore.dump`
    - `pg_restore --data-only --schema=public --schema=auth --file=data.sql restore.dump`
    - `psql "<temp database URL>" -v ON_ERROR_STOP=1 -c "set session_replication_role = replica" -f data.sql`
-4. **Files.** Enable the temporary project's S3 connection, add it to rclone as `temp`, and for each of the six buckets run `rclone copy r2:<R2 bucket>/storage/current/<bucket> temp:<bucket>`.
+4. **Files.** Enable the temporary project's S3 connection, add it to rclone as `temp`, and for each of the six buckets run `rclone copy r2:<R2 bucket>/storage/<environment>/current/<bucket> temp:<bucket>`.
 5. **Check.** Vault secrets never come back from a dump (Postgres refuses them, as it should). Set the scheduled jobs' secrets `project_url` and `service_role_key` in the temporary project's vault as for staging. Then run `psql "<temp database URL>" -f scripts/verify-restore.sql`. It passes when "VALIDATED files without a stored object" and "released scores outside their assignment marks" are both 0. Compare the table sizes with the source's, and note the newest records: the gap between them and the failure time is the data-loss window (must be under 24 hours).
 6. **Journey.** Point a local build at the temporary project (`VITE_SUPABASE_URL` and the anon key in `.env.local`), sign in as an administrator, a lecturer and a learner, and open a course, a lesson's audio, a submitted answer and a gradebook.
 7. **Record** in `docs/acceptance/` (or the quarterly log): the backup used, start and finish times (must be under 8 hours), the data-loss window, the check output and any problems. Then delete the temporary project, resume `ddtc-lms-dev`, and delete `restore.dump`, `data.sql` and every decrypted copy.
